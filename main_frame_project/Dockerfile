@@ -1,10 +1,22 @@
-FROM node:23-alpine 
+FROM node:23-alpine
 
-# WORKDIR /app/frontend
-# COPY package*.json ./
-# RUN npm install
-# COPY . .
-# RUN npm run build
+WORKDIR /Frontend
+
+COPY requirements.txt .
+
+RUN npm install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+WORKDIR /Frontend/protfolioResume
+
+COPY package*.json ./
+
+RUN npm install
+
+COPY . .
+
+RUN npm run build
 
 
 
