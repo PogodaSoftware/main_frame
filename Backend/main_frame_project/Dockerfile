@@ -1,25 +1,3 @@
-FROM node:23-alpine
-
-WORKDIR /Frontend
-
-COPY requirements.txt .
-
-RUN npm install --no-cache-dir -r requirements.txt
-
-COPY . .
-
-WORKDIR /Frontend/protfolioResume
-
-COPY package*.json ./
-
-RUN npm install
-
-COPY . .
-
-RUN npm run build
-
-
-
 FROM python:3.9.21 
 
 WORKDIR /app
