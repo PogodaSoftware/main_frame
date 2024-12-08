@@ -1,34 +1,46 @@
-# FROM node:22-alpine
+# FROM node:18-alpine AS build
+
+# WORKDIR /
+
+# COPY package.json package-lock.json ./
+# RUN npm install
+
+# COPY . .
+# RUN npm run build --prod
 
 
-# WORKDIR /app
+# FROM nginx:alpine
 
-# COPY package*.json ./
+# COPY --from=build /dist/portfolio-resume-frontend /usr/share/nginx/html
 
-# RUN npm install -g @angular/cli && npm install
-# RUN npm install @angular-devkit/build-angular
-# RUN npm install -g curl
+# EXPOSE 80
 
-# RUN  npm update
-
-# # EXPOSE 4200 49153
-
-# CMD ["npm", "start"]
-
-# Stage 1: Build the Angular app
+# Stage 1: Build
 FROM node:18-alpine AS build
 
-WORKDIR /
+# Install build tools for Alpine (optional but necessary for some npm packages)
+RUN apk add --no-cache python3 make g++
 
+# Set the working directory
+WORKDIR /app
+
+# Copy package.json and package-lock.json
 COPY package.json package-lock.json ./
+
+# Install dependencies
 RUN npm install
 
+# Copy the rest of the project files
 COPY . .
+
+# Ensure the Angular workspace is recognized and build the application
 RUN npm run build --prod
 
-# Stage 2: Serve the app with Nginx
+# Stage 2: Serve with Nginx
 FROM nginx:alpine
 
-# COPY --from=build /dist/your-app-name /usr/share/nginx/html
+# Copy built files to the Nginx HTML directory
+COPY --from=build /app/dist/portfolio-resume-frontend /usr/share/nginx/html
 
-EXPOSE 80
+# Expose the default Nginx port
+EXPOSE 8000
