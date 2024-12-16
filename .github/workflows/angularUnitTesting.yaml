@@ -19,11 +19,9 @@ jobs:
         run: cd Frontend/portfolioResume && npm install -g @angular/cli
 
       - name: Install project dependencies
-        run: npm ci
+        run: cd Frontend/portfolioResume && npm ci
 
-      - name: Run Jasmine Tests
+      - name: Run Angular unit tests
         run: |
-          npm install 
-          npm run 
-      # - name: Run Angular unit tests with Karma
-      #   run: ng test --watch=false --browsers=ChromeHeadless
+          cd Frontend/portfolioResume
+          npm run test
