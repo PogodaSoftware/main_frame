@@ -1,4 +1,4 @@
-name: Run Angular Unit Tests with Jasmine and Karma
+name: Run Angular Unit Tests with ChromeHeadless
 
 on: [push]
 
@@ -21,7 +21,7 @@ jobs:
       - name: Install project dependencies
         run: cd Frontend/portfolioResume && npm ci
 
-      - name: Run Angular unit tests
+      - name: Run Angular unit tests with ChromeHeadless
         run: |
           cd Frontend/portfolioResume
-          npm run test
+          ng test --watch=false --browsers=ChromeHeadless
