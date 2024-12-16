@@ -16,15 +16,14 @@ jobs:
           node-version: "18"
 
       - name: Install Angular CLI
-        run: npm install -g @angular/cli
+        run: cd Frontend/portfolioResume && npm install -g @angular/cli
 
       - name: Install project dependencies
         run: npm ci
 
       - name: Run Jasmine Tests 
         run: |
-          cd Frontend/portfolioResume
           npm test -- --watch=false --browsers=ChromeHeadless
       
-      - name: Run Angular unit tests with Karma
-        run: ng test --watch=false --browsers=ChromeHeadless
+      # - name: Run Angular unit tests with Karma
+      #   run: ng test --watch=false --browsers=ChromeHeadless
