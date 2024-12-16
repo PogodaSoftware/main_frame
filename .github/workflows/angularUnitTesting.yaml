@@ -25,4 +25,4 @@ jobs:
         run: npm ci
 
       - name: Run Angular unit tests with Jasmine
-        run: ng test Frontend/portfolioResume/src/test
+        run: ng test
