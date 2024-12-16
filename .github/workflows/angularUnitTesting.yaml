@@ -1,7 +1,12 @@
-name: Run Angular Unit Tests
+name: Run Angular Unit Tests with Jasmine
 
 on:
-    [ push ]
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test:
@@ -19,8 +24,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Angular unit tests
-        run: npm test -- --watch=false
+      - name: Run Angular unit tests with Jasmine
+        run: npm test -- --watch=false --reporters=jasmine
 
       - name: Archive test results (optional)
         if: always()
@@ -35,4 +40,4 @@ jobs:
         with:
           name: Unit Tests
           path: ./coverage/junit.xml
-          reporter: jest
+          reporter: jasmine
