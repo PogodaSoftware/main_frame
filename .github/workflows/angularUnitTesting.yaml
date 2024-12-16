@@ -25,4 +25,4 @@ jobs:
       - name: Run Angular unit tests with ChromeHeadless
         run: |
           cd Frontend/portfolioResume
-          ng test --watch=false --browsers=ChromeHeadless
+          ng test --watch=false --browsers=ChromeHeadless --code-coverage
