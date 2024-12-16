@@ -21,5 +21,10 @@ jobs:
       - name: Install project dependencies
         run: npm ci
 
+      - name: Run Jasmine Tests 
+        run: |
+          cd Frontend/portfolioResume
+          npm test -- --watch=false --browsers=ChromeHeadless
+      
       - name: Run Angular unit tests with Karma
         run: ng test --watch=false --browsers=ChromeHeadless
