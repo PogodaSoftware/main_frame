@@ -1,12 +1,7 @@
-name: Run Angular Unit Tests with Jasmine
+name: Run Angular Unit Tests with Jest
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+ [ push ]
 
 jobs:
   test:
@@ -21,8 +16,18 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Install dependencies
+      - name: Install Angular CLI
+        run: npm install -g @angular/cli
+
+      - name: Install project dependencies
         run: npm ci
 
-      - name: Run Angular unit tests with Jasmine
-        run: ng test
+      - name: Install Jest dependencies
+        run: npm install --save-dev jest @angular-builders/jest jest-preset-angular
+
+      - name: Configure Jest
+        run: |
+          echo "module.exports = { preset: 'jest-preset-angular', testEnvironment: 'jsdom' };" > jest.config.js
+
+      - name: Run Angular unit tests with Jest
+        run: npx jest
