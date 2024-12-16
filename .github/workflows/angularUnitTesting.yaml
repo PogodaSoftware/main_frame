@@ -1,7 +1,6 @@
-name: Run Angular Unit Tests with Jest
+name: Run Angular Unit Tests with Jasmine and Karma
 
-on:
- [ push ]
+on: [push]
 
 jobs:
   test:
@@ -22,12 +21,5 @@ jobs:
       - name: Install project dependencies
         run: npm ci
 
-      - name: Install Jest dependencies
-        run: npm install --save-dev jest @angular-builders/jest jest-preset-angular
-
-      - name: Configure Jest
-        run: |
-          echo "module.exports = { preset: 'jest-preset-angular', testEnvironment: 'jsdom' };" > jest.config.js
-
-      - name: Run Angular unit tests with Jest
-        run: npx jest
+      - name: Run Angular unit tests with Karma
+        run: ng test --watch=false --browsers=ChromeHeadless
