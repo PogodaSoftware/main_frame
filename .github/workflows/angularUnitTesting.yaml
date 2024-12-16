@@ -25,19 +25,5 @@ jobs:
         run: npm ci
 
       - name: Run Angular unit tests with Jasmine
-        run: npm test -- --watch=false --reporters=jasmine
+        run: npm test Frontend/portfolioResume/src/test/unitTesting.ts
 
-      - name: Archive test results (optional)
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: test-results
-          path: ./coverage
-
-      - name: Publish test results (optional)
-        if: failure()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Unit Tests
-          path: ./coverage/junit.xml
-          reporter: jasmine
