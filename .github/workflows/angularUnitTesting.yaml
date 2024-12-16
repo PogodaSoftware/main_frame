@@ -1,6 +1,6 @@
 name: Run Angular Unit Tests with Jasmine and Karma
 
-on: [ push ]
+on: [push]
 
 jobs:
   test:
@@ -21,9 +21,10 @@ jobs:
       - name: Install project dependencies
         run: npm ci
 
-      - name: Run Jasmine Tests 
+      - name: Run Jasmine Tests
         run: |
+          npm install 
           npm test -- --watch=false --browsers=ChromeHeadless
-      
+
       # - name: Run Angular unit tests with Karma
       #   run: ng test --watch=false --browsers=ChromeHeadless
