@@ -1,6 +1,6 @@
 name: Run Angular Unit Tests with Jasmine and Karma
 
-on: [push]
+on: [ push ]
 
 jobs:
   test:
