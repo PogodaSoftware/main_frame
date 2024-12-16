@@ -24,6 +24,6 @@ jobs:
       - name: Run Jasmine Tests
         run: |
           npm install 
-          run: npm test
+          npm run test
       # - name: Run Angular unit tests with Karma
       #   run: ng test --watch=false --browsers=ChromeHeadless
