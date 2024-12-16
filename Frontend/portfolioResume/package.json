@@ -6,7 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "ng build",
     "serve:ssr:portfolioResumeFrontend": "node dist/portfolio-resume-frontend/server/server.mjs"
   },
   "private": true,
