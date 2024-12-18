@@ -30,4 +30,4 @@ jobs:
 
       # Step 5: Run your tests
       - name: Run your tests
-        run: Backend/controller/test/test_runner.py
+        run: python Backend/controller/test/test_runner.py
