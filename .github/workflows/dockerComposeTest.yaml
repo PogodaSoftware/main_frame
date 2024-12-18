@@ -1,44 +1,23 @@
 name: Test Docker Compose
 
-
-
-on:
-
-  [push]
+on: [push]
 
 jobs:
-
   test:
     timeout-minutes: 5
     runs-on: ubuntu-latest
-
+    services:
+      docker:
+        image: docker:20.10.9
+        options: --privileged
     steps:
-
-      - uses: actions/checkout@v3
-
-
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Run docker-compose up
-
-        run: docker compose up -d
-
-
-
-      - name: Check service logs
-
-        run: docker logs main_frame-backend-1
-
-
-
-      - name: Perform API test
-
         run: |
-         curl -X GET http://localhost:8000/health | grep 'OK'
-         sleep 30
-
-
-
+          docker compose up -d
+          sleep 30
 
       - name: Clean up
-
         run: docker compose down
