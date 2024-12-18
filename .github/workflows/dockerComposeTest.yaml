@@ -1,10 +1,34 @@
-name: Test Docker Compose
+# name: Test Docker Compose
+
+# on: [push]
+
+# jobs:
+#   test:
+#     timeout-minutes: 5
+#     runs-on: ubuntu-latest
+#     services:
+#       docker:
+#         image: docker:20.10.9
+#         options: --privileged
+#     steps:
+#       - name: Checkout code
+#         uses: actions/checkout@v4
+
+#       - name: Run docker-compose up
+#         run: |
+#           docker compose up -d
+#           sleep 30
+
+#       - name: Clean up
+#         run: docker compose down
+
+name: Docker Compose and Python Tests
 
 on: [push]
 
 jobs:
   test:
-    timeout-minutes: 5
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     services:
       docker:
@@ -14,27 +38,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run docker-compose up
+      - name: Build and run Docker Compose
         run: |
           docker compose up -d
           sleep 30
-          
-      - name: Test Node.js service with curl
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
         run: |
-            SERVICE_URL="http://localhost:8000"
-            EXPECTED_RESPONSE="Hello, World!"
-            RESPONSE=$(curl -sSf $SERVICE_URL)
-            if [ "$RESPONSE" == "$EXPECTED_RESPONSE" ]; then
-                echo "Test Passed: Service returned expected response."
-                echo "Expected: $EXPECTED_RESPONSE"
-                echo "Actual: $RESPONSE"
-                exit 0
-            else
-                echo "Test Failed: Service response did not match expected response."
-                echo "Expected: $EXPECTED_RESPONSE"
-                echo "Actual: $RESPONSE"
-                exit 1
-            fi
+          python -m pip install --upgrade pip
+          pip install -r Backend/controller/requirements.txt
+      # - name: Ensure browsers are installed
+      #   run: python -m playwright install --with-deps
+      - name: Run your tests
+        run: python Playwright-tests/test_homePage.py
 
       - name: Clean up
         run: docker compose down
