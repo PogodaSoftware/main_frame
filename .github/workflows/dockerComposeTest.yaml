@@ -26,7 +26,7 @@ jobs:
 
       - name: Check service logs
 
-        run: main_frame-backend-1
+        run: docker logs main_frame-backend-1
 
 
 
