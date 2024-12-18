@@ -4,16 +4,12 @@ name: Test Docker Compose
 
 on:
 
-  push: 
-
-    branches: [ main ]
-
-
+  [push]
 
 jobs:
 
   test:
-    timeout-minutes: 10
+    timeout-minutes: 5
     runs-on: ubuntu-latest
 
     steps:
