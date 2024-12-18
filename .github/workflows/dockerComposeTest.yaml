@@ -20,7 +20,7 @@ jobs:
 
       - name: Run docker-compose up
 
-        run: docker-compose up -d
+        run: docker compose up -d
 
 
 
@@ -38,4 +38,4 @@ jobs:
 
       - name: Clean up
 
-        run: docker-compose down
+        run: docker compose down
