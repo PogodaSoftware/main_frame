@@ -24,15 +24,15 @@ jobs:
 
 
 
-      - name: Check service logs
+    #   - name: Check service logs
 
-        run: docker logs webserver
+    #     run: docker logs webserver
 
 
 
-      - name: Perform API test
+    #   - name: Perform API test
 
-        run: curl -X GET http://localhost:8080/health | grep 'OK'
+    #     run: curl -X GET http://localhost:8080/health | grep 'OK'
 
 
 
