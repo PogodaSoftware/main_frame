@@ -82,8 +82,15 @@
             "main": "src/test/testmain.spec.ts",
             "karmaConfig": "src/test/karma.conf.js",
             "tsConfig": "tsconfig.spec.json",
+            "inlineStyleLanguage": "scss",
+            "assets": [
+              {
+                "glob": "*/",
+                "input": "public"
+              }
+            ],
             "polyfills": ["zone.js", "zone.js/testing"],
-            "assets": ["src/favicon.ico", "src/assets"],
+
             "styles": ["src/styles.scss"],
             "scripts": []
           }
