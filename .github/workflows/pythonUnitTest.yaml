@@ -19,6 +19,6 @@ jobs:
         pip install -r Backend/controller/requirements.txt
   
     - name: Run your tests
-      run: Backend/controller/main_frame_project/test/test_runner.py
+      run: Backend/controller/test/test_runner.py
 
   
