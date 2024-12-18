@@ -1,0 +1,62 @@
+name: Jira Update
+
+on:
+  pull_request:
+    types: [opened, closed, edited, synchronize]
+
+jobs:
+  update-jira:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Parse Branch Name
+        id: parse_branch
+        run: |
+          BRANCH_NAME=${{ github.head_ref }}
+          echo "Branch name: $BRANCH_NAME"
+          if [[ "$BRANCH_NAME" =~ \[(.*)-([0-9]+)\]]]; then
+            PROJECT_KEY=${BASH_REMATCH[1]}
+            ISSUE_NUMBER=${BASH_REMATCH[2]}
+            echo "::set-output name=project_key::$PROJECT_KEY"
+            echo "::set-output name=issue_number::$ISSUE_NUMBER"
+          else
+            echo "No matching Jira issue format found."
+            exit 1
+          fi
+
+      - name: Update Jira Issue
+        if: github.event.pull_request.merged == true
+        env:
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+        run: |
+          PROJECT_KEY=${{ steps.parse_branch.outputs.project_key }}
+          ISSUE_NUMBER=${{ steps.parse_branch.outputs.issue_number }}
+          ISSUE_KEY="${PROJECT_KEY}-${ISSUE_NUMBER}"
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
+          PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
+          curl -X PUT \
+            -u $JIRA_EMAIL:$JIRA_API_TOKEN \
+            -H "Content-Type: application/json" \
+            --data '{
+              "update": {
+                "comment": [
+                  {
+                    "add": {
+                      "body": "Pull request merged: [${PULL_REQUEST_URL}]\\nLatest commit: ${COMMIT_MESSAGE}"
+                    }
+                  }
+                ],
+                "status": [
+                  {
+                    "set": {
+                      "name": "Done"
+                    }
+                  }
+                ]
+              }
+            }' \
+            "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY"
