@@ -32,7 +32,10 @@ jobs:
 
       - name: Perform API test
 
-        run: curl -X GET http://localhost:8000/health | grep 'OK'
+        run: |
+         curl -X GET http://localhost:8000/health | grep 'OK'
+         sleep 30
+
 
 
 
