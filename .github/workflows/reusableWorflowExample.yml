@@ -4,14 +4,11 @@ on: [push]
 
 jobs:
   call-workflow-in-local-repo:
+    uses: ./.github/workflows/dockerCompose.yml
+    with:
+      compose-file: "docker-compose.yml" # Optional input if needed
 
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Call workflow in local repo
-        uses: ./.github/workflows/dockerCompose.yml
-      - name: Call workflow in local repo 2
-        uses: ./.github/workflows/automationTestingWithPlaywright.yml
-
-
+  call-automation-testing:
+    uses: ./.github/workflows/automationTestingWithPlaywright.yml
+    with:
+      python-version: "3.10" # Optional input if needed
