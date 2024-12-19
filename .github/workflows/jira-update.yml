@@ -3,7 +3,7 @@ name: Jira Update
 on:
     pull_request:
         types: [opened, synchronize, reopened]
-    
+    # lame comment
 jobs:
   update-jira:
     runs-on: ubuntu-latest
