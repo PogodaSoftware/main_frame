@@ -1,37 +1,14 @@
-# name: Reusable Workflow User
-
-# on: [push]
-
-# jobs:
-#   call-workflow-in-local-repo:
-#     uses: ./.github/workflows/dockerCompose.yml
-#     with:
-#       compose-file: "docker-compose.yml" # Optional input if needed
-
-#   call-automation-testing:
-#     uses: ./.github/workflows/automationTestingWithPlaywright.yml
-#     with:
-#       python-version: "3.10" # Optional input if needed
-
 name: Reusable Workflow User
 
 on: [push]
 
 jobs:
-  # Step 1: Run Docker Compose
-  docker-compose-up:
+  call-workflow-in-local-repo:
     uses: ./.github/workflows/dockerCompose.yml
     with:
       compose-file: "docker-compose.yml" # Optional input if needed
 
-  # Step 2: Run Playwright Automation
-  playwright-automation:
-    needs: docker-compose-up # Ensure this job runs after the Docker Compose job
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run Playwright Automation
-        uses: ./.github/workflows/automationTestingWithPlaywright.yml
-        with:
-          python-version: "3.10" # Optional input if needed
-      - name: Docker Compose Down
-        run: docker compose down
+  call-automation-testing:
+    uses: ./.github/workflows/automationTestingWithPlaywright.yml
+    with:
+      python-version: "3.10" # Optional input if needed
