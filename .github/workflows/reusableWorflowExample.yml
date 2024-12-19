@@ -1,6 +1,7 @@
  name: reusable worflow user
 
  on: 
+    push:
     workflow_dispatch:
 
  jobs:
