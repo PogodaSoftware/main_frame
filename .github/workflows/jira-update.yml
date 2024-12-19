@@ -1,9 +1,8 @@
 name: Jira Update
 
 on:
-  pull_request:
-    types: [opened, closed, edited, synchronize]
-
+#   pull_request:
+    [push]
 jobs:
   update-jira:
     runs-on: ubuntu-latest
