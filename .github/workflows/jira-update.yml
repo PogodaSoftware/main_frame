@@ -14,6 +14,7 @@ jobs:
         id: parse_branch
         run: |
           BRANCH_NAME=${{ github.head_ref }}
+          echo ${{ github.head_ref }}
           echo "Branch name: $BRANCH_NAME"
           if [[ "$BRANCH_NAME" =~ ^([A-Z]+-[0-9]+)-(.+)$ ]]; then
             PROJECT_KEY=${BASH_REMATCH[1]}
