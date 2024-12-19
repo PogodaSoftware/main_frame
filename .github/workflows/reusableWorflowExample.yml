@@ -11,21 +11,19 @@ on: [push]
 #         - uses: actions/checkout@v2
 #         - name: Launching Docker Compose
 #           uses: ./.github/workflows/dockerCompose.yml
-  
+
 #         - name: Conducting Playwright Python Automation Test
 #           uses: ./.github/workflows/automationTestingWithPlaywright.yml
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - name: Launching Docker Compose
+        uses: ./.github/workflows/dockerCompose.yml
 
   notify:
     runs-on: ubuntu-latest
     needs: build
     steps:
-        - name: Launching Docker Compose
-          uses: ./.github/workflows/dockerCompose.yml
-        
-        - name: Conducting Playwright Python Automation Test
-          uses: ./.github/workflows/automationTestingWithPlaywright.yml
+      - name: Conducting Playwright Python Automation Test
+        uses: ./.github/workflows/automationTestingWithPlaywright.yml
