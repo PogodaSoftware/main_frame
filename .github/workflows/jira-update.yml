@@ -30,9 +30,9 @@ jobs:
         # if: github.event.pull_request.merged == false 
         if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
         env:
-          JIRA_API_TOKEN: ${{ env.Action_keys.JIRA_API_TOKEN }}
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_API_TOKEN: ${{ env.Action_keys.secrets.JIRA_API_TOKEN }}
+          JIRA_EMAIL: ${{ env.Action_keys.secrets.JIRA_EMAIL }}
+          JIRA_BASE_URL: ${{ env.Action_keys.secrets.JIRA_BASE_URL }}
         run: |
           PROJECT_KEY=${{ steps.parse_branch.outputs.project_key }}
           ISSUE_NUMBER=${{ steps.parse_branch.outputs.issue_number }}
