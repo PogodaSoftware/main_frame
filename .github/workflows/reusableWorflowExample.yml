@@ -4,7 +4,11 @@ on: [push]
 
 jobs:
   call-workflow-in-local-repo:
-    uses: ./.github/workflows/dockerCompose.yml
-
-  call-workflow-in-local-repo-2:
-    uses: ./.github/workflows/automationTestingWithPlaywright.yml
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sets up docker
+        uses: ./.github/workflows/dockerCompose.yml
+      - name: runs playwright automation test with python
+        uses: ./.github/workflows/automationTestingWithPlaywright.yml
+      - name: cleans up the docker containers
+        run: docker compose down
