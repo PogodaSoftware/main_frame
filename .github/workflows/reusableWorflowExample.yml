@@ -7,6 +7,8 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
+
+        - uses: actions/checkout@v2
         - name: Launching Docker Compose
           uses: ./.github/workflows/dockerCompose.yml@main
   
