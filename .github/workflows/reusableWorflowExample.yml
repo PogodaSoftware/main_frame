@@ -27,14 +27,11 @@ jobs:
   # Step 2: Run Playwright Automation
   playwright-automation:
     needs: docker-compose-up # Ensure this job runs after the Docker Compose job
-    uses: ./.github/workflows/automationTestingWithPlaywright.yml
-    with:
-      python-version: "3.10" # Optional input if needed
-
-  # Step 3: Bring Docker Compose Down
-  docker-compose-down:
-    needs: playwright-automation # Ensure this job runs after Playwright automation
     runs-on: ubuntu-latest
     steps:
-      - name: Clean up Docker Compose
+      - name: Run Playwright Automation
+        uses: ./.github/workflows/automationTestingWithPlaywright.yml
+        with:
+          python-version: "3.10" # Optional input if needed
+      - name: Docker Compose Down
         run: docker compose down
