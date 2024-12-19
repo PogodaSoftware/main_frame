@@ -7,13 +7,9 @@ jobs:
     timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
-     
-
-      - name: Launching docker compose
-        uses: ./.github/workflows/dockerCompose.yml
-
-      - name: Conducting Playwright python automation test
-        uses: ./.github/workflows/automationTestingWithPlaywright.yml
-
-      - name: Clean up
-        run: docker compose down
+        - name: Launching Docker Compose
+          uses: ./.github/workflows/dockerCompose.yml
+  
+        - name: Conducting Playwright Python Automation Test
+          uses: ./.github/workflows/automationTestingWithPlaywright.yml
+          

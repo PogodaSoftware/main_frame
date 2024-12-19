@@ -1,6 +1,12 @@
 name: Docker Compose
+
 on: 
-  workflow_dispatch:
+  workflow_call:
+    inputs:
+      compose-file:
+        description: 'Compose file path'
+        default: 'docker-compose.yml'
+        type: string
 
 jobs:
   test:
@@ -19,3 +25,6 @@ jobs:
           docker compose up -d
           sleep 30
 
+      - name: Run docker-compose down
+        if: always()
+        run: docker compose down
