@@ -39,7 +39,7 @@ jobs:
           ISSUE_KEY="${PROJECT_KEY}"
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
-          echo "Updating Jira issue: $ISSUE_KEY env.JIRA_BASE_URL"
+          echo "Updating Jira issue: $ISSUE_KEY ${{env.JIRA_BASE_URL}}"
             #   echo ${{env.JIRA_BASE_URL}}/rest/api/3/issue/${env.ISSUE_KEY}
           curl -X PUT \
             -u $JIRA_EMAIL:${{ env.JIRA_API_TOKEN }} \
