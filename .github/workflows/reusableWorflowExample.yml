@@ -1,0 +1,21 @@
+ name: reusable worflow user
+
+ on: 
+    workflow_dispatch:
+
+ jobs:
+    do-it:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+
+            - name: Launching docker compose
+              uses: ./.github/workflows/dockerCompose.yml
+
+            - name: Conducting Playwright python automation test
+              uses: ./.github/workflows/automationTestingWithPlaywright.yml
+
+            - name: Clean up
+              run: docker compose down
