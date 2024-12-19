@@ -36,7 +36,7 @@ jobs:
         run: |
           PROJECT_KEY=${{ steps.parse_branch.outputs.project_key }}
           ISSUE_NUMBER=${{ steps.parse_branch.outputs.issue_number }}
-          ISSUE_KEY="${PROJECT_KEY}-${ISSUE_NUMBER}"
+          ISSUE_KEY="${PROJECT_KEY}"
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
           echo "Updating Jira issue: $ISSUE_KEY"
