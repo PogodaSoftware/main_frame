@@ -4,11 +4,14 @@ on: [push]
 
 jobs:
   call-workflow-in-local-repo:
+
     runs-on: ubuntu-latest
     steps:
-      - name: Sets up docker
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Call workflow in local repo
         uses: ./.github/workflows/dockerCompose.yml
-      - name: runs playwright automation test with python
+      - name: Call workflow in local repo 2
         uses: ./.github/workflows/automationTestingWithPlaywright.yml
-      - name: cleans up the docker containers
-        run: docker compose down
+
+
