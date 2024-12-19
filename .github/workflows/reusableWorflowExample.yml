@@ -3,19 +3,8 @@ name: Reusable Workflow User
 on: [push]
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Launching Docker Compose
-        uses: ./github/workflows/dockerCompose.yml # Replace 'main' with the branch name where this workflow exists
-        with:
-          compose-file: "docker-compose.override.yml" # Optional input if needed
+  call-workflow-in-local-repo:
+    uses: ./.github/workflows/dockerCompose.yml
 
-  notify:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Conducting Playwright Python Automation Test
-        uses: ./github/workflows/automationTestingWithPlaywright.yml # Replace 'main' with the branch name where this workflow exists
-        with:
-          python-version: "3.10" # Optional input if needed
+  call-workflow-in-local-repo-2:
+    uses: ./.github/workflows/automationTestingWithPlaywright.yml
