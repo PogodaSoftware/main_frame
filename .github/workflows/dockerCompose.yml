@@ -1,8 +1,7 @@
 name: Docker Compose
 
 on: 
-  push:
-  workflow_call:
+  workflow_call: # Allows this workflow to be reused
     inputs:
       compose-file:
         description: 'Compose file path'
@@ -23,9 +22,9 @@ jobs:
 
       - name: Run docker-compose up
         run: |
-          docker compose up -d
+          docker compose -f ${{ inputs.compose-file }} up -d
           sleep 30
 
       - name: Run docker-compose down
-        if: always()
-        run: docker compose down
+        if: always() # Ensure cleanup happens even if previous steps fail
+        run: docker compose -f ${{ inputs.compose-file }} down
