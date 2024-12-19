@@ -1,21 +1,20 @@
- name: reusable worflow user
+name: reusable worflow user
 
- on: 
-   [push]
+on: [push]
 
- jobs:
-    do-it:
-        runs-on: ubuntu-latest
+jobs:
+  test:
+    timeout-minutes: 5
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-        steps:
-            - uses: actions/checkout@v4
+      - name: Launching docker compose
+        uses: ./.github/workflows/dockerCompose.yml
 
+      - name: Conducting Playwright python automation test
+        uses: ./.github/workflows/automationTestingWithPlaywright.yml
 
-            - name: Launching docker compose
-              uses: ./.github/workflows/dockerCompose.yml
-
-            - name: Conducting Playwright python automation test
-              uses: ./.github/workflows/automationTestingWithPlaywright.yml
-
-            - name: Clean up
-              run: docker compose down
+      - name: Clean up
+        run: docker compose down
