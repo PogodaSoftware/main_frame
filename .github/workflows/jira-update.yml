@@ -60,5 +60,4 @@ jobs:
                 ]
               }
             }' \
-            echo "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY"
-            # "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY"
+            "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY"
