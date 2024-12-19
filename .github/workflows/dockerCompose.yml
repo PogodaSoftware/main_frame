@@ -1,5 +1,6 @@
 name: Docker Compose
-on: [push]
+on: 
+  workflow_dispatch:
 
 jobs:
   test:

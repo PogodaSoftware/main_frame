@@ -17,6 +17,6 @@
 
             - name: Conducting Playwright python automation test
               uses: ./.github/workflows/automationTestingWithPlaywright.yml
-
+              
             - name: Clean up
               run: docker compose down
