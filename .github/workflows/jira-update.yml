@@ -40,7 +40,7 @@ jobs:
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
           curl -X PUT \
-            -u $JIRA_EMAIL:$JIRA_API_TOKEN \
+            -u $JIRA_EMAIL:${JIRA_API_TOKEN} \
             -H "Content-Type: application/json" \
             --data '{
               "update": {
@@ -60,4 +60,4 @@ jobs:
                 ]
               }
             }' \
-            "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY"
+            "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}"
