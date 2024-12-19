@@ -1,6 +1,7 @@
 name: Docker Compose
 
 on: 
+  push:
   workflow_call:
     inputs:
       compose-file:
