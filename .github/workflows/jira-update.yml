@@ -28,6 +28,7 @@ jobs:
 
       - name: Update Jira Issue
         # if: github.event.pull_request.merged == false 
+        if: github.event_name == 'push' == true
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
