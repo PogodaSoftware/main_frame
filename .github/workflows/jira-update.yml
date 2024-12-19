@@ -42,7 +42,7 @@ jobs:
           echo "Updating Jira issue: $ISSUE_KEY ${{env.JIRA_BASE_URL}}"
             #   echo ${{env.JIRA_BASE_URL}}/rest/api/3/issue/${env.ISSUE_KEY}
           curl -X PUT \
-            -u $JIRA_EMAIL:${{ env.JIRA_API_TOKEN }} \
+            -u $JIRA_EMAIL:${{ env.Action_keys.JIRA_API_TOKEN }} \
             -H "Content-Type: application/json" \
             --data '{
               "update": {
