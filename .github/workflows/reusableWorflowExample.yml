@@ -8,8 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
         - name: Launching Docker Compose
-          uses: ./.github/workflows/dockerCompose.yml
+          uses: ./.github/workflows/dockerCompose.yml@main
   
         - name: Conducting Playwright Python Automation Test
-          uses: ./.github/workflows/automationTestingWithPlaywright.yml
-          
+          uses: ./.github/workflows/automationTestingWithPlaywright.yml@main
