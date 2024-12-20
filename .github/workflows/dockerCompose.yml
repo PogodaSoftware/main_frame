@@ -1,7 +1,6 @@
 name: Docker Compose and Playwright Automation Testing
 
-on:
-  push:
+on: [push]
 
 jobs:
   test:
