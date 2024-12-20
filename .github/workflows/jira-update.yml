@@ -39,7 +39,7 @@ jobs:
 
       - name: Update Jira Issue
         # if: github.event.pull_request.merged == true
-        if: github.event_name == 'pull_request' && github.event.action == 'synchronized'
+        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
@@ -59,7 +59,8 @@ jobs:
             "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY/comment"
 
       - name: Transition Jira Issue
-        if: github.event.pull_request.merged == true
+        # if: github.event.pull_request.merged == true
+        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
         env:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
