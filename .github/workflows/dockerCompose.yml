@@ -25,7 +25,7 @@ jobs:
 
       # Step 3: Call the Playwright reusable workflow
       - name: Call Playwright Automation Testing
-        uses: ./.github/workflows/automationTestingWithPlaywright.yml
+        uses: ./.github/workflows/automationTestingWithPlaywright.yml@main
         with:
           python-version: "3.10"
 
