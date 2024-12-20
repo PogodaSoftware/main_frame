@@ -50,6 +50,8 @@ jobs:
           ISSUE_KEY="${PROJECT_KEY}"
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
+          echo "Updating Jira issue: $ISSUE_KEY"
+          echo "Latest commit: $COMMIT_MESSAGE"
           curl -X POST \
             -u ${JIRA_EMAIL}:${JIRA_API_TOKEN} \
             -H "Content-Type: application/json" \
@@ -69,11 +71,11 @@ jobs:
           TRANSITION_ID=21  # Replace with the actual transition ID for "Done"
           ISSUE_KEY="${PROJECT_KEY}"
           curl -X POST \
-            -u $JIRA_EMAIL:$JIRA_API_TOKEN \
+            -u $JIRA_EMAIL:${JIRA_API_TOKEN} \
             -H "Content-Type: application/json" \
             --data '{
               "transition": {
-                "id": "'"$TRANSITION_ID"'"
+                "id": "'"${TRANSITION_ID}"'"
               }
             }' \
-            "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY/transitions"
+            "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/transitions"
