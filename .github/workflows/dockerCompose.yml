@@ -1,11 +1,12 @@
 name: Docker Compose
 
-on: 
-  workflow_call: 
+on:
+  push:
+  workflow_dispatch:
     inputs:
       compose-file:
-        description: 'Compose file path'
-        default: 'docker-compose.yml'
+        description: "Compose file path"
+        default: "docker-compose.yml"
         type: string
 
 jobs:
@@ -19,10 +20,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Run docker-compose up
         run: |
-          docker compose  up -d
+          docker compose up -d
           sleep 30
 
+      - name: Call automation testing
+        uses: ./.github/workflows/automationTestingWithPlaywright.yml
+        with:
+          python-version: "3.10"
 
+      - name: Run docker-compose down
+        run: docker compose down

@@ -1,7 +1,7 @@
 name: Playwright Automation Testing
 
 on:
-  workflow_call: # Allows this workflow to be reused
+  workflow_call: 
     inputs:
       python-version:
         description: 'Python version to use'
