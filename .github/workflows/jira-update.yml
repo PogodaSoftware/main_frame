@@ -52,14 +52,14 @@ jobs:
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
           echo "Updating Jira issue: $ISSUE_KEY"
           echo "Latest commit: ${COMMIT_MESSAGE}"
-          COMMENT_BODY="Pull request merged: [${PULL_REQUEST_URL}] Latest commit: ${COMMIT_MESSAGE}." 
-          COMMENT_JSON=$(echo -n '{"body": "'"$COMMENT_BODY"'"}') 
-          echo "Comment JSON: $COMMENT_JSON"
+          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s") PULL_REQUEST_URL=${{ github.event.pull_request.html_url }} 
+          COMMENT_BODY=$(jq -n --arg pr_url "$PULL_REQUEST_URL" --arg commit_msg "$COMMIT_MESSAGE" '{"body": "Pull request merged: [" + $pr_url + "]\nLatest commit: " + $commit_msg}') 
+          echo "Comment JSON: $COMMENT_BODY" 
           curl -X POST \
-            -u ${JIRA_EMAIL}:${JIRA_API_TOKEN} \
-            --data "$COMMENT_JSON" \
-            -H "Content-Type: application/json" \
-            "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment"
+           -u $JIRA_EMAIL:$JIRA_API_TOKEN \
+           -H "Content-Type: application/json" \
+           --data "$COMMENT_BODY" \
+           "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment"
 
       - name: Transition Jira Issue
         # if: github.event.pull_request.merged == true # Only transition when PR is merged
