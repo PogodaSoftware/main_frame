@@ -52,7 +52,7 @@ jobs:
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
           echo "Updating Jira issue: $ISSUE_KEY"
           echo "Latest commit: ${COMMIT_MESSAGE}"
-          COMMENT_BODY="Pull request merged: [${PULL_REQUEST_URL}] Latest commit: ${COMMIT_MESSAGE}" 
+          COMMENT_BODY="Pull request merged: [${PULL_REQUEST_URL}] Latest commit: ${COMMIT_MESSAGE}." 
           COMMENT_JSON=$(echo -n '{"body": "'"$COMMENT_BODY"'"}') 
           echo "Comment JSON: $COMMENT_JSON"
           curl -X POST \
