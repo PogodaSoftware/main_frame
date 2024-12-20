@@ -56,7 +56,7 @@ jobs:
             -u ${JIRA_EMAIL}:${JIRA_API_TOKEN} \
             -H "Content-Type: application/json" \
             --data '{
-              "body": "Pull request merged: [${PULL_REQUEST_URL}]\\nLatest commit: ${COMMIT_MESSAGE}"
+              "body": "Pull request merged: [${PULL_REQUEST_URL}]\\nLatest commit: commit successsful"
             }' \
             "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment"
 
