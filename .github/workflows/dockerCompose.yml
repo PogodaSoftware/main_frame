@@ -1,13 +1,7 @@
 name: Docker Compose
 
 on:
-  push:
-  workflow_dispatch:
-    inputs:
-      compose-file:
-        description: "Compose file path"
-        default: "docker-compose.yml"
-        type: string
+  [push]
 
 jobs:
   test:
