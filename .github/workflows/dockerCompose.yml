@@ -1,0 +1,33 @@
+name: Docker Compose and Playwright Automation Testing
+
+on: [push]
+
+jobs:
+  test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:20.10.9
+        options: --privileged
+
+    steps:
+      # Step 1: Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Step 2: Spin up Docker Compose
+      - name: Run docker-compose up
+        run: |
+          docker compose up -d
+          sleep 30
+
+      # Step 3: Call the Playwright reusable workflow
+      - name: Call Playwright Automation Testing
+        uses: ./.github/workflows/automationTestingWithPlaywright.yml@main
+        with:
+          python-version: "3.10"
+
+      # Step 4: Tear down Docker Compose
+      - name: Run docker-compose down
+        run: docker compose down
