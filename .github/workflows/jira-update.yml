@@ -55,9 +55,7 @@ jobs:
           curl -X POST \
             -u ${JIRA_EMAIL}:${JIRA_API_TOKEN} \
             -H "Content-Type: application/json" \
-            --data '{
-              "body": "comment":"Pull request merged: [${PULL_REQUEST_URL}] Latest commit: commit successsful"
-            }' \
+            --data '{"body": "comment":"Pull request merged: [${PULL_REQUEST_URL}] Latest commit: commit successsful"}' \
             "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment"
 
       - name: Transition Jira Issue
