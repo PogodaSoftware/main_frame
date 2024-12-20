@@ -51,12 +51,12 @@ jobs:
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
           curl -X POST \
-            -u $JIRA_EMAIL:$JIRA_API_TOKEN \
+            -u ${JIRA_EMAIL}:${JIRA_API_TOKEN} \
             -H "Content-Type: application/json" \
             --data '{
               "body": "Pull request merged: [${PULL_REQUEST_URL}]\\nLatest commit: ${COMMIT_MESSAGE}"
             }' \
-            "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY/comment"
+            "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment"
 
       - name: Transition Jira Issue
         # if: github.event.pull_request.merged == true
