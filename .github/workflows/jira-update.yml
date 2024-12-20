@@ -1,9 +1,9 @@
 name: Jira Update
 
 on:
-    pull_request:
-        types: [opened, synchronize, reopened]
-    # lame comment 21
+  pull_request:
+    types: [opened, closed, edited, synchronize]
+
 jobs:
   update-jira:
     runs-on: ubuntu-latest
@@ -11,61 +11,68 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Get Branch Name
+        id: get_branch
+        run: |
+          if [ -n "${{ github.head_ref }}" ]; then
+            echo "Branch name: ${{ github.head_ref }}"
+            echo "::set-output name=branch_name::${{ github.head_ref }}"
+          else
+            echo "Branch name: ${{ github.ref }}"
+            echo "::set-output name=branch_name::${{ github.ref }}"
+          fi
+
       - name: Parse Branch Name
         id: parse_branch
         run: |
-          BRANCH_NAME=${{ github.head_ref }}
+          BRANCH_NAME=${{ steps.get_branch.outputs.branch_name }}
           echo "Branch name: $BRANCH_NAME"
           if [[ "$BRANCH_NAME" =~ ^([A-Z]+-[0-9]+)-(.+)$ ]]; then
             PROJECT_KEY=${BASH_REMATCH[1]}
-            echo "::set-output name=project_key::$PROJECT_KEY"
             ISSUE_NUMBER=$(echo $PROJECT_KEY | cut -d'-' -f2)
+            echo "::set-output name=project_key::$PROJECT_KEY"
             echo "::set-output name=issue_number::$ISSUE_NUMBER"
           else
             echo "No matching Jira issue format found."
             exit 1
           fi
 
-      - name: Debug Environment Variables
-        # if: github.event.pull_request.merged == false 
-        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
-        env:
-            JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-            JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-            JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-        run: env
       - name: Update Jira Issue
+        # if: github.event.pull_request.merged == true
+        if: github.event_name == 'pull_request' && github.event.action == 'synchronized'
         env:
-            JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-            JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-            JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
         run: |
           PROJECT_KEY=${{ steps.parse_branch.outputs.project_key }}
           ISSUE_NUMBER=${{ steps.parse_branch.outputs.issue_number }}
           ISSUE_KEY="${PROJECT_KEY}"
           COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
-          echo "Updating Jira issue: $ISSUE_KEY ${{env.JIRA_BASE_URL}}"
-            #   echo ${env.JIRA_BASE_URL}/rest/api/3/issue/${env.ISSUE_KEY}
-          curl -X PUT \
-            -u $JIRA_EMAIL:${{ env.JIRA_API_TOKEN }} \
+          curl -X POST \
+            -u $JIRA_EMAIL:$JIRA_API_TOKEN \
             -H "Content-Type: application/json" \
             --data '{
-              "update": {
-                "comment": [
-                  {
-                    "add": {
-                      "body": "Pull request merged: [${PULL_REQUEST_URL}]\\nLatest commit: ${COMMIT_MESSAGE}"
-                    }
-                  }
-                ],
-                "status": [
-                  {
-                    "set": {
-                      "name": "Done"
-                    }
-                  }
-                ]
+              "body": "Pull request merged: [${PULL_REQUEST_URL}]\\nLatest commit: ${COMMIT_MESSAGE}"
+            }' \
+            "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY/comment"
+
+      - name: Transition Jira Issue
+        if: github.event.pull_request.merged == true
+        env:
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+        run: |
+          TRANSITION_ID=21  # Replace with the actual transition ID for "Done"
+          ISSUE_KEY="${PROJECT_KEY}"
+          curl -X POST \
+            -u $JIRA_EMAIL:$JIRA_API_TOKEN \
+            -H "Content-Type: application/json" \
+            --data '{
+              "transition": {
+                "id": "'"$TRANSITION_ID"'"
               }
             }' \
-            "${{env.JIRA_BASE_URL}}/rest/api/3/issue/${ISSUE_KEY}"
+            "$JIRA_BASE_URL/rest/api/3/issue/$ISSUE_KEY/transitions"
