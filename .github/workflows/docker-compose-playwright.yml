@@ -43,9 +43,6 @@ jobs:
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
-      - name: Debug PYTHONPATH
-        run: echo $PYTHONPATH
-
       - name: Run Playwright Tests
         env:
           PYTHONPATH: ${{ env.PYTHONPATH }}
