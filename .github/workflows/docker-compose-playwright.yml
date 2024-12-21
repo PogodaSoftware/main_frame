@@ -39,13 +39,28 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r "Backend/controller/requirements.txt"
-      
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PYTHONPATH:$(pwd)" >> $GITHUB_ENV
+
       - name: Run Django setup
         run: |
-            python /main_frame/Backend/controller/manage.py migrate
-            python /main_frame/Backend/controller/manage.py collectstatic --noinput
+          python /main_frame/Backend/controller/manage.py migrate
+          python /main_frame/Backend/controller/manage.py collectstatic --noinput
 
       - name: Run Playwright Tests
         run: |
           mkdir -p test-results
           python ${{ inputs.test-script }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results
+          retention-days: 1
+
+      - name: Stop Docker Compose
+        if: always()
+        run: docker compose down
