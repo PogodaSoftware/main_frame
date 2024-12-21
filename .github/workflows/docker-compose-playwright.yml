@@ -45,13 +45,8 @@ jobs:
 
       - name: Run Django setup
         run: |
-          
-          cd Backend/controller
-          ls
-
-        #  /home/runner/work/main_frame/main_frame
-      #          python /main_frame/Backend/controller/manage.py migrate
-      #         python /main_frame/Backend/controller/manage.py collectstatic --noinput
+          python Backend/controller/manage.py migrate
+          python Backend/controller/manage.py collectstatic --noinput
 
       - name: Run Playwright Tests
         run: |
