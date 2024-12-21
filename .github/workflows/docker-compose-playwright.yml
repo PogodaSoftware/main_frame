@@ -45,8 +45,9 @@ jobs:
 
       - name: Run Django setup
         run: |
-          python /main_frame/Backend/controller/manage.py migrate
-          python /main_frame/Backend/controller/manage.py collectstatic --noinput
+          echo workdir
+#          python /main_frame/Backend/controller/manage.py migrate
+ #         python /main_frame/Backend/controller/manage.py collectstatic --noinput
 
       - name: Run Playwright Tests
         run: |
