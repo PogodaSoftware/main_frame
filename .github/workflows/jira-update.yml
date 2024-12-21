@@ -57,7 +57,7 @@ jobs:
           curl -X POST \
            -u $JIRA_EMAIL:$JIRA_API_TOKEN \
            -H "Content-Type: application/json" \
-           --data "{'body':'test.'}" \
+           --data '{"body":"test."}' \
            "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment"
 
       - name: Transition Jira Issue
