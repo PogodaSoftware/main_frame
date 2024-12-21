@@ -53,4 +53,6 @@ jobs:
           echo "COMMIT_MESSAGE=$(git log -1 --pretty=format:'%s')" >> $GITHUB_ENV
 
       - name: Run JavaScript to update Jira
-        run: node updateJira.js
+        run:
+            COPY .github/workflows/updateJira.js updateJira.js 
+            node updateJira.js
