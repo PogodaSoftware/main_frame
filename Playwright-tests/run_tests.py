@@ -29,7 +29,7 @@ def main():
 
     # Define and run pytest arguments
     pytest_args = [
-        "Playwright-tests/test_homepage.py",
+        "Playwright-tests/test_homePage.py",
         "Playwright-tests/test_second_test.py"
     ]
     print(f"Running pytest with arguments: {pytest_args}")
