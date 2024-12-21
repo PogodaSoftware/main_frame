@@ -17,9 +17,8 @@ def main():
         ) from exc
 
     pytest_args = [
-       "playwright-tests/tests/test_homepage.py",
-       "playwright-tests/tests/test_second_test.py",
-       
+       "Playwright-tests/test_homepage.py",
+       "Playwright-tests/test_second_test.py"       
         
     ]
     

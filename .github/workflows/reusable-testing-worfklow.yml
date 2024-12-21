@@ -9,4 +9,4 @@ jobs:
     uses: ./.github/workflows/docker-compose-playwright.yml
     with:
       python-version: "3.11"
-      test-script: "Playwright-tests/test_homePage.py"
+      test-script: "Playwright-tests/run_tests.py"
