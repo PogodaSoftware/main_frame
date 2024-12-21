@@ -1,7 +1,6 @@
 name: Python Unit Tests
 
-
-on: [pull_request]
+on: [push]
 
 jobs:
   test:
@@ -14,7 +13,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -23,7 +22,7 @@ jobs:
 
       - name: Add execute permissions for test_runner.py
         run: chmod +x Backend/controller/test/test_runner.py
-        
+
       - name: Run your tests
         run: python Backend/controller/test/test_runner.py
 
