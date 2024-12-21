@@ -43,11 +43,10 @@ jobs:
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
-      - name: Run Playwright Tests
+      - name: Run tests
         env:
-          PYTHONPATH: ${{ env.PYTHONPATH }}
-        run: |
-          python Playwright-tests/run_tests.py
+          DJANGO_ALLOW_ASYNC_UNSAFE: 1
+        run: python run_tests test
 
       - name: Stop Docker Compose
         if: always()
