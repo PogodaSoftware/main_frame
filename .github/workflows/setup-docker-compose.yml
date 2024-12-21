@@ -1,0 +1,25 @@
+name: Docker Compose and Playwright Automation Testing
+
+on:
+   workflow_call:
+
+jobs:
+  test:
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:20.10.9
+        options: --privileged
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run docker-compose up
+        run: |
+          docker compose up -d
+          sleep 30
+
+  
+
