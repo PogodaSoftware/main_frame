@@ -45,7 +45,7 @@ jobs:
 
       - name: Run Django setup
         run: |
-          echo workdir
+          pwd
 #          python /main_frame/Backend/controller/manage.py migrate
  #         python /main_frame/Backend/controller/manage.py collectstatic --noinput
 
