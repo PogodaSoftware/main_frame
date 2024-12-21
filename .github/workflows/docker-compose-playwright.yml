@@ -42,7 +42,7 @@ jobs:
 
       - name: Run Playwright Tests
         run: |
-          python ${{ inputs.test-script }}
+          python Playwright-tests/run_tests.py
 
       - name: Stop Docker Compose
         if: always()
