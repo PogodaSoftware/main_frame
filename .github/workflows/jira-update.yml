@@ -7,9 +7,15 @@ on:
 jobs:
   update-jira:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '14'
 
       - name: Get Branch Name
         id: get_branch
@@ -37,45 +43,14 @@ jobs:
             exit 1
           fi
 
-      - name: Update Jira Issue
-        # if: github.event.pull_request.merged == true
-        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
-        env:
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+      - name: Set Environment Variables
         run: |
-          PROJECT_KEY=${{ steps.parse_branch.outputs.project_key }}
-          ISSUE_NUMBER=${{ steps.parse_branch.outputs.issue_number }}
-          ISSUE_KEY="${PROJECT_KEY}"
-          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s")
-          PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
-          echo "Updating Jira issue: $ISSUE_KEY"
-          echo "Latest commit: ${COMMIT_MESSAGE}"
-          COMMENT_BODY=$(jq -n --arg pr_url "$PULL_REQUEST_URL" --arg commit_msg "$COMMIT_MESSAGE" '{"body": ("Pull request merged: [" + $pr_url + "]\\nLatest commit: " + $commit_msg)}')
-          echo "Comment JSON: $COMMENT_BODY" 
-          curl -X POST \
-           -u $JIRA_EMAIL:$JIRA_API_TOKEN \
-           -H "Content-Type: application/json" \
-           --data '{"body":"test."}' \
-           "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment"
+          echo "JIRA_EMAIL=${{ secrets.JIRA_EMAIL }}" >> $GITHUB_ENV
+          echo "JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}" >> $GITHUB_ENV
+          echo "JIRA_BASE_URL=${{ secrets.JIRA_BASE_URL }}" >> $GITHUB_ENV
+          echo "ISSUE_KEY=${{ steps.parse_branch.outputs.project_key }}" >> $GITHUB_ENV
+          echo "PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}" >> $GITHUB_ENV
+          echo "COMMIT_MESSAGE=$(git log -1 --pretty=format:'%s')" >> $GITHUB_ENV
 
-      - name: Transition Jira Issue
-        # if: github.event.pull_request.merged == true # Only transition when PR is merged
-        if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
-        env:
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-        run: |
-          TRANSITION_ID=21  # Replace with the actual transition ID for "Done"
-          ISSUE_KEY="${PROJECT_KEY}"
-          curl -X POST \
-            -u $JIRA_EMAIL:${JIRA_API_TOKEN} \
-            -H "Content-Type: application/json" \
-            --data '{
-              "transition": {
-                "id": "'"${TRANSITION_ID}"'"
-              }
-            }' \
-            "${JIRA_BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/transitions"
+      - name: Run JavaScript to update Jira
+        run: node updateJira.js
