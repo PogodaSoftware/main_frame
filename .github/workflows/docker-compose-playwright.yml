@@ -46,6 +46,7 @@ jobs:
       - name: Run Django setup
         run: |
           ls
+          cd Backend
 
         #  /home/runner/work/main_frame/main_frame
       #          python /main_frame/Backend/controller/manage.py migrate
