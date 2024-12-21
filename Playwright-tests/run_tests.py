@@ -1,14 +1,14 @@
 import os
 import sys
+import django
 import pytest
 
 def main():
-    # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main_frame_project.settings')  
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main_frame_project.settings')  
 
  
     try:
-        from django import setup
-        setup()
+        django.setup()
     except ImportError as exc:
         raise ImportError(
             "Couldn't import Django. Are you sure it's installed and "
