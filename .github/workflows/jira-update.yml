@@ -52,8 +52,7 @@ jobs:
           PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}
           echo "Updating Jira issue: $ISSUE_KEY"
           echo "Latest commit: ${COMMIT_MESSAGE}"
-          COMMIT_MESSAGE=$(git log -1 --pretty=format:"%s") PULL_REQUEST_URL=${{ github.event.pull_request.html_url }} 
-          COMMENT_BODY=$(jq -n --arg pr_url "$PULL_REQUEST_URL" --arg commit_msg "$COMMIT_MESSAGE" '{"body": "Pull request merged: [" + $pr_url + "]\nLatest commit: " + $commit_msg}') 
+          COMMENT_BODY=$(jq -n --arg pr_url "$PULL_REQUEST_URL" --arg commit_msg "$COMMIT_MESSAGE" '{"body": ("Pull request merged: [" + $pr_url + "]\\nLatest commit: " + $commit_msg)}')
           echo "Comment JSON: $COMMENT_BODY" 
           curl -X POST \
            -u $JIRA_EMAIL:$JIRA_API_TOKEN \
