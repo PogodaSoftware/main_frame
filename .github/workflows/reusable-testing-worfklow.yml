@@ -7,4 +7,4 @@ jobs:
     uses: ./.github/workflows/docker-compose-playwright.yml
     with:
       python-version: "3.11"
-      test-script: "playwright-tests/tests/run_tests.py"
+      test-script: "playwright-tests/test/test_hello.py"
