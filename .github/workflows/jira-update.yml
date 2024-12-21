@@ -54,4 +54,4 @@ jobs:
 
       - name: Run JavaScript to update Jira
         run:
-            node .github/workflows/updateJira.js
+            node updateJira.js
