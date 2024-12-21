@@ -45,7 +45,8 @@ jobs:
 
       - name: Run Django setup
         run: |
-          pwd
+          ls
+#          /home/runner/work/main_frame/main_frame
 #          python /main_frame/Backend/controller/manage.py migrate
  #         python /main_frame/Backend/controller/manage.py collectstatic --noinput
 
@@ -54,13 +55,6 @@ jobs:
           mkdir -p test-results
           python ${{ inputs.test-script }}
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: test-results
-          retention-days: 1
 
       - name: Stop Docker Compose
         if: always()
