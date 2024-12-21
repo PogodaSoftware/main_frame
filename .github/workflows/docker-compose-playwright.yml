@@ -46,7 +46,7 @@ jobs:
       - name: Run tests
         env:
           DJANGO_ALLOW_ASYNC_UNSAFE: 1
-        run: python run_tests test
+        run: python Playwright-tests/run_tests test
 
       - name: Stop Docker Compose
         if: always()
