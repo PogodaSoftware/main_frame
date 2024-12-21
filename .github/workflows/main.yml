@@ -1,0 +1,14 @@
+name: Run Tests with Reusable Workflow
+
+on:
+  push:
+    branches:
+      - main # Adjust to your branches
+
+jobs:
+  run-tests:
+    uses: ./.github/workflows/docker-compose-playwright.yml
+    with:
+      python-version: "3.10"
+      test-script: "Playwright-tests/test_homePage.py"
+      requirements-file: "Backend/controller/requirements.txt"
