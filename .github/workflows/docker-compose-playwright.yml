@@ -47,6 +47,7 @@ jobs:
         run: |
           ls
           cd Backend
+          ls
 
         #  /home/runner/work/main_frame/main_frame
       #          python /main_frame/Backend/controller/manage.py migrate
@@ -54,7 +55,6 @@ jobs:
 
       - name: Run Playwright Tests
         run: |
-          mkdir -p test-results
           python ${{ inputs.test-script }}
 
       - name: Stop Docker Compose
