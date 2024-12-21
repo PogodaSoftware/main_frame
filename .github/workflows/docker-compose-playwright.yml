@@ -7,6 +7,10 @@ on:
         description: "Python version to use"
         default: "3.11"
         type: string
+      test-script:
+        description: "Path to the Playwright test script"
+        default: "Playwright-tests/test_homePage.py"
+        type: string
 
 jobs:
   test:
