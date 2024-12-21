@@ -4,7 +4,7 @@ import django
 import pytest
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main_frame.Backend.controller.main_frame_project.settings')  
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main_frame_project.settings')  
 # C:\Users\kevin\main_frame\Backend\controller\main_frame_project\settings.py
     try:
         django.setup()
