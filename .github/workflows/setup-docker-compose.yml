@@ -1,11 +1,10 @@
-name: Docker Compose and Playwright Automation Testing
+name: Docker Compose Setup
 
 on:
-   workflow_call:
+  workflow_call:
 
 jobs:
-  test:
-    timeout-minutes: 15
+  setup:
     runs-on: ubuntu-latest
     services:
       docker:
@@ -20,6 +19,3 @@ jobs:
         run: |
           docker compose up -d
           sleep 30
-
-  
-

@@ -1,0 +1,19 @@
+name: Run Docker Compose and Playwright Tests
+
+on:
+  push:
+
+
+jobs:
+  docker-compose-setup:
+    uses: ./.github/workflows/setup-docker-compose.yml
+
+  playwright-tests:
+    needs: docker-compose-setup
+    uses: ./.github/workflows/automationTestingWithPlaywright.yml
+    with:
+      python-version: "3.11"
+
+  docker-compose-teardown:
+    needs: playwright-tests
+    uses: ./.github/workflows/docker-compose-teardown.yml
