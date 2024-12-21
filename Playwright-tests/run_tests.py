@@ -4,11 +4,22 @@ import django
 import pytest
 
 def main():
+    # Set DJANGO_SETTINGS_MODULE
+    os.environ.setdefault(
+        'DJANGO_SETTINGS_MODULE', 
+        'Backend.controller.main_frame_project.settings'
+    )
+
+    # Log DJANGO_SETTINGS_MODULE
     print(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main_frame_project.settings')  
-# C:\Users\kevin\main_frame\Backend\controller\main_frame_project\settings.py
+
+    # Log PYTHONPATH for debugging
+    print(f"PYTHONPATH: {os.environ.get('PYTHONPATH')}")
+
+    # Setup Django
     try:
         django.setup()
+        print("Django setup completed successfully.")
     except ImportError as exc:
         raise ImportError(
             "Couldn't import Django. Are you sure it's installed and "
@@ -16,11 +27,12 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
+    # Define and run pytest arguments
     pytest_args = [
-       "Playwright-tests/test_homepage.py",
-       "Playwright-tests/test_second_test.py"       
-        
+        "Playwright-tests/test_homepage.py",
+        "Playwright-tests/test_second_test.py"
     ]
+    print(f"Running pytest with arguments: {pytest_args}")
     
     sys.exit(pytest.main(pytest_args))
 
