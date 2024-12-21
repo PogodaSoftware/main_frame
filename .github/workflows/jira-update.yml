@@ -55,4 +55,4 @@ jobs:
       - name: Run JavaScript to update Jira
         run:
             ls
-            # node updateJira.js
+            node jira-update.js
