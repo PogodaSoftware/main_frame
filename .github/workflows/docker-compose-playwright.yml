@@ -40,6 +40,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r "Backend/controller/requirements.txt"
 
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
       - name: Run Playwright Tests
         env:
@@ -47,7 +49,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
           DJANGO_ALLOW_ASYNC_UNSAFE: 1
         run: |
-          python Playwright-tests/run_tests.py
+          python ${{ inputs.test-script }}
 
       - name: Stop Docker Compose
         if: always()
