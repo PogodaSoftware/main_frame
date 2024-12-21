@@ -43,6 +43,9 @@ jobs:
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
+      - name: List directory
+        run: ls -R
+
       - name: Run tests
         env:
           DJANGO_ALLOW_ASYNC_UNSAFE: 1
