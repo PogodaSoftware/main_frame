@@ -45,8 +45,8 @@ jobs:
 
       - name: Run Django setup
         run: |
-          ls
-          cd Backend
+          
+          cd Backend/controller
           ls
 
         #  /home/runner/work/main_frame/main_frame
