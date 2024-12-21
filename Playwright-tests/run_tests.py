@@ -3,9 +3,9 @@ import sys
 import pytest
 
 def main():
-    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main_frame_project.settings')  
+    # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'main_frame_project.settings')  
 
-    # Run Django setup
+ 
     try:
         from django import setup
         setup()
