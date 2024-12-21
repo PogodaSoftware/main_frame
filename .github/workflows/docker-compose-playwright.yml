@@ -45,17 +45,16 @@ jobs:
 
       - name: Run Django setup
         run: |
-          workdir /Backend/controller/ 
+          cd Backend/controller/ 
           ls
         #  /home/runner/work/main_frame/main_frame
-#          python /main_frame/Backend/controller/manage.py migrate
- #         python /main_frame/Backend/controller/manage.py collectstatic --noinput
+      #          python /main_frame/Backend/controller/manage.py migrate
+      #         python /main_frame/Backend/controller/manage.py collectstatic --noinput
 
       - name: Run Playwright Tests
         run: |
           mkdir -p test-results
           python ${{ inputs.test-script }}
-
 
       - name: Stop Docker Compose
         if: always()
