@@ -51,11 +51,15 @@ jobs:
         run: |
           python ${{ inputs.test-script }}
 
-      - uses: actions/upload-artifact@v3
-        if: always()  
+      - name: running ls command
+        run: ls
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
         with:
           name: test-results
-          path: main_frame\test-results
+          path: main_frame/test-results
           retention-days: 1
 
       - name: Stop Docker Compose
