@@ -10,12 +10,12 @@ module.exports = function (config) {
       require('@angular-devkit/build-angular/plugins/karma'),
     ],
     files: [
-      { pattern: './src/test-setup.ts', watched: false }, // Load setup
-      { pattern: './src/**/*.spec.ts', watched: false }, // Load all spec files
+      { pattern: './test-setup.ts', watched: false }, // Load test setup
+      { pattern: './**/*.spec.ts', watched: false },  // Load all test files in the current directory
     ],
     preprocessors: {
-      './src/test-setup.ts': ['webpack'],
-      './src/**/*.spec.ts': ['webpack'],
+      './test-setup.ts': ['webpack'],
+      './**/*.spec.ts': ['webpack'],
     },
     client: {
       jasmine: {},
