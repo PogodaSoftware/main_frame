@@ -7,36 +7,30 @@ module.exports = function (config) {
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
       require('karma-coverage'),
-      require('@angular-devkit/build-angular/plugins/karma'),
+      require('@angular-devkit/build-angular/plugins/karma')
     ],
-    files: [
-      { pattern: './**/*.spec.ts', type: 'module', watched: false },  // Explicitly specify type
-    ],
-    preprocessors: {
-      './**/*.spec.ts': [],
-    },
     client: {
       jasmine: {},
-      clearContext: false, // Leave Jasmine Spec Runner output visible in browser
+      clearContext: false // Leave Jasmine Spec Runner output visible in browser
     },
     jasmineHtmlReporter: {
-      suppressAll: true, // Suppress duplicated traces
+      suppressAll: true // Removes duplicated traces
     },
     coverageReporter: {
-      dir: require('path').join(__dirname, './coverage'),
+      dir: require('path').join(__dirname, '../../coverage/portfolioResume'),
       subdir: '.',
       reporters: [
         { type: 'html' },
-        { type: 'text-summary' },
-      ],
+        { type: 'text-summary' }
+      ]
     },
     reporters: ['progress', 'kjhtml'],
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    autoWatch: false, // CI should not watch for changes
+    autoWatch: true,
     browsers: ['ChromeHeadless'],
-    singleRun: true, // Ensure tests exit after execution in CI
-    restartOnFileChange: false, // Prevent unnecessary restarts in CI
+    singleRun: false,
+    restartOnFileChange: true
   });
 };

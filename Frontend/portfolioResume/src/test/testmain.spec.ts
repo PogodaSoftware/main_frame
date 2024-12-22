@@ -5,6 +5,7 @@ import {
   platformBrowserDynamicTesting,
 } from '@angular/platform-browser-dynamic/testing';
 
+// Initialize the Angular testing environment.
 getTestBed().initTestEnvironment(
   BrowserDynamicTestingModule,
   platformBrowserDynamicTesting(),
@@ -15,13 +16,5 @@ describe('Hello World Test', () => {
     const consoleSpy = spyOn(console, 'log');
     console.log('Hello World');
     expect(consoleSpy).toHaveBeenCalledWith('Hello World');
-  });
-});
-
-describe('simple math test', () => {
-  it('should add 1 + 1 to the console', () => {
-      const consoleSpy = spyOn(console, 'log');
-      console.log(1 + 1);
-      expect(consoleSpy).toHaveBeenCalledWith(2);
   });
 });
