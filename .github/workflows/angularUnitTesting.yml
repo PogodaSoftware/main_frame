@@ -27,4 +27,4 @@ jobs:
 
       - name: Run Angular unit tests
         run: ng test --watch=false --browsers=ChromeHeadless --code-coverage
-        working-directory: Frontend/portfolioResume
+        working-directory: Frontend/portfolioResume/test
