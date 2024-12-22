@@ -9,22 +9,20 @@ module.exports = function (config) {
       require('karma-coverage'),
       require('@angular-devkit/build-angular/plugins/karma'),
     ],
-    
     files: [
-      { pattern: './test-setup.ts', watched: false }, 
-      { pattern: './**/*.spec.ts', watched: false },
+      { pattern: './test-setup.ts', type: 'module', watched: false }, // Explicitly specify type
+      { pattern: './**/*.spec.ts', type: 'module', watched: false },  // Explicitly specify type
     ],
     preprocessors: {
       './test-setup.ts': [],
       './**/*.spec.ts': [],
     },
-    
     client: {
       jasmine: {},
-      clearContext: false,
+      clearContext: false, // Leave Jasmine Spec Runner output visible in browser
     },
     jasmineHtmlReporter: {
-      suppressAll: true,
+      suppressAll: true, // Suppress duplicated traces
     },
     coverageReporter: {
       dir: require('path').join(__dirname, './coverage'),
@@ -38,9 +36,9 @@ module.exports = function (config) {
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
-    autoWatch: true,
+    autoWatch: false, // CI should not watch for changes
     browsers: ['ChromeHeadless'],
-    singleRun: false,
-    restartOnFileChange: true,
+    singleRun: true, // Ensure tests exit after execution in CI
+    restartOnFileChange: false, // Prevent unnecessary restarts in CI
   });
 };
