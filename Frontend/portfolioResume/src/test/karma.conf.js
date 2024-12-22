@@ -11,10 +11,10 @@ module.exports = function (config) {
       ],
       client: {
         jasmine: {},
-        clearContext: false // Leave Jasmine Spec Runner output visible in browser
+        clearContext: false
       },
       jasmineHtmlReporter: {
-        suppressAll: true // Removes duplicated traces
+        suppressAll: true
       },
       coverageReporter: {
         dir: require('path').join(__dirname, '../../coverage/portfolioResume'),
