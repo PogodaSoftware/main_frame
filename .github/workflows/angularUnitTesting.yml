@@ -20,10 +20,11 @@ jobs:
         run: npm ci
         working-directory: Frontend/portfolioResume
 
-      - name: Run Angular unit tests
+      - name: Run Angular unit tests with ChromeHeadless
         run: |
-          cd Frontend/portfolioResume/test
-          npx karma start karma.config.ts --code-coverage
+          cd Frontend/portfolioResume
+          ng test --watch=false --browsers=ChromeHeadless --code-coverage
+
 
 
 # name: Run Angular Unit Tests with ChromeHeadless
