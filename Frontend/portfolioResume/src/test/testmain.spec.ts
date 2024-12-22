@@ -18,3 +18,11 @@ describe('Hello World Test', () => {
     expect(consoleSpy).toHaveBeenCalledWith('Hello World');
   });
 });
+
+describe('Math Test', () => {
+  it('should double the number', () => {
+    const double = (num: number) => num * 2;
+    const result = double(4);
+    expect(result).toBe(8);
+  });
+});
