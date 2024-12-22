@@ -3,6 +3,7 @@ module.exports = function (config) {
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
     plugins: [
+      require('karma-webpack'),
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
@@ -10,8 +11,8 @@ module.exports = function (config) {
       require('@angular-devkit/build-angular/plugins/karma'),
     ],
     files: [
-      { pattern: './test-setup.ts', watched: false }, // Load test setup
-      { pattern: './**/*.spec.ts', watched: false },  // Load all test files in the current directory
+      { pattern: './test-setup.ts', watched: false }, // Ensure correct path
+      { pattern: './**/*.spec.ts', watched: false },  // Load all spec files in the directory
     ],
     preprocessors: {
       './test-setup.ts': ['webpack'],
@@ -19,10 +20,10 @@ module.exports = function (config) {
     },
     client: {
       jasmine: {},
-      clearContext: false, // Leave Jasmine Spec Runner output visible in browser
+      clearContext: false,
     },
     jasmineHtmlReporter: {
-      suppressAll: true, // Suppress duplicated traces
+      suppressAll: true,
     },
     coverageReporter: {
       dir: require('path').join(__dirname, './coverage'),
@@ -38,7 +39,7 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
     autoWatch: true,
     browsers: ['ChromeHeadless'],
-    singleRun: false, // Use `true` for CI
+    singleRun: false,
     restartOnFileChange: true,
   });
 };
