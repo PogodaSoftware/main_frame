@@ -3,7 +3,6 @@ module.exports = function (config) {
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
     plugins: [
-      require('karma-webpack'),
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
@@ -11,8 +10,8 @@ module.exports = function (config) {
       require('@angular-devkit/build-angular/plugins/karma'),
     ],
     files: [
-      { pattern: './test-setup.ts', watched: false }, // Ensure correct path
-      { pattern: './**/*.spec.ts', watched: false },  // Load all spec files in the directory
+      { pattern: './test-setup.ts', watched: false }, // Adjust to match the actual path
+      { pattern: './**/*.spec.ts', watched: false },
     ],
     preprocessors: {
       './test-setup.ts': ['webpack'],
