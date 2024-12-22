@@ -3,7 +3,6 @@ module.exports = function (config) {
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
     plugins: [
-      require('karma-webpack'),
       require('karma-jasmine'),
       require('karma-chrome-launcher'),
       require('karma-jasmine-html-reporter'),
@@ -16,9 +15,10 @@ module.exports = function (config) {
       { pattern: './**/*.spec.ts', watched: false },
     ],
     preprocessors: {
-      './test-setup.ts': ['webpack'],
-      './**/*.spec.ts': ['webpack'],
+      './test-setup.ts': [],
+      './**/*.spec.ts': [],
     },
+    
     client: {
       jasmine: {},
       clearContext: false,
