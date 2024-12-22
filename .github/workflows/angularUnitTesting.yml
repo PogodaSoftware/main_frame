@@ -1,47 +1,76 @@
+# name: Run Angular Unit Tests with ChromeHeadless
+
+# on: 
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   test:
+#     timeout-minutes: 10
+#     runs-on: ubuntu-latest
+
+#     steps:
+#       # Step 1: Checkout repository
+#       - name: Checkout repository
+#         uses: actions/checkout@v3
+
+#       # Step 2: Set up Node.js
+#       - name: Set up Node.js
+#         uses: actions/setup-node@v3
+#         with:
+#           node-version: "18"
+
+#       # Step 3: Install Angular CLI globally
+#       - name: Install Angular CLI
+#         run: npm install -g @angular/cli
+
+#       # Step 4: Install project dependencies
+#       - name: Install project dependencies
+#         run: npm ci
+#         working-directory: Frontend/portfolioResume
+
+#       # Step 5: Run Angular unit tests with ChromeHeadless
+#       - name: Run Angular unit tests
+#         run: ng test --watch=false --browsers=ChromeHeadless --code-coverage
+#         working-directory: Frontend/portfolioResume
+
+#       # Step 6: Upload Coverage Report
+#       - name: Upload coverage report
+#         uses: actions/upload-artifact@v3
+#         with:
+#           name: coverage-report
+#           path: Frontend/portfolioResume/coverage
+
+
 name: Run Angular Unit Tests with ChromeHeadless
 
-on: 
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+on: [push]
 
 jobs:
   test:
-    timeout-minutes: 10
+    timeout-minutes: 5
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18"
 
-      # Step 3: Install Angular CLI globally
       - name: Install Angular CLI
-        run: npm install -g @angular/cli
+        run: cd Frontend/portfolioResume && npm install -g @angular/cli
 
-      # Step 4: Install project dependencies
       - name: Install project dependencies
-        run: npm ci
-        working-directory: Frontend/portfolioResume
+        run: cd Frontend/portfolioResume && npm ci
 
-      # Step 5: Run Angular unit tests with ChromeHeadless
-      - name: Run Angular unit tests
-        run: ng test --watch=false --browsers=ChromeHeadless --code-coverage
-        working-directory: Frontend/portfolioResume
-
-      # Step 6: Upload Coverage Report
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: Frontend/portfolioResume/coverage
-
+      - name: Run Angular unit tests with ChromeHeadless
+        run: |
+          cd Frontend/portfolioResume
+          ng test --watch=false --browsers=ChromeHeadless --code-coverage
