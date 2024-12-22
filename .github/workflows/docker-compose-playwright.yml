@@ -59,7 +59,7 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: test-results
-          path: main_frame/test-results
+          path: Playwright-tests/test-results
           retention-days: 1
 
       - name: Stop Docker Compose

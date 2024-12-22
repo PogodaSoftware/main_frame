@@ -1,6 +1,6 @@
 name: Run Tests with Reusable Workflow
 
-on: [pull_request]
+on: [push]
 
 jobs:
   run-tests:
