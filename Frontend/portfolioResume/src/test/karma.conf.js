@@ -10,7 +10,7 @@ module.exports = function (config) {
       require('@angular-devkit/build-angular/plugins/karma'),
     ],
     files: [
-      { pattern: './test-setup.ts', watched: false }, // Adjust to match the actual path
+      { pattern: './test-setup.ts', watched: false }, 
       { pattern: './**/*.spec.ts', watched: false },
     ],
     preprocessors: {
