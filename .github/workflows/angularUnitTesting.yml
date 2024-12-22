@@ -1,15 +1,11 @@
-name: Run Angular Unit Tests
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+name: Run Angular Unit Tests with ChromeHeadless
+
+on: [push]
 
 jobs:
   test:
+    timeout-minutes: 5
     runs-on: ubuntu-latest
 
     steps:
@@ -21,9 +17,11 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Install dependencies
-        run: npm ci
-        working-directory: Frontend/portfolioResume
+      - name: Install Angular CLI
+        run: cd Frontend/portfolioResume && npm install -g @angular/cli
+
+      - name: Install project dependencies
+        run: cd Frontend/portfolioResume && npm ci
 
       - name: Run Angular unit tests with ChromeHeadless
         run: |
@@ -31,13 +29,19 @@ jobs:
           ng test --watch=false --browsers=ChromeHeadless --code-coverage
 
 
-#         name: Run Angular Unit Tests with ChromeHeadless
 
-# on: [push]
+# name: Run Angular Unit Tests
+
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
 
 # jobs:
 #   test:
-#     timeout-minutes: 5
 #     runs-on: ubuntu-latest
 
 #     steps:
@@ -49,13 +53,12 @@ jobs:
 #         with:
 #           node-version: "18"
 
-#       - name: Install Angular CLI
-#         run: cd Frontend/portfolioResume && npm install -g @angular/cli
-
-#       - name: Install project dependencies
-#         run: cd Frontend/portfolioResume && npm ci
+#       - name: Install dependencies
+#         run: npm ci
+#         working-directory: Frontend/portfolioResume
 
 #       - name: Run Angular unit tests with ChromeHeadless
 #         run: |
 #           cd Frontend/portfolioResume
-#           ng test --watch=false --browsers=ChromeHeadless --code-coverage
+          # ng test --watch=false --browsers=ChromeHeadless --code-coverage
+
