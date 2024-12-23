@@ -8,29 +8,21 @@ const ISSUE_KEY = process.env.ISSUE_KEY;
 const PULL_REQUEST_URL = process.env.PULL_REQUEST_URL;
 const COMMIT_MESSAGE = process.env.COMMIT_MESSAGE;
 
-const commentBody = 
-{
-  "body": {
-    "content": [
-      {
-        "content": [
-          {
-            "text": `Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: ${COMMIT_MESSAGE}`,
-            "type": "text"
-          }
-        ],
-        "type": "paragraph"
-      }
-    ],
-    "type": "doc",
-    "version": 1
-  },
-  "visibility": {
-    "identifier": "Administrators",
-    "type": "role",
-    "value": "Administrators"
-  }  
-};
+const commentBody = { 
+  "body": 
+  { 
+    "content": [ 
+      { 
+        "content": [ 
+        { 
+          "text": `Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: ${COMMIT_MESSAGE}`, 
+          "type": "text" 
+        } ], 
+        "type": "paragraph" 
+      } ], 
+      "type": "doc", "version": 1 
+      }, 
+   };
 // console.log("JIRA_BASE_URL:",JIRA_BASE_URL);
 const BASE_URL = `jpogodasoftware.atlassian.net`
 // JIRA_BASE_URL.replace('https://', '');
