@@ -3,7 +3,7 @@ const axios = require('axios');
 
 const JIRA_EMAIL = process.env.JIRA_EMAIL;
 const JIRA_API_TOKEN = process.env.JIRA_API_TOKEN;
-const JIRA_BASE_URL = process.env.JIRA_BASE_URL;
+// const JIRA_BASE_URL = process.env.JIRA_BASE_URL;
 const ISSUE_KEY = process.env.ISSUE_KEY;
 const PULL_REQUEST_URL = process.env.PULL_REQUEST_URL;
 const COMMIT_MESSAGE = process.env.COMMIT_MESSAGE;
@@ -11,7 +11,8 @@ const COMMIT_MESSAGE = process.env.COMMIT_MESSAGE;
 const commentBody = `Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: ${COMMIT_MESSAGE}`;
 
 console.log("JIRA_BASE_URL:",JIRA_BASE_URL);
-const BASE_URL = JIRA_BASE_URL.replace('https://', '');
+const BASE_URL = `https://jpogodasoftware.atlassian.net/`
+// JIRA_BASE_URL.replace('https://', '');
 axios.post(
   `https://${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment`,
   { body: commentBody },
