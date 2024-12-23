@@ -9,13 +9,13 @@ const PULL_REQUEST_URL = process.env.PULL_REQUEST_URL;
 const COMMIT_MESSAGE = process.env.COMMIT_MESSAGE;
 
 const commentBody = 
-`{
+{
   "body": {
     "content": [
       {
         "content": [
           {
-            "text": "Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: ${COMMIT_MESSAGE}",
+            "text": `Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: ${COMMIT_MESSAGE}`,
             "type": "text"
           }
         ],
@@ -30,7 +30,7 @@ const commentBody =
     "type": "role",
     "value": "Administrators"
   }  
-}`;
+};
 // console.log("JIRA_BASE_URL:",JIRA_BASE_URL);
 const BASE_URL = `jpogodasoftware.atlassian.net`
 // JIRA_BASE_URL.replace('https://', '');
