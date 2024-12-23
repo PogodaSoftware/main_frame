@@ -11,7 +11,7 @@ const COMMIT_MESSAGE = process.env.COMMIT_MESSAGE;
 const commentBody = `Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: ${COMMIT_MESSAGE}`;
 
 // console.log("JIRA_BASE_URL:",JIRA_BASE_URL);
-const BASE_URL = `https://jpogodasoftware.atlassian.net/`
+const BASE_URL = `jpogodasoftware.atlassian.net`
 // JIRA_BASE_URL.replace('https://', '');
 axios.post(
   `https://${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment`,
