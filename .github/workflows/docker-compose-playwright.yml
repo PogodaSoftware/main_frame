@@ -51,15 +51,15 @@ jobs:
         run: |
           python ${{ inputs.test-script }}
 
-      - name: running ls command
-        run: ls
-      
+      - name: Debugging test results path
+        run: ls -R Playwright-tests
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v3
         with:
           name: test-results
-          path: Playwright-tests/test-results
+          path: Playwright-tests/test-results/results.json
           retention-days: 1
 
       - name: Stop Docker Compose
