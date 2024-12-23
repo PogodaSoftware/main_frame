@@ -29,8 +29,7 @@ def main():
     pytest_args = [
         "Playwright-tests/test_homePage.py",
         "Playwright-tests/test_second_test.py",
-        "--json-report",  # Enable JSON reporting
-        "--json-report-file=Playwright-tests/test-results/results.json"  # Save to specific file
+        
     ]
     print(f"Running pytest with arguments: {pytest_args}")
     
