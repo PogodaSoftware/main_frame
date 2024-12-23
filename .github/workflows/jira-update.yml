@@ -54,9 +54,7 @@ jobs:
               "type": "doc",
               "version": 1
             },
-            "visibility": {
-              "type": "role",
-              "identifier": "Members"
+            visibility: {
             }
           }
           EOF
