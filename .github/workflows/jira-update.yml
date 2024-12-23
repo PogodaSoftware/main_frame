@@ -54,7 +54,9 @@ jobs:
               "type": "doc",
               "version": 1
             },
-            visibility: {
+            "visibility": {
+                type: "group",
+                value: "jira-users-jpogodasoftware"
             }
           }
           EOF
