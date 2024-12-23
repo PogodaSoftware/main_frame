@@ -36,7 +36,7 @@ const BASE_URL = `jpogodasoftware.atlassian.net`
 // JIRA_BASE_URL.replace('https://', '');
 axios.post(
   `https://${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment`,
-  { commentBody },
+  commentBody,
   {
     headers: {
       'Content-Type': 'application/json',
