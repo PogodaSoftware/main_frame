@@ -2,6 +2,9 @@ name: Run Angular Unit Tests with ChromeHeadless
 
 on: [push]
 
+defaults:
+  run:
+    working-directory: Frontend/portfolioResume
 
 jobs:
   test:
@@ -18,12 +21,11 @@ jobs:
           node-version: "18"
 
       - name: Install Angular CLI
-        run: cd Frontend/portfolioResume && npm install -g @angular/cli
+        run: npm install -g @angular/cli
 
       - name: Install project dependencies
-        run: cd Frontend/portfolioResume && npm ci
+        run:  npm ci
 
       - name: Run Angular unit tests with ChromeHeadless
         run: |
-          cd Frontend/portfolioResume
           ng test --watch=false --browsers=ChromeHeadless --code-coverage
