@@ -40,10 +40,7 @@ jobs:
               type: "doc",
               version: 1
             },
-            visibility: {
-              type: "group",
-              value: "jira-users-jpogodasoftware"
-            }
+            
           }')
 
           # Log the comment body for debugging
