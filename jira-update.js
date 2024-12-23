@@ -25,14 +25,18 @@ const commentBody =
     "type": "doc",
     "version": 1
   },
-  
+  "visibility": {
+    "identifier": "Administrators",
+    "type": "role",
+    "value": "Administrators"
+  }  
 }`;
 // console.log("JIRA_BASE_URL:",JIRA_BASE_URL);
 const BASE_URL = `jpogodasoftware.atlassian.net`
 // JIRA_BASE_URL.replace('https://', '');
 axios.post(
   `https://${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment`,
-  { body: commentBody },
+  { commentBody },
   {
     headers: {
       'Content-Type': 'application/json',
