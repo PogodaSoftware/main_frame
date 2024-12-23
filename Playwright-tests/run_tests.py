@@ -4,16 +4,16 @@ import django
 import pytest
 
 def main():
-    # Set DJANGO_SETTINGS_MODULE
+
     os.environ.setdefault(
         'DJANGO_SETTINGS_MODULE', 
         'Backend.controller.main_frame_project.settings'
     )
 
-    # Log DJANGO_SETTINGS_MODULE
+  
     print(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
 
-    # Log PYTHONPATH for debugging
+
     print(f"PYTHONPATH: {os.environ.get('PYTHONPATH')}")
 
     # Setup Django
