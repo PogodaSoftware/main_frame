@@ -56,7 +56,7 @@ jobs:
             },
             "visibility": {
               "type": "role",
-              "identifier": "Administrators"
+              "identifier": "Members"
             }
           }
           EOF
