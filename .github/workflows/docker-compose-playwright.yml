@@ -50,8 +50,8 @@ jobs:
           DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
           DJANGO_ALLOW_ASYNC_UNSAFE: 1
         run: |
-          mkdir -p Playwright-tests/test-results
-          pytest ${{ inputs.test-script }} --junitxml=Playwright-tests/test-results/report.xml
+         
+          pytest ${{ inputs.test-script }} 
 
       - name: Upload test results
         if: always()
