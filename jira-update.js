@@ -13,7 +13,7 @@ const commentBody = `Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: 
 console.log("JIRA_BASE_URL:",JIRA_BASE_URL);
 const BASE_URL = JIRA_BASE_URL.replace('https://', '');
 axios.post(
-  `${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment`,
+  `https://${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/comment`,
   { body: commentBody },
   {
     headers: {
