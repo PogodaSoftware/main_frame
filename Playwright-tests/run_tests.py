@@ -4,16 +4,12 @@ import django
 import pytest
 
 def main():
-
     os.environ.setdefault(
         'DJANGO_SETTINGS_MODULE', 
         'Backend.controller.main_frame_project.settings'
     )
 
-  
     print(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
-
-
     print(f"PYTHONPATH: {os.environ.get('PYTHONPATH')}")
 
     # Setup Django
@@ -27,10 +23,14 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    # Define and run pytest arguments
+    # Ensure test-results directory exists
+    os.makedirs("Playwright-tests/test-results", exist_ok=True)
+
     pytest_args = [
         "Playwright-tests/test_homePage.py",
-        "Playwright-tests/test_second_test.py"
+        "Playwright-tests/test_second_test.py",
+        "--json-report",  # Enable JSON reporting
+        "--json-report-file=Playwright-tests/test-results/results.json"  # Save to specific file
     ]
     print(f"Running pytest with arguments: {pytest_args}")
     
