@@ -11,7 +11,7 @@ const commentBody = `Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: 
 const data = JSON.stringify({ body: commentBody });
 
 const options = {
-  hostname: JIRA_BASE_URL,
+  hostname: JIRA_BASE_URL.replace('https://', ''),
   path: `/rest/api/3/issue/${ISSUE_KEY}/comment`,
   method: 'POST',
   headers: {
