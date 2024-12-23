@@ -8,7 +8,7 @@ const ISSUE_KEY = process.env.ISSUE_KEY;
 const PULL_REQUEST_URL = process.env.PULL_REQUEST_URL;
 const COMMIT_MESSAGE = process.env.COMMIT_MESSAGE;
 
-const commentBody = Pull request merged: [${PULL_REQUEST_URL}]\nLatest commit: ${COMMIT_MESSAGE}
+const commentBody = 
 `{
   "body": {
     "content": [
