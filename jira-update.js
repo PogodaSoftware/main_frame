@@ -26,6 +26,7 @@ axios.post(
     console.log(`Successfully updated Jira issue: ${ISSUE_KEY}`);
   })
   .catch((error) => {
+    console.log("error:",error);
     console.error(`Error updating Jira issue: ${error.message}`);
     process.exit(1);
   });
