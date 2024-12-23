@@ -19,6 +19,7 @@ const options = {
     'Authorization': `Basic ${Buffer.from(`${JIRA_EMAIL}:${JIRA_API_TOKEN}`).toString('base64')}`
   }
 };
+console.log("options:",options);
 
 const req = https.request(options, (res) => {
   let responseData = '';
