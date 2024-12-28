@@ -2,7 +2,7 @@ name: Jira Update
 
 on:
   pull_request:
-    types: [synchronize]
+    types: [ opened, synchronize, edited, closed]
 
 jobs:
   update-jira-issue-comment:
@@ -65,7 +65,47 @@ jobs:
         env:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-          BASE_URL: https://jpogodasoftware.atlassian.net
-          ISSUE_KEY: SCRUM-29
+          BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          ISSUE_KEY: ${ISSUE_KEY}
           PULL_REQUEST_URL: ${{ github.event.pull_request.html_url }}
           COMMIT_MESSAGE: ${{ github.event.pull_request.head.sha }}
+  complete-jira-task-if-pr-closed:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    steps:
+      - name: Set Environment Variables
+        run: |
+          echo "JIRA_EMAIL=${{ secrets.JIRA_EMAIL }}" >> $GITHUB_ENV
+          echo "JIRA_API_TOKEN=${{ secrets.JIRA_API_TOKEN }}" >> $GITHUB_ENV
+          echo "BASE_URL=${{ secrets.JIRA_BASE_URL }}" >> $GITHUB_ENV
+          echo "PULL_REQUEST_URL=${{ github.event.pull_request.html_url }}" >> $GITHUB_ENV 
+          echo "COMMIT_MESSAGE=$(git log -1 --pretty=format:'%s')" >> $GITHUB_ENV
+      - name:   Extract Jira Issue Key from Branch Name 
+        id: extract_issue_key 
+        run: | 
+          branch_name="${{ github.head_ref }}" 
+          if [[ $branch_name =~ ([A-Z]+-[0-9]+) ]]; 
+            then ISSUE_KEY="${BASH_REMATCH[1]}" 
+            echo "ISSUE_KEY=$ISSUE_KEY" >> $GITHUB_ENV 
+          else 
+            echo "No matching Jira issue key found in branch name." 
+            exit 1 
+          fi
+      - name: Update Jira Issue Status
+        run: |
+            # Change jira status from im progress to done
+            curl -X POST \
+            -u "${JIRA_EMAIL}:${JIRA_API_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data '{"transition": {"id": "31"}}' \
+            "${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/transitions"
+
+      
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          ISSUE_KEY: ${ISSUE_KEY}
+          PULL_REQUEST_URL: ${{ github.event.pull_request.html_url }}
+          COMMIT_MESSAGE: ${{ github.event.pull_request.head.sha }}
+
