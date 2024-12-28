@@ -71,7 +71,8 @@ jobs:
           COMMIT_MESSAGE: ${{ github.event.pull_request.head.sha }}
   complete-jira-task-if-pr-closed:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
+    if: github.event_name == 'pull_request' && github.event.action == 'synchronize' || github.event.action == 'closed'
+    # 'closed'
     steps:
       - name: Set Environment Variables
         run: |
