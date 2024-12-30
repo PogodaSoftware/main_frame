@@ -17,7 +17,7 @@ module.exports = function (config) {
         suppressAll: true // Removes duplicated traces
       },
       coverageReporter: {
-        dir: require('path').join(__dirname, '../../coverage/portfolioResume'),
+        dir: require('path').join(__dirname, 'coveragefiles'),
         subdir: '.',
         reporters: [
           { type: 'html' },
@@ -25,7 +25,7 @@ module.exports = function (config) {
         ]
       },
       reporters: ['progress', 'kjhtml'],
-      port: 9876,
+      port: 80,
       colors: true,
       logLevel: config.LOG_INFO,
       autoWatch: true,
