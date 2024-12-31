@@ -36,7 +36,6 @@ module.exports = function (config) {
     });
   };
   
-=======
   config.set({
     basePath: '',
     frameworks: ['jasmine', '@angular-devkit/build-angular'],
@@ -71,5 +70,4 @@ module.exports = function (config) {
     singleRun: false,
     restartOnFileChange: true
   });
-};
->>>>>>> 67b199c2f5a40a11c5d8e6de1416c561b12bf24c
+
