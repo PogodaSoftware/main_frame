@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 # Currently do not have the code underneath, will comment out for now 
+
+
 # COPY --from=build-backend /app/backend/ .
 # COPY --from=build-frontend /app/frontend/build /app/backend/static
 
