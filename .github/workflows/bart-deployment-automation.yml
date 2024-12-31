@@ -17,7 +17,7 @@ jobs:
           run: docker compose down
 
         - name: Pull latest code
-          run: git pull origin main
+          run: git pull
 
         - name: Start Docker Compose
           run: docker-compose up -d
