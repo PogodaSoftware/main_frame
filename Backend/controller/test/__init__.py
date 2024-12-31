@@ -5,5 +5,5 @@ from Backend.controller.test import hello
 
 [pytest]
 
-DJANGO_SETTINGS_MODULE = main_frame_project.settings
+DJANGO_SETTINGS_MODULE = main_frame.Backend.controller.main_frame_project.settings
 python_files = hello.py
