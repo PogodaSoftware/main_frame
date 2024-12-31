@@ -92,6 +92,10 @@ jobs:
             echo "No matching Jira issue key found in branch name." 
             exit 1 
           fi
+      - name: Find out what transitions are available for the issue
+        run: |
+            TRANSITIONS=$(curl -s -u "${JIRA_EMAIL}:${JIRA_API_TOKEN}" -X GET "${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/transitions")
+            echo "Available Transitions: ${TRANSITIONS}"
       - name: Update Jira Issue Status
         run: |
             # Change jira status from im progress to done
