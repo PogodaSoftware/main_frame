@@ -1,5 +1,5 @@
 module.exports = function (config) {
-<<<<<<< HEAD
+
     config.set({
       basePath: '',
       frameworks: ['jasmine', '@angular-devkit/build-angular'],
