@@ -23,7 +23,7 @@ jobs:
         - name: Check if Docker containers are running 
           id: docker-status 
           run: |
-           if [ $(docker-compose ps -q | wc -l) -gt 0 ]; 
+           if [ $(docker compose ps -q | wc -l) -gt 0 ]; 
            then 
              echo "Docker containers are running"
              echo "::set-output name=containers_up::true" 
