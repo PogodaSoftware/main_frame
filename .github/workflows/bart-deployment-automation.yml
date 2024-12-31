@@ -8,16 +8,16 @@ on:
 jobs:
   deploy:
     # runs-on: ubuntu-latest test2
-    runs-on: 'self-hosted'
+    runs-on: ubuntu-latest
     steps:
         - name: Checkout code
           uses: actions/checkout@v2
         
         - name: Shut down Docker Compose
-          run: docker-compose down
-
-        - name: Pull latest code
-          run: git pull origin main
-
-        - name: Start Docker Compose
           run: docker-compose up -d
+
+        # - name: Pull latest code
+        #   run: git pull origin main
+
+        # - name: Start Docker Compose
+        #   run: docker-compose up -d
