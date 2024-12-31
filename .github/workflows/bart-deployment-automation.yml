@@ -20,10 +20,21 @@ jobs:
 
         - name: Checkout code
           uses: actions/checkout@v2
-        
+        - name: Check if Docker containers are running 
+          id: docker-status 
+          run: |
+           if [ $(docker-compose ps -q | wc -l) -gt 0 ]; 
+           then 
+             echo "Docker containers are running"
+             echo "::set-output name=containers_up::true" 
+           else 
+             echo "Docker containers are not running" 
+             echo "::set-output name=containers_up::false" 
+             exit 1 
+           fi
         - name: Shut down Docker Compose
           run: sudo docker compose down
-          
+
         - name: Change directory into the directory
           run: cd ../
 
