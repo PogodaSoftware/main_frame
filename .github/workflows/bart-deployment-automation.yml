@@ -17,12 +17,13 @@ jobs:
     steps:
         - name: check working directory
           run: pwd
-          
+
         - name: Checkout code
           uses: actions/checkout@v2
         
         - name: Shut down Docker Compose
-          run: docker compose down
+          run: sudo docker compose down
+          
         - name: Change directory into the directory
           run: cd ../
 
