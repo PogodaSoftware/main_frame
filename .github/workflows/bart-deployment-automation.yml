@@ -16,6 +16,9 @@ jobs:
         - name: Shut down Docker Compose
           run: docker compose down
 
+        - name: Branch Name
+          run: git branch
+
         - name: Pull latest code
           run: git pull
 
