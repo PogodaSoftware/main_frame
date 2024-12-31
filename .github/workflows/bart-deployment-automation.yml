@@ -6,14 +6,18 @@ on:
     types: [closed, synchronize]
 
 defaults:
-  run:
-    working-directory: ../
+    run:
+        working-directory: ../
+
 
 jobs:
   deploy:
     # runs-on: ubuntu-latest test2
     runs-on: 'self-hosted'
     steps:
+        - name: check working directory
+          run: pwd
+          
         - name: Checkout code
           uses: actions/checkout@v2
         
