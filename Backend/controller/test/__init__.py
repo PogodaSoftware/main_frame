@@ -1,10 +1,7 @@
-
-
 import pytest
 
-from main_frame.Backend.controller import main_frame_project
-from main_frame.Backend.controller.test import hello
-
+from Backend.controller import main_frame_project
+from Backend.controller.test import hello
 
 [pytest]
 

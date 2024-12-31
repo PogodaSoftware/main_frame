@@ -1,4 +1,3 @@
-# hello.py
 
 def hello_world():
     """
