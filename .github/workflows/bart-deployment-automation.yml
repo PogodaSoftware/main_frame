@@ -1,0 +1,23 @@
+name: Deploy to Main
+on:
+  pull_request:
+    branches:
+        - main
+    types: [closed, synchronize]
+
+jobs:
+  deploy:
+    # runs-on: ubuntu-latest 
+    runs-on: 'self-hosted'
+    steps:
+        - name: Checkout code
+          uses: actions/checkout@v2
+        
+        - name: Shut down Docker Compose
+          run: docker-compose down
+
+        - name: Pull latest code
+          run: git pull origin main
+
+        - name: Start Docker Compose
+          run: docker-compose up -d
