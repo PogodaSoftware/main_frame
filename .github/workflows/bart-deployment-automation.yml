@@ -5,6 +5,10 @@ on:
         - main
     types: [closed, synchronize]
 
+defaults:
+  run:
+    working-directory: ../
+
 jobs:
   deploy:
     # runs-on: ubuntu-latest test2
