@@ -94,6 +94,7 @@ jobs:
           fi
       - name: Find out what transitions are available for the issue
         run: |
+            echo "Issue Key: ${ISSUE_KEY}"
             TRANSITIONS=$(curl -s -u "${JIRA_EMAIL}:${JIRA_API_TOKEN}" -X GET "${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/transitions")
             echo "Available Transitions: ${TRANSITIONS}"
       - name: Update Jira Issue Status
