@@ -95,7 +95,7 @@ jobs:
       - name: Update Jira Issue Status
         run: |
             # Change jira status from im progress to done
-            TRANSITION_ID=41 # Replace with the actual transition ID for "Done" 
+            TRANSITION_ID=41 
             TRANSITION_BODY=$(jq -n --arg transition_id "$TRANSITION_ID" '{ transition: { id: $transition_id } }') 
             
             echo "Transition Body: ${TRANSITION_BODY}" 
@@ -106,7 +106,9 @@ jobs:
              --data "${TRANSITION_BODY}" \
              "${BASE_URL}/rest/api/3/issue/${ISSUE_KEY}/transitions") 
              if [ "$RESPONSE" -ne 204 ];
-             then echo "Failed to transition Jira issue: HTTP status code $RESPONSE" exit 1 else echo "Successfully transitioned Jira issue to Done." fi
+             then echo "Failed to transition Jira issue: HTTP status code $RESPONSE" exit 1 
+             else echo "Successfully transitioned Jira issue to Done." 
+             fi
         env:
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
