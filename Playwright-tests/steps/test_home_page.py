@@ -3,7 +3,7 @@ from pytest_bdd import scenarios, given, when, then, parsers
 from playwright.sync_api import Page, expect
 
 
-scenarios("./features/home_page.feature")
+scenarios("../features/home_page.feature")
 
 @pytest.fixture(scope="function")
 def home_page(page: Page):
