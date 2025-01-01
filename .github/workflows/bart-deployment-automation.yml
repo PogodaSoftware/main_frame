@@ -26,12 +26,9 @@ jobs:
            if [ $(docker compose ps -q | wc -l) -gt 0 ]; 
            then 
              echo "Docker containers are running"
-             echo "::set-output name=containers_up::true" 
              sudo docker compose down
            else 
-             echo "Docker containers are not running" 
-             echo "::set-output name=containers_up::false" 
-             exit 1 
+             echo "Docker containers are not running"  
            fi
 
         - name: Change directory into the directory
