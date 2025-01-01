@@ -27,13 +27,12 @@ jobs:
            then 
              echo "Docker containers are running"
              echo "::set-output name=containers_up::true" 
+             sudo docker compose down
            else 
              echo "Docker containers are not running" 
              echo "::set-output name=containers_up::false" 
              exit 1 
            fi
-        - name: Shut down Docker Compose
-          run: sudo docker compose down
 
         - name: Change directory into the directory
           run: cd ../
