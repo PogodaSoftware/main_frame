@@ -1,5 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import {
+  provideHttpClientTesting,
+  HttpTestingController,
+} from '@angular/common/http/testing';
 import { AppComponent } from './app.component';
 import { HttpClient } from '@angular/common/http';
 
@@ -9,8 +12,8 @@ describe('AppComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule], // Import the testing module
-      declarations: [AppComponent],      // Declare the AppComponent
+      imports: [provideHttpClientTesting], // Import the testing module
+      declarations: [AppComponent], // Declare the AppComponent
     }).compileComponents();
 
     // Inject the testing controller and HttpClient
@@ -39,19 +42,6 @@ describe('AppComponent', () => {
 
     const req = httpTestingController.expectOne(testUrl);
     expect(req.request.method).toEqual('GET');
-    req.flush({ success: true }); 
-  });
-
-  it('should reach http://localhost:80/fake', (done) => {
-    const testUrl = 'http://localhost:80/fake';
-
-    httpClient.get(testUrl).subscribe((response) => {
-      expect(response).toBeTruthy();
-      done();
-    });
-
-    const req = httpTestingController.expectOne(testUrl);
-    expect(req.request.method).toEqual('GET');
-    req.flush({ success: true }); 
+    req.flush({ success: true });
   });
 });
