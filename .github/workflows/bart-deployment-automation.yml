@@ -32,8 +32,8 @@ jobs:
            fi
 
         - name: Change directory into the directory
-          run: cd ../
-          
+          run: cd ../main_frame
+
         - name: List files in the directory
           run: ls -la
 
