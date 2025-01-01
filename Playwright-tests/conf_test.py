@@ -2,10 +2,6 @@ import pytest
 from playwright.sync_api import Page
 import datetime
 
-@pytest.fixture(scope="function")
-def homePage(page: Page):
-    page.goto("http://localhost:8000")  # Replace with your Django app's URL
-    yield page
 
 @pytest.hookimpl(tryfirst=True, hookwrapper=True)
 def pytest_runtest_makereport(item, call):

@@ -9,7 +9,7 @@ on:
         type: string
       test-script:
         description: "Path to the Playwright test script"
-        default: "Playwright-tests/test_homePage.py"
+        default: "Playwright-tests/run_tests.py"
         type: string
 
 jobs:
