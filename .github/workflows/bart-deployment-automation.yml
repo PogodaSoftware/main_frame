@@ -33,11 +33,11 @@ jobs:
 
         - name: Change directory into the directory
         # workdir: ./main_frame
-          working-directory: ../../../../main_frame
+          working-directory: ../../../../main_frame/
           run: pwd
 
         - name: List files in the directory
-          run: ls -la
+          run: ls 
 
         - name: Branch Name
           run: git branch
