@@ -14,6 +14,11 @@ services:
       - PYTHONUNBUFFERED=1
     command: ["python", "./manage.py", "runserver", "0.0.0.0:8000"]
 
+    develop:
+      watch:
+        - path: ./Backend/controller
+          action: rebuild
+
   frontend:
     build:
       context: ./Frontend/portfolioResume
@@ -24,3 +29,9 @@ services:
       - ./Frontend/portfolioResume:/app
     stdin_open: true
     tty: true
+    develop:
+      watch:
+        - path: ./Frontend/portfolioResume
+          action: rebuild
+
+    

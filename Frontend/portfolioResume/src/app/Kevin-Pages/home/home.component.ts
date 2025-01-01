@@ -5,7 +5,7 @@ import { Component } from '@angular/core';
   imports: [],
   template: `
     <p>
-      Kevin home works!
+      Kevin home works! test testing
     </p>
   `,
   styleUrl: './home.component.scss'
