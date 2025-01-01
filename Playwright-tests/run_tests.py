@@ -27,7 +27,7 @@ def main():
     os.makedirs("Playwright-tests/test-results", exist_ok=True)
 
     pytest_args = [
-        # "Playwright-tests/steps/test_homePage.py",
+        "Playwright-tests/steps/test_home_page.py",
         "Playwright-tests/steps/test_second_test.py",
         
     ]
