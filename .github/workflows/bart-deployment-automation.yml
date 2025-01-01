@@ -32,7 +32,7 @@ jobs:
            fi
 
         - name: Change directory into the directory
-        # workdir: ./main_frame
+        # workdir: ./main_frame test
           working-directory: ../../../../main_frame/
           run: pwd
 
