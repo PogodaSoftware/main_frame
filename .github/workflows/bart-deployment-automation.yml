@@ -33,7 +33,7 @@ jobs:
 
         - name: Change directory into the directory
         # workdir: ./main_frame test
-          working-directory: ../../../../main_frame/
+          working-directory: ../../../../main_frame/main_frame
           run: pwd
 
         - name: List files in the directory
