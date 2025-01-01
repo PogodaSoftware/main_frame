@@ -33,6 +33,9 @@ jobs:
 
         - name: Change directory into the directory
           run: cd ../
+          
+        - name: List files in the directory
+          run: ls -la
 
         - name: Branch Name
           run: git branch
