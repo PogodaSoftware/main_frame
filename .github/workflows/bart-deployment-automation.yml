@@ -39,17 +39,22 @@ jobs:
             ls
             pwd
 
-        - name: List files in the directory test
-          working-directory: ./main_frame/main_frame
-          run: ls 
-
         - name: Branch Name
           working-directory: ./main_frame/main_frame
-          run: git branch
+          run: |
+            cd ../../../main_frame/
+            ls
+            git branch
 
         - name: Pull latest code
           working-directory: ./main_frame/main_frame
-          run: git pull
+          run: |
+            cd ../../../main_frame/
+            ls
+            git pull
 
         - name: Start Docker Compose
-          run: docker-compose up -d
+          run: |
+            cd ../../../main_frame/
+            ls
+            docker-compose up -d
