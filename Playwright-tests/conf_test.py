@@ -13,3 +13,5 @@ def pytest_runtest_makereport(item, call):
         if hasattr(item.instance, "page"):
             item.instance.page.screenshot(path=screenshot_path)
             print(f"Saved screenshot to {screenshot_path}")
+
+

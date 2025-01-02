@@ -1,11 +1,9 @@
-Feature: Home Page Validation
+Feature: Kevin Home Page Validation
 
   Scenario Outline: Verify text is displayed
-    Given I navigate to the home page "<url>"
-    When I check the element with XPath "<xpath>"
-    Then it should display the text "<expected_text>"
+    Given I navigate to the home page
+    Then it should display the text "<text>"
 
     Examples:
-      | url                        | xpath | expected_text                            |
-      | http://localhost:80/kevin  | p     | Kevin home works! test testing!!!!!!!!!! |
-      | http://localhost:80/pogoda | p     | Pogoda home works111!                    |
+      | text                                     |
+      | "Kevin home works! test testing!!!!!!!!!!" |
