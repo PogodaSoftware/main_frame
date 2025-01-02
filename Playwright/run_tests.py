@@ -12,7 +12,6 @@ def main():
     print(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
     print(f"PYTHONPATH: {os.environ.get('PYTHONPATH')}")
 
-    # Setup Django
     try:
         django.setup()
         print("Django setup completed successfully.")
@@ -23,13 +22,10 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    # Ensure test-results directory exists
-    os.makedirs("Playwright-tests/test-results", exist_ok=True)
+    os.makedirs("Playwright/test-results", exist_ok=True)
 
     pytest_args = [
-        "Playwright-tests/test_homePage.py",
-        "Playwright-tests/test_second_test.py",
-        
+        "Playwright/steps"
     ]
     print(f"Running pytest with arguments: {pytest_args}")
     

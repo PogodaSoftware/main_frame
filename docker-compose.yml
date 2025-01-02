@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   backend:
@@ -24,3 +24,12 @@ services:
       - ./Frontend/portfolioResume:/app
     stdin_open: true
     tty: true
+
+    develop:
+      watch:
+        - path: ./Frontend/portfolioResume
+          action: rebuild
+        - path: ./Backend/controller
+          action: rebuild
+
+
