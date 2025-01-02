@@ -9,7 +9,7 @@ on:
         type: string
       test-script:
         description: "Path to the Playwright test script"
-        default: "Playwright-tests/run_tests.py"
+        default: "Playwright/run_tests.py"
         type: string
 
 jobs:
@@ -60,7 +60,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: test-results
-          path: Playwright-tests/test-results
+          path: Playwright/test-results
           retention-days: 1
 
       - name: Stop Docker Compose

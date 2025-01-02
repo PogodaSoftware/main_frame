@@ -22,10 +22,10 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
 
-    os.makedirs("Playwright-tests/test-results", exist_ok=True)
+    os.makedirs("Playwright/test-results", exist_ok=True)
 
     pytest_args = [
-        "Playwright-tests/steps"
+        "Playwright/steps"
     ]
     print(f"Running pytest with arguments: {pytest_args}")
     
