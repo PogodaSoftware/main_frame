@@ -49,6 +49,7 @@ jobs:
           run: |
             cd ../../../main_frame/
             ls
+            git stash
             git fetch origin
             git rebase origin/main
             git rebase --continue
