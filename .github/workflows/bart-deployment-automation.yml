@@ -49,7 +49,7 @@ jobs:
           run: |
             cd ../../../main_frame/
             ls
-            git pull
+            git pull rebase origin main
 
         - name: Start Docker Compose
           run: |
