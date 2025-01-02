@@ -34,7 +34,7 @@ jobs:
         - name: Change directory into the directory
         # workdir: ./main_frame test
           run: |
-            cd ../../../../
+            cd ../../../
             ls
             pwd
 
