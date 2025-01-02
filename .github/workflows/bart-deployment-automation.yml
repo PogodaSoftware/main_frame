@@ -34,7 +34,9 @@ jobs:
         - name: Change directory into the directory
         # workdir: ./main_frame test
           working-directory: cd ./main_frame/main_frame
-          run: pwd
+          run: |
+            cd ../../../../main_frame/main_frame
+            pwd
 
         - name: List files in the directory test
           working-directory: ./main_frame/main_frame
