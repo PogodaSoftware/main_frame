@@ -33,10 +33,10 @@ jobs:
 
         - name: Change directory into the directory
         # workdir: ./main_frame test
-          working-directory: cd ../../../../main_frame/main_frame
+          working-directory: cd ./main_frame/main_frame
           run: pwd
 
-        - name: List files in the directory
+        - name: List files in the directory test
           run: ls 
 
         - name: Branch Name
