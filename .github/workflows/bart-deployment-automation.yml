@@ -35,7 +35,8 @@ jobs:
         # workdir: ./main_frame test
           working-directory: cd ./main_frame/main_frame
           run: |
-            cd ../../../../main_frame/main_frame
+            cd ../../../../
+            ls
             pwd
 
         - name: List files in the directory test
