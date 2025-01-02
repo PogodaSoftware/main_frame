@@ -33,7 +33,6 @@ jobs:
 
         - name: Change directory into the directory
         # workdir: ./main_frame test
-          working-directory: cd ./main_frame/main_frame
           run: |
             cd ../../../../
             ls
