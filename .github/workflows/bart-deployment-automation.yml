@@ -51,8 +51,7 @@ jobs:
             ls
             git stash
             git fetch origin
-            git rebase origin/main
-            git rebase --continue
+            git rebase origin/SCRUN-45-create-soltion-on-bart-server
 
         - name: Start Docker Compose
           run: |
