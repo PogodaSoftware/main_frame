@@ -12,7 +12,6 @@ def main():
     print(f"DJANGO_SETTINGS_MODULE: {os.environ.get('DJANGO_SETTINGS_MODULE')}")
     print(f"PYTHONPATH: {os.environ.get('PYTHONPATH')}")
 
-
     try:
         django.setup()
         print("Django setup completed successfully.")
@@ -26,9 +25,7 @@ def main():
     os.makedirs("Playwright-tests/test-results", exist_ok=True)
 
     pytest_args = [
-        "Playwright-tests/steps/kevin_home_page.py",
-        "Playwright-tests/steps/pogoda_home_page.py",
-        
+        "Playwright-tests/steps"
     ]
     print(f"Running pytest with arguments: {pytest_args}")
     
