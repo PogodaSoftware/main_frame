@@ -2,7 +2,7 @@ from playwright.sync_api import sync_playwright, expect
 def test_page_content():
     with sync_playwright() as playwright:
         # Launch the browser in non-headless mode with a delay
-        browser = playwright.chromium.launch(headless=False, slow_mo=5000)
+        browser = playwright.chromium.launch
         page = browser.new_page()
 
         # Navigate to the target URL
