@@ -58,4 +58,4 @@ jobs:
           run: |
             cd ../../../main_frame/
             ls
-            docker-compose up -d
+            docker compose up --build -d
