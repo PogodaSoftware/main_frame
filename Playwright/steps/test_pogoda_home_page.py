@@ -8,12 +8,7 @@ from Playwright.pages.pogoda.home_page import home_page_paragraph_xpath
 scenarios("../features/pogoda_home_page.feature")
 
 @pytest.fixture
-def page():
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
-        page = browser.new_page()
-        yield page
-        browser.close()
+
 
 @given("I navigate to pogoda home page")
 def navigate_to_pogoda_home_page(page):
