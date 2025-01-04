@@ -55,14 +55,6 @@ jobs:
 
           python ${{ inputs.test-script }}
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: Playwright/test-results
-          retention-days: 1
-
       - name: Stop Docker Compose
         if: always()
         run: docker compose down
