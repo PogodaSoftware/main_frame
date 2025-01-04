@@ -1,3 +1,4 @@
+import os
 import pytest
 from pytest_bdd import scenarios, given, then, parsers
 from playwright.sync_api import sync_playwright, expect
@@ -15,7 +16,8 @@ def page():
 
 @given("I navigate to pogoda home page")
 def navigate_to_pogoda_home_page(page):
-    page.goto("http://localhost:${{ secrets.FRONTEND_PORT }}/pogoda")
+    frontend_port = os.getenv('FRONTEND_PORT')
+    page.goto(f"http://localhost:{frontend_port}/pogoda")
 
 @then(parsers.parse('it should display the text "{text}"'))
 def verify_text(page, text):
