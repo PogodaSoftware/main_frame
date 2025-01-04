@@ -23,7 +23,7 @@ jobs:
           uses: actions/checkout@v2
         - name: Check if Docker containers are running 
           id: docker-status 
-          # get password from github secrets under SERVER_SUDO_PASSWORD
+          # get password from github secrets under SERVER_SUDO_PASSWORD #key
 
           run: |
            cd ../../../main_frame/
