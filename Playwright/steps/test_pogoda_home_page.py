@@ -24,4 +24,4 @@ def navigate_to_pogoda_home_page(page):
 @then(parsers.parse('it should display the text "{text}"'))
 def verify_text(page, text):
     locator = page.locator(home_page_paragraph_xpath)
-    expect(locator).to_have_text(text)
+    expect(locator).to_have_text(text) 
