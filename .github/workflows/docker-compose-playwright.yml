@@ -23,6 +23,14 @@ jobs:
     env:
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+
+
+    timeout-minutes: 15
+    services:
+      docker:
+        image: docker:20.10.9
+        options: --privileged
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,18 +43,31 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.11
+          python-version: ${{ inputs.python-version }}
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r "Backend/controller/requirements.txt"
 
-      - name: Install Playwright Browsers
+      - name: Ensure browsers are installed
         run: python -m playwright install --with-deps
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
       - name: Debug Environment Variables
         run: echo "FRONTEND_PORT=$FRONTEND_PORT"
+      
 
       - name: Run Playwright Tests
-        run: python Playwright/run_tests.py
+        env:
+          PYTHONPATH: ${{ env.PYTHONPATH }}
+          DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
+          DJANGO_ALLOW_ASYNC_UNSAFE: 1
+        run: |
+          python ${{ inputs.test-script }}
+
+      - name: Stop Docker Compose
+        if: always()
+        run: docker compose down
