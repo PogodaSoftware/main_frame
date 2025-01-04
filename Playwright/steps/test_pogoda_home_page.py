@@ -22,6 +22,8 @@ def navigate_to_pogoda_home_page(page):
     page.goto(f"http://localhost:{frontend_port}/pogoda")
 
 
+
+
 @then(parsers.parse('it should display the text "{text}"'))
 def verify_text(page, text):
     locator = page.locator(home_page_paragraph_xpath)
