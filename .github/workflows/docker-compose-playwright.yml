@@ -21,6 +21,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
+      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
     steps:
       - name: Checkout code
