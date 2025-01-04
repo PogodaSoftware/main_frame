@@ -16,6 +16,7 @@ jobs:
     runs-on: 'self-hosted'
     steps:
         - name: check working directory
+          working-directory: . . ./main_frame
           run: pwd
 
         - name: Checkout code
