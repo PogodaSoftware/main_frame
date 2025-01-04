@@ -8,3 +8,6 @@ jobs:
     with:
       python-version: "3.11"
       test-script: "Playwright/run_tests.py"
+    secrets:
+      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
