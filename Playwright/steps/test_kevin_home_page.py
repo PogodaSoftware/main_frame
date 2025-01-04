@@ -15,7 +15,7 @@ def page():
 
 @given("I navigate to kevin home page")
 def navigate_to_kevin_home_page(page):
-    page.goto("http://localhost:${{ secrets.FRONTEND_PORT }}/kevin")
+    page.goto("http://localhost:80/kevin")
 
 @then(parsers.parse('it should display the text "{text}"'))
 def verify_text(page, text):
