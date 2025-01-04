@@ -46,6 +46,7 @@ jobs:
             git branch
 
         - name: Pull latest code
+          working-directory: . . /main_frame
           run: |
             cd ../../../main_frame/
             ls
