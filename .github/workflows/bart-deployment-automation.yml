@@ -16,7 +16,7 @@ jobs:
     runs-on: 'self-hosted'
     steps:
         - name: check working directory
-          working-directory: . . ./main_frame
+        #   working-directory: . . ./main_frame
           run: pwd
 
         - name: Checkout code
@@ -47,7 +47,6 @@ jobs:
             git branch
 
         - name: Pull latest code
-          working-directory: . . /main_frame
           run: |
             cd ../../../main_frame/
             ls
