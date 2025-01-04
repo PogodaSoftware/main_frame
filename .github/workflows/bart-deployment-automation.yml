@@ -25,7 +25,7 @@ jobs:
           id: docker-status 
           run: |
            cd ../../../main_frame/
-           if [ $(docker compose ps -q | wc -l) -gt 0 ]; 
+           if [ $(docker compose ps -q)  ]; 
            then 
              echo "Docker containers are running"
              sudo docker compose down
