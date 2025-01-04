@@ -1,0 +1,64 @@
+name: Deploy to Main
+on:
+  pull_request:
+    branches:
+        - main
+    types: [closed, synchronize]
+
+defaults:
+    run:
+        working-directory: ../
+
+
+jobs:
+  deploy:
+    # runs-on: ubuntu-latest test2
+    runs-on: 'self-hosted'
+    steps:
+        - name: check working directory
+        #   working-directory: . . ./main_frame
+          run: pwd
+
+        - name: Checkout code
+          uses: actions/checkout@v2
+        - name: Check if Docker containers are running 
+          id: docker-status 
+          # get password from github secrets under SERVER_SUDO_PASSWORD #key
+
+          run: |
+           cd ../../../main_frame/
+           echo ${{ secrets.SERVER_SUDO_PASSWORD }} | sudo -S docker compose down
+        #    sudo docker compose down 
+        #    if [ $(docker compose ps -q | wc -l) -gt 0 ]; 
+        #    then 
+        #      echo "Docker containers are running"
+        #    else 
+        #      echo "Docker containers are not running"  
+        #    fi
+
+        - name: Change directory into the directory
+        # workdir: ./main_frame test
+          run: |
+            cd ../../../main_frame/
+            ls
+            pwd
+
+        - name: Branch Name
+          run: |
+            cd ../../../main_frame/
+            ls
+            git branch
+
+        - name: Pull latest code
+          run: |
+            cd ../../../main_frame/
+            ls
+            git stash
+            git fetch origin
+            git rebase origin/SCRUM-45-create-soltion-on-bart-server
+
+        - name: Start Docker Compose
+          run: |
+            cd ../../../main_frame/
+            ls
+            docker compose up --build -d
