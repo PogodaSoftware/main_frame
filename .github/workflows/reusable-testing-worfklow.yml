@@ -5,6 +5,4 @@ on: [push]
 jobs:
   run-tests:
     uses: ./.github/workflows/docker-compose-playwright.yml
-    # with:
-    #   python-version: "3.11"
-    #   test-script: "Playwright/run_tests.py"
+
