@@ -1,21 +1,18 @@
+import os
 import pytest
 from pytest_bdd import scenarios, given, then, parsers
 from playwright.sync_api import sync_playwright, expect
+from Playwright.Hooks.hooks import selecting_different_routes
 from Playwright.pages.pogoda.home_page import home_page_paragraph_xpath
 
 scenarios("../features/pogoda_home_page.feature")
 
 @pytest.fixture
-def page():
-    with sync_playwright() as playwright:
-        browser = playwright.chromium.launch()
-        page = browser.new_page()
-        yield page
-        browser.close()
+
 
 @given("I navigate to pogoda home page")
 def navigate_to_pogoda_home_page(page):
-    page.goto("http://localhost:80/pogoda")
+    selecting_different_routes(page, 'pogoda')
 
 @then(parsers.parse('it should display the text "{text}"'))
 def verify_text(page, text):

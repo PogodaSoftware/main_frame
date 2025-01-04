@@ -11,10 +11,18 @@ on:
         description: "Path to the Playwright test script"
         default: "Playwright/run_tests.py"
         type: string
+    secrets:
+      BACKEND_PORT:
+        required: true
+      FRONTEND_PORT:
+        required: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    env: 
+      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
     timeout-minutes: 15
     services:
       docker:
@@ -52,16 +60,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
           DJANGO_ALLOW_ASYNC_UNSAFE: 1
         run: |
-
           python ${{ inputs.test-script }}
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-results
-          path: Playwright/test-results
-          retention-days: 1
 
       - name: Stop Docker Compose
         if: always()
