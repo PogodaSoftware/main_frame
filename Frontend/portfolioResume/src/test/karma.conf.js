@@ -26,7 +26,7 @@ module.exports = function (config) {
         ]
       },
       reporters: ['progress', 'kjhtml'],
-      port: 80,
+      port: "${FRONTEND_PORT}",
       colors: true,
       logLevel: config.LOG_INFO,
       autoWatch: true,
