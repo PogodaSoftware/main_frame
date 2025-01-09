@@ -1,21 +1,12 @@
-name: Docker Compose and Playwright Tests
+name: Docker Compose, Playwright, and Angular Unit Tests
 
 on:
-  workflow_call:
-    inputs:
-      python-version:
-        description: "Python version to use"
-        default: "3.11"
-        type: string
-      test-script:
-        description: "Path to the Playwright test script"
-        default: "Playwright/run_tests.py"
-        type: string
-    secrets:
-      BACKEND_PORT:
-        required: true
-      FRONTEND_PORT:
-        required: true
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test:
@@ -23,7 +14,7 @@ jobs:
     env: 
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-    timeout-minutes: 15
+    timeout-minutes: 20
     services:
       docker:
         image: docker:20.10.9
@@ -35,7 +26,7 @@ jobs:
 
       - name: Start Docker Compose
         run: |
-          docker compose up -d
+          docker-compose up -d
           sleep 5
 
       - name: Set up Python
@@ -43,7 +34,7 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r "Backend/controller/requirements.txt"
@@ -62,6 +53,21 @@ jobs:
         run: |
           python ${{ inputs.test-script }}
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install Angular CLI
+        run: npm install -g @angular/cli
+
+      - name: Install project dependencies
+        run: npm ci
+
+      - name: Run Angular unit tests with ChromeHeadless
+        run: |
+          ng test --watch=false --browsers=ChromeHeadless --code-coverage
+
       - name: Stop Docker Compose
         if: always()
-        run: docker compose down
+        run: docker-compose down
