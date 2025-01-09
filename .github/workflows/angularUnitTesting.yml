@@ -10,6 +10,9 @@ jobs:
   test:
     timeout-minutes: 5
     runs-on: ubuntu-latest
+    env: 
+      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
     steps:
       - name: Checkout repository
