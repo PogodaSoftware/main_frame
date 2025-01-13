@@ -26,7 +26,7 @@ module.exports = function (config) {
         ]
       },
       reporters: ['progress', 'kjhtml'],
-      port: 81,
+      port: 80,
       colors: true,
       logLevel: config.LOG_INFO,
       autoWatch: true,
