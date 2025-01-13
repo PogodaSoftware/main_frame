@@ -2,6 +2,7 @@ import os
 from playwright.sync_api import sync_playwright
 
 FRONTEND_PORT = os.environ["FRONTEND_PORT"]
+
     
 def page():
     with sync_playwright() as playwright:
