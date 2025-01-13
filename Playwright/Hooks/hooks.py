@@ -14,8 +14,8 @@ def page():
 def selecting_different_routes(page, route):
     
     if route == 'kevin':
-        page.goto(f"http://localhost:51/kevin")
+        page.goto(f"http://localhost:{FRONTEND_PORT}/kevin")
     elif route == 'pogoda':
-        page.goto(f"http://localhost:51/pogoda")
+        page.goto(f"http://localhost:{FRONTEND_PORT}/pogoda")
     else:
         raise ValueError(f"Unknown route: {route}")
