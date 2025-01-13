@@ -16,3 +16,5 @@ def selecting_different_routes(page, route):
         page.goto(f"http://localhost:{frontend_port}/pogoda")
     else:
         raise ValueError(f"Unknown route: {route}")
+ 
+ 
