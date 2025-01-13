@@ -16,13 +16,14 @@ on:
         required: true
       FRONTEND_PORT:
         required: true
+env:
+  BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+  FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    env: 
-      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
-      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+
     timeout-minutes: 15
     services:
       docker:
