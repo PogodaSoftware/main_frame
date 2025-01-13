@@ -59,11 +59,8 @@ jobs:
           PYTHONPATH: ${{ env.PYTHONPATH }}
           DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
           DJANGO_ALLOW_ASYNC_UNSAFE: 1
-          FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
         run: |
           python ${{ inputs.test-script }}
-    
-          
 
       - name: Stop Docker Compose
         if: always()

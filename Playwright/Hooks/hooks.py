@@ -9,7 +9,7 @@ def page():
         browser.close()
 
 def selecting_different_routes(page, route):
-    frontend_port = os.get('FRONTEND_PORT')
+    frontend_port = os.getenv('FRONTEND_PORT')
     if not frontend_port:
         raise ValueError("FRONTEND_PORT environment variable is not set")
     
