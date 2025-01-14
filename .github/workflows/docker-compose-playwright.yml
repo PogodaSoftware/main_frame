@@ -34,12 +34,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Create .env file
-        run: |
-          echo "BACKEND_PORT=${{ secrets.BACKEND_PORT }}" >> .env
-          echo "FRONTEND_PORT=${{ secrets.FRONTEND_PORT }}" >> .env
-          echo "KEVIN_PORT=http://localhost:${{ secrets.BACKEND_PORT }}/kevin" >> .env
-          echo "POGODA_PORT=http://localhost:${{ secrets.BACKEND_PORT }}/pogoda" >> .env
+  
 
       - name: Start Docker Compose
         run: |
