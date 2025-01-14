@@ -16,22 +16,16 @@ on:
         required: true
       FRONTEND_PORT:
         required: true
-env: 
-      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
-      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
 jobs:
-
-  build: 
+  build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Build Docker images
-        run: |
-         docker compose up -d
-         sleep 5
+        run: docker compose up -d
 
   test:
     runs-on: ubuntu-latest
@@ -44,8 +38,6 @@ jobs:
         options: --privileged
 
     steps:
-      
-
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -64,10 +56,12 @@ jobs:
 
       - name: Run Playwright Tests
         env:
-          PYTHONPATH: ${{ env.PYTHONPATH }}
+          BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+          FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
           DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
           DJANGO_ALLOW_ASYNC_UNSAFE: 1
         run: |
+          ls
           python ${{ inputs.test-script }}
 
       - name: Stop Docker Compose
