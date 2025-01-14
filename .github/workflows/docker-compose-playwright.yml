@@ -5,7 +5,7 @@ on:
     inputs:
       python-version:
         description: "Python version to use"
-        default: "3.12"
+        default: "3.11"
         type: string
       test-script:
         description: "Path to the Playwright test script"
@@ -16,14 +16,13 @@ on:
         required: true
       FRONTEND_PORT:
         required: true
-env: 
-      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
-      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+    env: 
+      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
     timeout-minutes: 15
     services:
       docker:
@@ -33,13 +32,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Create .env file
-        run: |
-          echo "BACKEND_PORT=${{ secrets.BACKEND_PORT }}" >> .env
-          echo "FRONTEND_PORT=${{ secrets.FRONTEND_PORT }}" >> .env
-          echo "KEVIN_PORT=http://localhost:${{ secrets.BACKEND_PORT }}/kevin" >> .env
-          echo "POGODA_PORT=http://localhost:${{ secrets.BACKEND_PORT }}/pogoda" >> .env
 
       - name: Start Docker Compose
         run: |
@@ -59,10 +51,12 @@ jobs:
       - name: Ensure browsers are installed
         run: python -m playwright install --with-deps
 
-   
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
       - name: Run Playwright Tests
         env:
+          PYTHONPATH: ${{ env.PYTHONPATH }}
           DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
           DJANGO_ALLOW_ASYNC_UNSAFE: 1
         run: |
