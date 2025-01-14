@@ -16,13 +16,13 @@ on:
         required: true
       FRONTEND_PORT:
         required: true
+env: 
+      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    env: 
-      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
-      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
     timeout-minutes: 15
     services:
       docker:
@@ -57,8 +57,6 @@ jobs:
       - name: Run Playwright Tests
         env:
           PYTHONPATH: ${{ env.PYTHONPATH }}
-          DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
-          DJANGO_ALLOW_ASYNC_UNSAFE: 1
         run: |
           python ${{ inputs.test-script }}
 
