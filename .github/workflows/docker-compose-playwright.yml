@@ -16,13 +16,13 @@ on:
         required: true
       FRONTEND_PORT:
         required: true
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    env: 
+env: 
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
       docker:
@@ -53,7 +53,11 @@ jobs:
 
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
-
+      
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Run Playwright Tests
         env:
           PYTHONPATH: ${{ env.PYTHONPATH }}
