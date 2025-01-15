@@ -46,14 +46,28 @@ jobs:
       - name: Checkout Playwright tests repository
         uses: actions/checkout@v4
         with:
-          repository: PogodaSoftware/Au-tomation_Testing_with_Playwright
-          path: Automation
+          repository: PogodaSoftware/Automation_Testing_with_Playwright
+          path: Automation_Testing
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r "Backend/controller/requirements.txt"
+
+      - name: Ensure browsers are installed
+        run: python -m playwright install --with-deps
+
+      - name: Set PYTHONPATH
+        run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
       - name: Run Playwright tests
-        uses: PogodaSoftware/Automation_Testing_with_Playwright/.github/workflows/docker-compose-playwright.yml@main
-        with:
-          BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
-          FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+        run: |
+          python Automation_Testing/${{ inputs.test-script }}
 
       - name: Stop Docker Compose
         if: always()
