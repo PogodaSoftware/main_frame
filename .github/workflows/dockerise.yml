@@ -62,8 +62,7 @@ jobs:
       - name: Ensure browsers are installed
         run: python -m playwright install --with-deps
 
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
+      
 
       - name: Run Playwright tests
         run: |
