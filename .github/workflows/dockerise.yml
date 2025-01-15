@@ -8,7 +8,7 @@ on:
         default: "3.11"
         type: string
       test-script:
-        description: "Path to the Playwright test script"
+        description: "Path to the Playwright test script in the external repository"
         default: "Playwright/run_tests.py"
         type: string
     secrets:
@@ -52,13 +52,13 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r "Backend/controller/requirements.txt"
+          pip install -r Automation_Testing/requirements.txt
 
       - name: Ensure browsers are installed
         run: python -m playwright install --with-deps
 
       - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
+        run: echo "PYTHONPATH=$PWD/Automation_Testing:$PYTHONPATH" >> $GITHUB_ENV
 
       - name: Run Playwright tests
         run: |
