@@ -18,7 +18,7 @@ on:
         required: true
 
 jobs:
-  test:
+  start-container:
     runs-on: ubuntu-latest
     env: 
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
@@ -53,3 +53,10 @@ jobs:
 
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
+
+  test:
+    needs: start-container
+    uses: PogodaSoftware/Automation_Testing_with_Playwright/.github/workflows/docker-compose-playwright.yml@main
+    secrets:
+      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
+      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}

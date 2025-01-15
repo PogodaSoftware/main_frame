@@ -15,18 +15,11 @@ jobs:
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
-  test:
-    needs: dockerise
-    uses: PogodaSoftware/Automation_Testing_with_Playwright/.github/workflows/docker-compose-playwright.yml@main
-    secrets:
-      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
-      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-
+  
 
   teardown:
       needs:
         - dockerise
-        - test
       runs-on: ubuntu-latest
       steps:
         - name: Stop Docker Compose
