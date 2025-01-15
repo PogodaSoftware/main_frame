@@ -15,13 +15,3 @@ jobs:
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
-  
-
-  teardown:
-      needs:
-        - dockerise
-      runs-on: ubuntu-latest
-      steps:
-        - name: Stop Docker Compose
-          if: always()
-          run: docker compose down
