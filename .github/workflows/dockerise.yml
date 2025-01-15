@@ -9,7 +9,7 @@ on:
         type: string
       test-script:
         description: "Path to the Playwright test script"
-        default: ".github/workflows/docker-compose-playwright.yml"
+        default: "Playwright/run_tests.py"
         type: string
     secrets:
       BACKEND_PORT:
@@ -42,7 +42,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: PogodaSoftware/Automation_Testing_with_Playwright
-          path: Automation_Testing_with_Playwright
+          path: Automation
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -62,7 +62,7 @@ jobs:
 
       - name: Run Playwright tests
         run: |
-          python Automation_Testing_with_Playwright/${{ inputs.test-script }}
+          python Automation/${{ inputs.test-script }}
 
       - name: Stop Docker Compose
         if: always()
