@@ -33,10 +33,21 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Create .env file
+        run: |
+          echo "BACKEND_PORT=${{ secrets.BACKEND_PORT }}" >> .env
+          echo "FRONTEND_PORT=${{ secrets.FRONTEND_PORT }}" >> .env
+
       - name: Start Docker Compose
         run: |
-          docker compose up -d
+          docker-compose up -d
           sleep 5
+
+      - name: Checkout Playwright tests repository
+        uses: actions/checkout@v4
+        with:
+          repository: PogodaSoftware/Automation_Testing_with_Playwright
+          path: playwright-tests
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -55,9 +66,9 @@ jobs:
         run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
       - name: Run Playwright tests
-        run:  PogodaSoftware/Automation_Testing_with_Playwright/.github/workflows/docker-compose-playwright.yml@main
-      
+        run: |
+          python playwright-tests/${{ inputs.test-script }}
 
       - name: Stop Docker Compose
         if: always()
-        run: docker compose down
+        run: docker-compose down
