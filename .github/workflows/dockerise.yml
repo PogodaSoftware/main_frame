@@ -38,11 +38,7 @@ jobs:
           docker compose up -d
           sleep 5
 
-      - name: Checkout Playwright tests repository
-        uses: actions/checkout@v4
-        with:
-          repository: PogodaSoftware/Automation_Testing_with_Playwright
-          path: Automation_Testing
+      
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -56,6 +52,12 @@ jobs:
 
       - name: Ensure browsers are installed
         run: python -m playwright install --with-deps
+
+      - name: Checkout Playwright tests repository
+        uses: actions/checkout@v4
+        with:
+          repository: PogodaSoftware/Automation_Testing_with_Playwright
+          path: Automation_Testing
 
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD/Automation_Testing:$PYTHONPATH" >> $GITHUB_ENV
