@@ -38,22 +38,22 @@ jobs:
           docker compose up -d
           sleep 5
 
-      - name: Trigger External Playwright Tests
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const inputs = {
-              'python-version': '3.11',
-              'test-script': 'Playwright/run_tests.py',
-            };
-            await github.actions.createWorkflowDispatch({
-              owner: 'PogodaSoftware',
-              repo: 'Automation_Testing_with_Playwright',
-              workflow_id: 'python-test-with-playwright.yml',
-              ref: 'main',
-              inputs,
-            });
-
+          - name: Trigger External Playwright Tests
+          uses: actions/github-script@v6
+          with:
+            script: |
+              const inputs = {
+                'python-version': '3.11',
+                'test-script': 'Playwright/run_tests.py',
+              };
+              await github.rest.actions.createWorkflowDispatch({
+                owner: 'PogodaSoftware',
+                repo: 'Automation_Testing_with_Playwright',
+                workflow_id: 'python-test-with-playwright.yml',
+                ref: 'main',
+                inputs,
+              });
+            
       - name: Stop Docker Compose
         if: always()
         run: docker compose down
