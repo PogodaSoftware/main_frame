@@ -22,7 +22,7 @@ jobs:
 
       - name: Start Docker Compose
         run: |
-          docker compose up -d
+          docker compose watch
           sleep 5
 
       - name: Set up Python
