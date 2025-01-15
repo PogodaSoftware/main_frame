@@ -43,13 +43,10 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
-      - name: Install dependencies
+      - name: Install dependencies for backend
         run: |
           python -m pip install --upgrade pip
           pip install -r "Backend/controller/requirements.txt"
-
-      - name: Ensure browsers are installed
-        run: python -m playwright install --with-deps
 
       - name: Checkout Playwright tests repository
         uses: actions/checkout@v4
@@ -57,8 +54,17 @@ jobs:
           repository: PogodaSoftware/Automation_Testing_with_Playwright
           path: Automation_Testing
 
+      - name: Install dependencies for Playwright tests
+        run: |
+          pip install -r Automation_Testing/requirements.txt
+
+      - name: Ensure browsers are installed
+        run: python -m playwright install --with-deps
+
       - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$PWD/Automation_Testing:$PYTHONPATH" >> $GITHUB_ENV
+        run: |
+          echo "PYTHONPATH=$PWD/Automation_Testing:$PYTHONPATH" >> $GITHUB_ENV
+          source $GITHUB_ENV
 
       - name: Run Playwright tests
         run: |
