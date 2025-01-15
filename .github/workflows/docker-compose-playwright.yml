@@ -24,7 +24,9 @@ jobs:
 
 
   teardown:
-      needs: dockerise
+      needs:
+        - dockerise
+        - test
       runs-on: ubuntu-latest
       steps:
         - name: Stop Docker Compose
