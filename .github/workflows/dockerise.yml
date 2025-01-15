@@ -49,22 +49,6 @@ jobs:
           repository: PogodaSoftware/Automation_Testing_with_Playwright
           path: playwright-tests
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ inputs.python-version }}
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r "Backend/controller/requirements.txt"
-
-      - name: Ensure browsers are installed
-        run: python -m playwright install --with-deps
-
-      - name: Set PYTHONPATH
-        run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
-
       - name: Run Playwright tests
         run: |
           python playwright-tests/${{ inputs.test-script }}
