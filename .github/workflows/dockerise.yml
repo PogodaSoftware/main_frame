@@ -62,8 +62,6 @@ jobs:
       - name: Ensure browsers are installed
         run: python -m playwright install --with-deps
 
-      
-
       - name: Run Playwright tests
         run: |
           python Automation_Testing_with_Playwright/${{ inputs.test-script }}
