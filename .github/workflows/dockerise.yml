@@ -54,10 +54,6 @@ jobs:
           repository: PogodaSoftware/Automation_Testing_with_Playwright
           path: Automation_Testing
 
-      - name: Install dependencies for Playwright tests
-        run: |
-          pip install -r Automation_Testing/requirements.txt
-
       - name: Ensure browsers are installed
         run: python -m playwright install --with-deps
 
