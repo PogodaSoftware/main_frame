@@ -47,7 +47,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: PogodaSoftware/Automation_Testing_with_Playwright
-          path: playwright-tests
+          path: Automation_Testing_with_Playwright
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -67,7 +67,7 @@ jobs:
 
       - name: Run Playwright tests
         run: |
-          python playwright-tests/${{ inputs.test-script }}
+          python Automation_Testing_with_Playwright/${{ inputs.test-script }}
 
       - name: Stop Docker Compose
         if: always()
