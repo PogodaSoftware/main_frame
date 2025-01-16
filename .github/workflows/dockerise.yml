@@ -42,8 +42,6 @@ jobs:
         env:
           PATTOKEN: ${{ secrets.PAT_TEST }}
         run: |
-            echo "Triggering the external Playwright tests" \
-            echo "PAT: $PATTOKEN" \
             curl -L \
              -X POST \
               -H "Accept: application/vnd.github+json" \
