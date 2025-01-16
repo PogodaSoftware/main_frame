@@ -47,7 +47,7 @@ jobs:
         env:
           PATTOKEN: ${{ secrets.PAT }}
         run: |
-            echo -L \
+            curl -L \
              -X POST \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${PATTOKEN}" \
