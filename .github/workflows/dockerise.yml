@@ -38,8 +38,8 @@ jobs:
           docker compose up -d
           sleep 5
 
-          - name: Trigger External Playwright Tests
-          run: |
+      - name: Trigger External Playwright Tests
+        run: |
             curl -L \
               -X POST \
               -H "Accept: application/vnd.github+json" \
