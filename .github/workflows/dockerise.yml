@@ -43,7 +43,6 @@ jobs:
         env:
             PAT: ${{ secrets.REPOSITORY_PAT }}
         
-
       - name: Trigger External Playwright Tests
         run: |
             curl -L \
