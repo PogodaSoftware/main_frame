@@ -47,7 +47,7 @@ jobs:
             https://api.github.com/repos/PogodaSoftware/Automation_Testing_with_Playwright/actions/workflows/python-test-with-playwright.yml/dispatches \
             -d '{"ref":"main","inputs":{"BACKEND_PORT":"${{ secrets.BACKEND_PORT }}","FRONTEND_PORT":"${{ secrets.FRONTEND_PORT }}","python-version":"${{ inputs.python-version }}","test-script":"${{ inputs.test-script }}"}}'
 
- 
+  
       - name: Stop Docker Compose
         if: always()
         run: docker compose down
