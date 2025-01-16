@@ -1,5 +1,5 @@
+python>=3.8
 Django==4.2.18
-python>=3.10
 gunicorn==21.2.0
 pytest-django==4.9.0
 behave==1.2.6
