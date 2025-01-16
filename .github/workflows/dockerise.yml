@@ -23,6 +23,7 @@ jobs:
     env: 
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
+      PATTOKEN: ${{ secrets.PAT_TEST }}
     timeout-minutes: 30
     services:
       docker:
@@ -39,8 +40,6 @@ jobs:
           sleep 5
         
       - name: Trigger External Playwright Tests
-        env:
-          PATTOKEN: ${{ secrets.PAT_TEST }}
         run: |
             curl -L \
              -X POST \
