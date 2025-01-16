@@ -37,16 +37,13 @@ jobs:
         run: |
           docker compose up -d
           sleep 5
-
-      - name: Debug Secrets
-        run: echo "PAT is set"
-        env:
-            PAT: ${{ secrets.REPOSITORY_PAT }}
         
       - name: Trigger External Playwright Tests
         env:
           PATTOKEN: ${{ secrets.PAT }}
         run: |
+            echo "Triggering the external Playwright tests" \
+            echo "${PATTOKEN}"
             curl -L \
              -X POST \
               -H "Accept: application/vnd.github+json" \
