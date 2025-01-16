@@ -40,7 +40,7 @@ jobs:
         
       - name: Trigger External Playwright Tests
         env:
-          PATTOKEN: ${{ secrets.PAT }}
+          PATTOKEN: ${{ secrets.PAT_TEST }}
         run: |
             echo "Triggering the external Playwright tests" \
             echo "PAT: $PATTOKEN" \
