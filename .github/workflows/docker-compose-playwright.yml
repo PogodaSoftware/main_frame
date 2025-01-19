@@ -9,21 +9,12 @@ on:
         type: string
       test-script:
         description: "Path to the Playwright test script"
-        default: "Playwright/run_tests.py"
+        default: "Playwright-tests/test_homePage.py"
         type: string
-    secrets:
-      BACKEND_PORT:
-        required: true
-      FRONTEND_PORT:
-        required: true
-env: 
-      BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
-      FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
 
 jobs:
   test:
     runs-on: ubuntu-latest
-    
     timeout-minutes: 15
     services:
       docker:
@@ -49,20 +40,25 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r "Backend/controller/requirements.txt"
 
-      - name: Ensure browsers are installed
-        run: python -m playwright install --with-deps
-
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
-      - name: Run your tests
-        run: pytest --tracing=retain-on-failure
-      - uses: actions/upload-artifact@v4
-        if: ${{ !cancelled() }}
+      - name: Run Playwright Tests
+        env:
+          PYTHONPATH: ${{ env.PYTHONPATH }}
+          DJANGO_SETTINGS_MODULE: Backend.controller.main_frame_project.settings
+          DJANGO_ALLOW_ASYNC_UNSAFE: 1
+        run: |
+          python ${{ inputs.test-script }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: playwright-traces
-          path: test-results/
+          name: test-results
+          path: Playwright-tests/test-results
+          retention-days: 1
 
       - name: Stop Docker Compose
-        if: always() 
+        if: always()
         run: docker compose down
