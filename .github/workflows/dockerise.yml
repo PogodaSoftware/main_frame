@@ -51,7 +51,7 @@ jobs:
       - name: Trigger External Playwright Tests
         shell: bash
         env:
-          orgpat: ${{ secrets.ORGPAT }}
+          orgpat: ${{ secrets.NEWPAT }}
         run: |
           curl -L \
             -X POST \
