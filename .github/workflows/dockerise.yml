@@ -48,6 +48,7 @@ jobs:
         env:
           orgpat: ${{ secrets.ORGPAT }}
         run: |
+            echo PAT is $PATTOKEN
             curl -L \
              -X POST \
               -H "Accept: application/vnd.github+json" \
