@@ -45,7 +45,6 @@ jobs:
         env:
           BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
           FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-          PATTOKEN: ${{ secrets.PAT_TEST }}
           ORGPAT: ${{ secrets.ORGPAT }}
       
       - name: Debug Secrets
