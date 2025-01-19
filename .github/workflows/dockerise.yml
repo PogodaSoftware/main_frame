@@ -44,7 +44,7 @@ jobs:
       
       - name: Debug Secrets
         shell: bash
-        run: echo "PAT is set to $PATTOKEN"
+        run: echo "PAT is set"
         env:
             orgpat: ${{ secrets.ORGPAT }}
         
