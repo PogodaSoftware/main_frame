@@ -62,5 +62,5 @@ jobs:
           python ${{ inputs.test-script }}
 
       - name: Stop Docker Compose
-        if: always()
+        if: always() 
         run: docker compose down
