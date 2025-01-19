@@ -41,8 +41,8 @@ jobs:
         
       - name: Trigger External Playwright Tests
         run: |
-            echo PAT is $PATTOKEN == ${{ secrets.PAT_TEST }}?
-            curl --request -L \
+            echo PAT is ${PATTOKEN} == ${{ secrets.PAT_TEST }}?
+            curl -L \
              -X POST \
               -H "Accept: application/vnd.github+json" \
               -H "Authorization: Bearer ${PATTOKEN}" \
