@@ -20,6 +20,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    
     env: 
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
@@ -31,20 +32,24 @@ jobs:
         options: --privileged
 
     steps:
+      
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Start Docker Compose
+        shell: bash
         run: |
           docker compose up -d
           sleep 5
       
       - name: Debug Secrets
+        shell: bash
         run: echo "PAT is set"
         env:
             orgpat: ${{ secrets.ORGPAT }}
         
       - name: Trigger External Playwright Tests
+        shell: bash
         env:
           orgpat: ${{ secrets.ORGPAT }}
         run: |
@@ -61,5 +66,6 @@ jobs:
             
         
       - name: Stop Docker Compose
+        shell: bash
         if: always()
         run: docker compose down
