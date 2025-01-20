@@ -45,25 +45,20 @@ jobs:
         shell: bash
         run: echo "PAT is set to $orgpat"
         env:
-          orgpat: ${{ secrets.ORGPAT }}
+          orgpat: ${{ secrets.GITHUBPAT }}
         
       - name: Trigger External Playwright Tests
         uses: actions/github-script@v6
         with:
-          script: |
-            const response = await github.actions.createWorkflowDispatch({
-              owner: PogodaSoftware,
-              repo: "Automation",
-              workflow_id: "pythonplaywright.yml",
-              ref: main,
-              inputs: {
-                pythonVersion: inputs['pythonVersion'],
-                testScript: inputs['testScript'],
-                BACKEND_PORT: secrets.BACKEND_PORT,
-                FRONTEND_PORT: secrets.FRONTEND_PORT
-              }
-            });
-            console.log(response);
+            script: |
+              const response = await github.rest.actions.createWorkflowDispatch({
+                owner: 'PogodaSoftware',
+                repo: 'Automation',
+                workflow_id: 'pythonplaywright.yml',
+                ref: 'main'
+              });
+              console.log('Workflow triggered successfully:', response);
+        
 
       - name: Stop Docker Compose
         shell: bash
