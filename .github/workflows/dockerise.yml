@@ -3,11 +3,11 @@ name: Dockerisation of the Application
 on:
   workflow_call:
     inputs:
-      python-version:
+      pythonVersion:
         description: "Python version to use"
         default: "3.11"
         type: string
-      test-script:
+      testScript:
         description: "Path to the Playwright test script in the external repository"
         default: "Playwright/run_tests.py"
         type: string
@@ -24,7 +24,7 @@ jobs:
     env: 
       BACKEND_PORT: ${{ secrets.BACKEND_PORT }}
       FRONTEND_PORT: ${{ secrets.FRONTEND_PORT }}
-      PATTOKEN: ${{ secrets.PAT_TEST }}
+      PATTOKEN: ${{ secrets.ORGPAT }}
     timeout-minutes: 30
     services:
       docker:
@@ -57,8 +57,8 @@ jobs:
               workflow_id: "pythonplaywright.yml",
               ref: main,
               inputs: {
-                python-version: inputs['python-version'],
-                test-script: inputs['test-script'],
+                pythonVersion: inputs['pythonVersion'],
+                testScript: inputs['testScript'],
                 BACKEND_PORT: secrets.BACKEND_PORT,
                 FRONTEND_PORT: secrets.FRONTEND_PORT
               }
