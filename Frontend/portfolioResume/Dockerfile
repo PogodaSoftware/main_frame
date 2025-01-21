@@ -5,14 +5,14 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 
-RUN npm install && \
-    npm cache clean --force && \
-    rm -rf /root/.npm 
-    # rm -rf node_modules
+RUN npm install 
+
 
 COPY . .
 
-RUN npm run build --prod
+RUN npm cache clean --force && \
+    rm -rf /root/.npm &&  \
+    npm run build --prod 
 
 FROM nginx:stable-alpine3.20-perl
 
