@@ -8,11 +8,12 @@ COPY package.json package-lock.json ./
 RUN npm install && \
     npm cache clean --force
     
-    
-    
-    COPY . .
-    
-    npm run build 
+
+
+COPY . .
+
+RUN npm run build && \
+    npm cache clean --force
 
 
 FROM nginx:stable-alpine3.20-perl
