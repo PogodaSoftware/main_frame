@@ -14,7 +14,9 @@ RUN npm install && \
 COPY . .
 
 RUN npm run build && \
-    npm cache clean --force
+    npm cache clean --force && \
+    rm -rf /root/.npm
+    
 
 
 
