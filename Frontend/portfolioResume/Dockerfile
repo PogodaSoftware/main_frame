@@ -17,11 +17,8 @@ COPY . .
 
 RUN npm run build && \
     npm cache clean --force && \
-    rm -rf /root/.npm && \
-
-    
-
-
+    rm -rf /root/.npm 
+  
 
 FROM nginx:stable-alpine3.20-perl
 
