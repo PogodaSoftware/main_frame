@@ -2,16 +2,15 @@ FROM node:22-alpine3.21 AS build
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
 RUN npm install --production && \
-    npm run build --prod && \
+    npm run build && \
     npm cache clean --force && \
     rm -rf /root/.npm && \
     rm -rf node_modules
 
 COPY . .
-
 
 FROM nginx:stable-alpine3.20-perl
 
