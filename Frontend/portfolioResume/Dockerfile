@@ -10,7 +10,7 @@ COPY . .
 
 RUN npm run build --prod
 
-FROM nginx:alpine
+FROM nginx:stable-alpine3.20-perl
 
 COPY --from=build /app/dist/portfolio-resume-frontend /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
