@@ -4,9 +4,9 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm install --production && \
+RUN npm install && \
     npm cache clean --force && \
-    rm -rf /root/.npm && \
+    # rm -rf /root/.npm && \
     rm -rf node_modules
 
 
