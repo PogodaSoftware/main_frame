@@ -10,9 +10,11 @@ RUN npm install
 
 COPY . .
 
-RUN npm cache clean --force && \
-    rm -rf /root/.npm &&  \
-    npm run build --prod 
+RUN npm run build && \
+    npm cache clean --force && \
+    rm -rf /root/.npm &&  \    
+    rm -rf node_modules
+
 
 FROM nginx:stable-alpine3.20-perl
 
