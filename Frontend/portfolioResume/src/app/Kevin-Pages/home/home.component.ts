@@ -4,12 +4,29 @@ import { Component } from '@angular/core';
   selector: 'app-home',
   imports: [],
   template: `
-    <p>
-      Kevin home works! test testing!!!!!!!!!!
-    </p>
-  `,
-  styleUrl: './home.component.scss'
-})
-export class KevinHomeComponent {
+    <head>
+      8
+      <title>Kevin's portfolio project</title>
+    </head>
+    <body>
+      <nav id="desktop-navigation">
+        <div class="logo">John Doe</div>
+        <div>
+          <ul class="nav-links">
+            <li><a href="#about">About</a></li>
+            <li><a href="#experience">Experience</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#contacts">Contacts</a></li>
+          </ul>
+        </div>
+      </nav>
 
-}
+      <script src="script.js"></script>
+    </body>
+  `,
+  styleUrls: [
+    './home.component.scss',
+    '../media-queries/media-queries.component.scss',
+  ],
+})
+export class KevinHomeComponent {}
