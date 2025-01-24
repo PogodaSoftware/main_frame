@@ -10,7 +10,7 @@ import { Component } from '@angular/core';
     </head>
     <body>
       <nav id="desktop-navigation">
-        <div class="logo">John Doe</div>
+        <div class="logo">Kevin Ortiz!</div>
         <div>
           <ul class="nav-links">
             <li><a href="#about">About</a></li>
