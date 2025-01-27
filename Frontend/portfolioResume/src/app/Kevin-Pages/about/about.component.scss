@@ -1,0 +1,24 @@
+.section-container {
+  display: flex;
+}
+
+.section-text-p1 {
+  text-align: center;
+}
+
+.title {
+  font-size: 3rem;
+  text-align: center;
+}
+
+.section-picture-container {
+  display: flex;
+  height: 400px;
+  width: 400px;
+  margin: auto 0;
+  clip-path: circle();
+}
+.icon {
+  cursor: pointer;
+  height: 2rem;
+}

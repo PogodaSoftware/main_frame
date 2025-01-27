@@ -12,7 +12,7 @@ import { Component } from '@angular/core';
         <div class="logo">Kevin Ortiz!</div>
         <div>
           <ul class="nav-links">
-            <li><a href="#about">About</a></li>
+            <li><a href="kevin/about">About</a></li>
             <li><a href="#experience">Experience</a></li>
             <li><a href="#projects">Projects</a></li>
             <li><a href="#contacts">Contacts</a></li>
@@ -29,7 +29,7 @@ import { Component } from '@angular/core';
             <span></span>
           </div>
           <div class="menu-links">
-            <li><a href="#about" (click)="toggleMenu()">About</a></li>
+            <li><a href="kevin/about" (click)="toggleMenu()">About</a></li>
             <li><a href="#experience" (click)="toggleMenu()">Experience</a></li>
             <li><a href="#projects" (click)="toggleMenu()">Projects</a></li>
             <li><a href="#contacts" (click)="toggleMenu()">Contacts</a></li>
@@ -76,6 +76,31 @@ import { Component } from '@angular/core';
               class="icon"
               onclick="location.href='https://github.com/kevinortiz43'"
             />
+          </div>
+        </div>
+      </section>
+
+      <section id="about">
+        <p class="section-text-p1">Get to know more</p>
+        <h1 class="title">About Me</h1>
+        <div class="section-container">
+          <div class="section-picture-container">
+          <img
+            src="./assets/professional-picture.jpg"
+              alt="profile picture"
+              class="about-picture"
+            />
+          </div>
+        </div>
+        <div class="about-details-container">
+          <div class="about-containers">
+            <div class="details-container">
+              <img
+                src="./assets/experience.png"
+                alt="Experience icon"
+                class="icon"
+              />
+            </div>
           </div>
         </div>
       </section>
