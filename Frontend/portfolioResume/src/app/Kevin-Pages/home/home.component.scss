@@ -14,7 +14,7 @@ html {
 }
 
 p {
-  color: rgb(85, 85, 85);
+  color: #555555;
 }
 
 a,
@@ -39,23 +39,39 @@ nav {
 }
 
 a {
-  color: black;
+  color: #000000;
   text-decoration: none;
-  text-decoration-color: white;
+  text-decoration-color: #ffffff;
 }
 
 a:hover {
-  color: grey;
+  color: #6318af;
   text-decoration: underline;
   text-underline-offset: 1rem;
-  text-decoration-color: rgb(181, 181, 181);
+  text-decoration-color: #4a4a4a;
 }
 .logo {
   font-size: 2rem;
 }
 
-.logo-hover{
-    cursor: default;
+.logo-hover {
+  cursor: default;
 }
 
+#hamburger-navigation {
+  display: none;
+}
 
+.hamburger-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 24px;
+  width: 30px;
+  cursor: pointer;
+}
