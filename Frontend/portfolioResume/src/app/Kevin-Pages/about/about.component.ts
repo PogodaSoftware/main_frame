@@ -28,26 +28,46 @@ import { Component } from '@angular/core';
                 />
                 <h3>Experience</h3>
                 <p>
-                  3+ years <br />
+                  3 + years<br />
                   Software Developer
                 </p>
+                <p>
+                  2 + years<br />
+                  Quality Assurance Engineer
+                </p>
 
-                <div>
-                  <img
-                    src="./assets/education.png"
-                    alt="Education icon"
-                    class="icon"
-                  />
-                  <h3>Education</h3>
-                  <p>
-                    Bachelors of Science in Marine Environmental Science<br />
-                  </p>
-                  <p>Formal training in Software engineering at Perscholas</p>
-                </div>
+                <p>
+                  3 + months<br />
+                  DevOps Engineer
+                </p>
               </div>
+
+              <div class="details-container">
+                <img
+                  src="./assets/education.png"
+                  alt="Education icon"
+                  class="icon"
+                />
+                <h3>Education</h3>
+                <p>B.Sc. in Marine Environmental Science<br /></p>
+                <p>Software Engineering training at Perscholas & FDM Group</p>
+              </div>
+            </div>
+            <div class="text-container">
+              <p>
+                Experience <br />
+                Experience <br />
+                Experience <br />
+              </p>
             </div>
           </div>
         </div>
+        <img
+          src="./assets/arrow.png"
+          alt="Arrow icon"
+          class="icon arrow"
+          onclick="location.href='.#experience'"
+        />
       </section>
     </body>
   `,

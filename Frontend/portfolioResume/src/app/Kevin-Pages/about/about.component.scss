@@ -3,13 +3,36 @@
 }
 
 .about-containers {
-  display: flex;
+  // display: flex;
+  // justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+}
+
+.about-details-container {
   justify-content: center;
+  flex-direction: column;
+}
+
+.about-containers,
+.about-details-container {
+  display: flex;
+}
+
+.about-picture {
+  border-radius: 2rem;
+}
+
+.arrow {
+  position: absolute;
+  right: -5rem;
+  bottom: 2.5rem;
 }
 
 .details-container {
   padding: 10px;
-  border: 2px dotted rgb(96 139 168);
+  // border: 2px dotted rgb(96 139 168);
 }
 
 .about-text-p1 {
@@ -31,4 +54,8 @@
 .icon {
   cursor: pointer;
   height: 2rem;
+}
+
+#about {
+  position: relative;
 }
