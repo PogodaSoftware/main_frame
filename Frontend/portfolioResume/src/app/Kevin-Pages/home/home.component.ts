@@ -48,7 +48,7 @@ import { Component } from '@angular/core';
         <div class="section-text">
           <p class="section-text-p1">Hello I'm</p>
           <h1 class="title">Kevin Ortiz</h1>
-          <p class="section-text-p2">Quality Assurance and DevOps Engineer</p>
+          <p class="section-text-p2">Quality Assurance & DevOps Engineer</p>
           <div class="btn-container">
             <button class="btn btn-color-2" (click)="openResume()">
               Download CV
@@ -79,34 +79,13 @@ import { Component } from '@angular/core';
           </div>
         </div>
       </section>
-
-      <section id="about">
-        <p class="section-text-p1">Get to know more</p>
-        <h1 class="title">About Me</h1>
-        <div class="section-container">
-          <div class="section-picture-container">
-          <img
-            src="./assets/professional-picture.jpg"
-              alt="profile picture"
-              class="about-picture"
-            />
-          </div>
-        </div>
-        <div class="about-details-container">
-          <div class="about-containers">
-            <div class="details-container">
-              <img
-                src="./assets/experience.png"
-                alt="Experience icon"
-                class="icon"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
     </body>
   `,
-  styleUrls: ['./home.component.scss', './media-queries.component.scss'],
+  styleUrls: [
+    './home.component.scss',
+    '../global/global-styles.component.scss',
+    '../global/media-queries.component.scss'
+  ],
 })
 export class KevinHomeComponent {
   openResume(): void {

@@ -4,40 +4,57 @@ import { Component } from '@angular/core';
   selector: 'app-about',
   imports: [],
   template: `
-     <head>
+    <head>
       <title>Kevin's portfolio project</title>
     </head>
     <body>
-    
-    
       <section id="about">
-        <p class="section-text-p1">Get to know more</p>
         <h1 class="title">About Me</h1>
-        <div class="section-container">
-          <div class="section-picture-container">
-          <img
-            src="./assets/professional-picture.jpg"
+        <div class="about-section-container">
+          <div class="about-section-picture-container">
+            <img
+              src="./assets/professional-picture.jpg"
               alt="profile picture"
               class="about-picture"
             />
           </div>
-        </div>
-        <div class="about-details-container">
-          <div class="about-containers">
-            <div class="details-container">
-              <img
-                src="./assets/experience.png"
-                alt="Experience icon"
-                class="icon"
-              />
+          <div class="about-details-container">
+            <div class="about-containers">
+              <div class="details-container">
+                <img
+                  src="./assets/experience.png"
+                  alt="Experience icon"
+                  class="icon"
+                />
+                <h3>Experience</h3>
+                <p>
+                  3+ years <br />
+                  Software Developer
+                </p>
+
+                <div>
+                  <img
+                    src="./assets/education.png"
+                    alt="Education icon"
+                    class="icon"
+                  />
+                  <h3>Education</h3>
+                  <p>
+                    Bachelors of Science in Marine Environmental Science<br />
+                  </p>
+                  <p>Formal training in Software engineering at Perscholas</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </section>
     </body>
   `,
-  styleUrl: './about.component.scss'
+  styleUrls: [
+    './about.component.scss',
+    '../global/global-styles.component.scss',
+    '../global/media-queries.component.scss',
+  ],
 })
-export class KevinAboutComponent {
-
-}
+export class KevinAboutComponent {}

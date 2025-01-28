@@ -1,8 +1,18 @@
-.section-container {
+.about-section-container {
   display: flex;
 }
 
-.section-text-p1 {
+.about-containers {
+  display: flex;
+  justify-content: center;
+}
+
+.details-container {
+  padding: 10px;
+  border: 2px dotted rgb(96 139 168);
+}
+
+.about-text-p1 {
   text-align: center;
 }
 
@@ -11,7 +21,7 @@
   text-align: center;
 }
 
-.section-picture-container {
+.about-section-picture-container {
   display: flex;
   height: 400px;
   width: 400px;
