@@ -8,8 +8,8 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
       <title>Kevin's portfolio project</title>
     </head>
     <body>
+      <app-navigation></app-navigation>
       <section id="about">
-        <app-navigation></app-navigation>
         <div class="about-section-container">
           <div class="about-section-picture-container">
             <img
@@ -67,7 +67,7 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
           src="./assets/arrow.png"
           alt="Arrow icon"
           class="icon arrow"
-          onclick="location.href='.#experience'"
+          onclick="location.href='kevin/experience'"
         />
       </section>
     </body>

@@ -1,0 +1,31 @@
+.experience-text-p1 {
+  text-align: center;
+}
+
+.details-container {
+  padding: 1.5rem;
+  flex: 1;
+  background: white;
+  border-radius: 2rem;
+  border: rgb(53, 53, 53) 0.1rem solid;
+  border-color: rgb(163, 163, 163);
+  text-align: center;
+}
+
+.experience-containers {
+  // display: flex;
+  // justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+}
+
+  .experience-details-container {
+    justify-content: center;
+    flex-direction: column;
+  }
+  
+  .experience-containers,
+  .experience-details-container {
+    display: flex;
+  }

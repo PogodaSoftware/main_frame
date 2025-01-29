@@ -4,39 +4,42 @@ import { Component } from '@angular/core';
   selector: 'app-navigation',
   imports: [],
   template: `
-    <nav id="desktop-navigation">
-      <div class="logo">Kevin Ortiz!</div>
-      <div>
-        <ul class="nav-links">
-          <li><a href="kevin/about">About</a></li>
-          <li><a href="#experience">Experience</a></li>
-          <li><a href="#projects">Projects</a></li>
-          <li><a href="#contacts">Contacts</a></li>
-        </ul>
-      </div>
-    </nav>
+    <body>
+      <nav id="desktop-navigation">
+        <div class="logo"><a href="kevin">Kevin Ortiz!</a></div>
+        <div>
+          <ul class="nav-links">
+            <li><a href="kevin/about">About</a></li>
+            <li><a href="kevin/experience">Experience</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#contacts">Contacts</a></li>
+          </ul>
+        </div>
+      </nav>
 
-    <nav id="hamburger-navigation">
-      <div class="logo">Kevin Ortiz!</div>
-      <div class="hamburger-menu">
-        <div class="hamburger-icon" (click)="toggleMenu()">
-          <span></span>
-          <span></span>
-          <span></span>
+      <nav id="hamburger-navigation">
+        <div class="logo">Kevin Ortiz!</div>
+        <div class="hamburger-menu">
+          <div class="hamburger-icon" (click)="toggleMenu()">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <div class="menu-links">
+            <li><a href="kevin/about" (click)="toggleMenu()">About</a></li>
+            <li>
+              <a href="kevin/experience" (click)="toggleMenu()">Experience</a>
+            </li>
+            <li><a href="#projects" (click)="toggleMenu()">Projects</a></li>
+            <li><a href="#contacts" (click)="toggleMenu()">Contacts</a></li>
+          </div>
         </div>
-        <div class="menu-links">
-          <li><a href="kevin/about" (click)="toggleMenu()">About</a></li>
-          <li><a href="#experience" (click)="toggleMenu()">Experience</a></li>
-          <li><a href="#projects" (click)="toggleMenu()">Projects</a></li>
-          <li><a href="#contacts" (click)="toggleMenu()">Contacts</a></li>
-        </div>
-      </div>
-    </nav>
+      </nav>
+    </body>
   `,
   styleUrls: [
     './navigation.component.scss',
     '../global/global-styles.component.scss',
-
   ],
 })
 export class KevinNavigationComponent {
