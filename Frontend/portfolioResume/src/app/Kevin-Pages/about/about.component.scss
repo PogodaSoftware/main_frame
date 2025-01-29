@@ -1,3 +1,7 @@
+#about {
+  position: relative;
+}
+
 .about-section-container {
   display: flex;
 }
@@ -31,7 +35,14 @@
 }
 
 .details-container {
-  padding: 10px;
+  padding: 0.5rem;
+  flex: 1;
+  background: white;
+  border-radius: 2rem;
+  border: rgb(53, 53, 53) 0.1rem solid;
+  border-color: rgb(163, 163, 163);
+  text-align: center;
+
   // border: 2px dotted rgb(96 139 168);
 }
 
@@ -51,11 +62,16 @@
   margin: auto 0;
   clip-path: circle();
 }
-.icon {
-  cursor: pointer;
-  height: 2rem;
+
+
+.about-section-container {
+  gap: 4rem;
+  height: 80%;
 }
 
-#about {
-  position: relative;
+.about-containers {
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
 }

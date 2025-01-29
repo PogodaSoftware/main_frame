@@ -1,42 +1,14 @@
 import { Component } from '@angular/core';
-
+import { KevinNavigationComponent } from '../navigation/navigation.component';
 @Component({
   selector: 'app-home',
-  imports: [],
+  imports: [KevinNavigationComponent],
   template: `
     <head>
       <title>Kevin's portfolio project</title>
     </head>
     <body>
-      <nav id="desktop-navigation">
-        <div class="logo">Kevin Ortiz!</div>
-        <div>
-          <ul class="nav-links">
-            <li><a href="kevin/about">About</a></li>
-            <li><a href="#experience">Experience</a></li>
-            <li><a href="#projects">Projects</a></li>
-            <li><a href="#contacts">Contacts</a></li>
-          </ul>
-        </div>
-      </nav>
-
-      <nav id="hamburger-navigation">
-        <div class="logo">Kevin Ortiz!</div>
-        <div class="hamburger-menu">
-          <div class="hamburger-icon" (click)="toggleMenu()">
-            <span></span>
-            <span></span>
-            <span></span>
-          </div>
-          <div class="menu-links">
-            <li><a href="kevin/about" (click)="toggleMenu()">About</a></li>
-            <li><a href="#experience" (click)="toggleMenu()">Experience</a></li>
-            <li><a href="#projects" (click)="toggleMenu()">Projects</a></li>
-            <li><a href="#contacts" (click)="toggleMenu()">Contacts</a></li>
-          </div>
-        </div>
-      </nav>
-
+      <app-navigation></app-navigation>
       <section id="profile">
         <div class="section-picture-container">
           <img
@@ -84,20 +56,11 @@ import { Component } from '@angular/core';
   styleUrls: [
     './home.component.scss',
     '../global/global-styles.component.scss',
-    '../global/media-queries.component.scss'
+
   ],
 })
 export class KevinHomeComponent {
   openResume(): void {
     window.open('./assets/Ortiz_Kevin_Resume.pdf');
-  }
-
-  toggleMenu(): void {
-    const menu = document.querySelector('.menu-links');
-    const icon = document.querySelector('.hamburger-icon');
-    if (menu && icon) {
-      menu.classList.toggle('open');
-      icon.classList.toggle('open');
-    }
   }
 }

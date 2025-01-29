@@ -1,15 +1,15 @@
 import { Component } from '@angular/core';
-
+import { KevinNavigationComponent } from '../navigation/navigation.component';
 @Component({
-  selector: 'app-about',
-  imports: [],
+  selector: 'app-home',
+  imports: [KevinNavigationComponent],
   template: `
     <head>
       <title>Kevin's portfolio project</title>
     </head>
     <body>
       <section id="about">
-        <h1 class="title">About Me</h1>
+        <app-navigation></app-navigation>
         <div class="about-section-container">
           <div class="about-section-picture-container">
             <img
@@ -55,9 +55,10 @@ import { Component } from '@angular/core';
             </div>
             <div class="text-container">
               <p>
-                Experience <br />
-                Experience <br />
-                Experience <br />
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas
+                dignissimos ut blanditiis eius nisi deserunt repudiandae illo
+                numquam pariatur possimus, necessitatibus alias sint recusandae
+                facere a, voluptatem ad odio porro.
               </p>
             </div>
           </div>
@@ -74,7 +75,6 @@ import { Component } from '@angular/core';
   styleUrls: [
     './about.component.scss',
     '../global/global-styles.component.scss',
-    '../global/media-queries.component.scss',
   ],
 })
 export class KevinAboutComponent {}

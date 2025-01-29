@@ -1,3 +1,13 @@
+@media screen and (max-width: 1200px) {
+  #desktop-navigation {
+    display: none;
+  }
+
+  #hamburger-navigation {
+    display: flex;
+  }
+}
+
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap");
 
 * {
@@ -48,20 +58,13 @@ section {
   min-height: fit-content;
 }
 
-nav,
-.nav-links {
-  display: flex;
-}
-nav {
-  justify-content: space-around;
-  align-items: center;
-  height: 17vh;
+.icon {
+  cursor: pointer;
+  height: 2rem;
 }
 
-.nav-links {
-  gap: 2rem;
-  list-style: none;
-  font-size: 1.5rem;
+.title {
+  font-size: 3rem;
+  text-align: center;
 }
-
 //----------------------------Global Styles---------------------------------//
