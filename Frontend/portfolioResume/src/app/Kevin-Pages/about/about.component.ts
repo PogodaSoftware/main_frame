@@ -63,12 +63,12 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
             </div>
           </div>
         </div>
-        <img
+        <!-- <img
           src="./assets/arrow.png"
           alt="Arrow icon"
           class="icon arrow"
           onclick="location.href='kevin/experience'"
-        />
+        /> -->
       </section>
     </body>
   `,

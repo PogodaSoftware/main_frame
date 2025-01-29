@@ -6,7 +6,7 @@ import { Component } from '@angular/core';
   template: `
     <body>
       <nav id="desktop-navigation">
-        <div class="logo"><a href="kevin">Kevin Ortiz!</a></div>
+        <div class="logo"><a href="kevin">Home</a></div>
         <div>
           <ul class="nav-links">
             <li><a href="kevin/about">About</a></li>
@@ -18,7 +18,7 @@ import { Component } from '@angular/core';
       </nav>
 
       <nav id="hamburger-navigation">
-        <div class="logo">Kevin Ortiz!</div>
+        <div class="logo"><a href="kevin">Home</a></div>
         <div class="hamburger-menu">
           <div class="hamburger-icon" (click)="toggleMenu()">
             <span></span>
