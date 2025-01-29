@@ -11,7 +11,7 @@ import { Component } from '@angular/core';
           <ul class="nav-links">
             <li><a href="kevin/about">About</a></li>
             <li><a href="kevin/experience">Experience</a></li>
-            <li><a href="#projects">Projects</a></li>
+            <li><a href="kevin/projects">Projects</a></li>
             <li><a href="#contacts">Contacts</a></li>
           </ul>
         </div>
@@ -30,7 +30,7 @@ import { Component } from '@angular/core';
             <li>
               <a href="kevin/experience" (click)="toggleMenu()">Experience</a>
             </li>
-            <li><a href="#projects" (click)="toggleMenu()">Projects</a></li>
+            <li><a href="kevin/projects" (click)="toggleMenu()">Projects</a></li>
             <li><a href="#contacts" (click)="toggleMenu()">Contacts</a></li>
           </div>
         </div>

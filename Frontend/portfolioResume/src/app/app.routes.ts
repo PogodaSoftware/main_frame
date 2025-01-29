@@ -3,6 +3,7 @@ import { KevinHomeComponent } from './Kevin-Pages/home/home.component';
 import { KevinAboutComponent } from './Kevin-Pages/about/about.component';
 import { KevinExperienceComponent } from './Kevin-Pages/experience/experience.component';
 import { PogodaHomeComponent } from './Pogoda-Software-Pages/home/home.component';
+import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.component';
 
 export const routes: Routes = [
   {
@@ -20,6 +21,12 @@ export const routes: Routes = [
     path: 'kevin/experience',
     component: KevinExperienceComponent,
     title: 'Kevin Experience Page',
+  },
+
+  {
+    path: 'kevin/projects',
+    component: KevinProjectsComponent,
+    title: 'Kevin Projects Page',
   },
   {
     path: 'pogoda',

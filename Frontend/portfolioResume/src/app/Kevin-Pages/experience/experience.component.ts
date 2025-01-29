@@ -76,7 +76,7 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
             </div>
 
             <div class="details-container">
-              <h2 class="experience-sub-title">Frontend Developer</h2>
+              <h2 class="experience-sub-title">Backend Developer</h2>
               <div class="article-container">
                 <article>
                   <img
