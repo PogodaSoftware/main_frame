@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { KevinNavigationComponent } from '../navigation/navigation.component';
+import { KevinGlobalService } from '../global/global.service';
 
 @Component({
   selector: 'app-projects',
@@ -22,7 +23,11 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
             <div class="btn-container">
               <button
                 class="btn btn-color-2 project-btn"
-                onclick="location.href='https://github.com/PogodaSoftware/main_frame'"
+                (click)="
+                  kevinGlobalService.openPage(
+                    'https://github.com/PogodaSoftware/main_frame'
+                  )
+                "
               >
                 GitHub
               </button>
@@ -40,15 +45,19 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
             <div class="article-container">
               <img
                 src="./assets/project-2.png"
-                alt="Second project, place holder"
+                alt="First project, place holder"
                 class="project-image"
               />
             </div>
-            <h2 class="project-sub-title project-title">Project two</h2>
+            <h2 class="project-sub-title project-title">Project one</h2>
             <div class="btn-container">
               <button
                 class="btn btn-color-2 project-btn"
-                (click)="openPage()"
+                (click)="
+                  kevinGlobalService.openPage(
+                    'https://github.com/PogodaSoftware/main_frame'
+                  )
+                "
               >
                 GitHub
               </button>
@@ -71,11 +80,15 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
                 class="project-image"
               />
             </div>
-            <h2 class="project-sub-title project-title">Project three</h2>
+            <h2 class="project-sub-title project-title">Project one</h2>
             <div class="btn-container">
               <button
                 class="btn btn-color-2 project-btn"
-                onclick="location.href='https://github.com/PogodaSoftware/main_frame'"
+                (click)="
+                  kevinGlobalService.openPage(
+                    'https://github.com/PogodaSoftware/main_frame'
+                  )
+                "
               >
                 GitHub
               </button>
@@ -91,13 +104,8 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
       </section>
     </body>
   `,
-  styleUrls: [
-    './projects.component.scss',
-    '../global/global.component.scss',
-  ],
+  styleUrls: ['./projects.component.scss', '../global/global.component.scss'],
 })
 export class KevinProjectsComponent {
-  openPage(): void {
-    window.open('https://github.com/PogodaSoftware/main_frame');
-  }
+  constructor(public kevinGlobalService: KevinGlobalService) {}
 }
