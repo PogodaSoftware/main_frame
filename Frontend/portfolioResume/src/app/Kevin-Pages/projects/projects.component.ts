@@ -11,6 +11,7 @@ import { KevinGlobalService } from '../global/global.service';
       <section id="projects">
         <h1 class="title">Browse my projects</h1>
         <div class="project-details-container">
+          <div class="project-containers">
           <div class="details-container color-container">
             <div class="article-container">
               <img
@@ -99,6 +100,7 @@ import { KevinGlobalService } from '../global/global.service';
                 Live Demo
               </button>
             </div>
+          </div>
           </div>
         </div>
       </section>
