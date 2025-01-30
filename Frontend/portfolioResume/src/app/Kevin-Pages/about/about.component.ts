@@ -74,7 +74,7 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
   `,
   styleUrls: [
     './about.component.scss',
-    '../global/global-styles.component.scss',
+    '../global/global.component.scss',
   ],
 })
 export class KevinAboutComponent {}

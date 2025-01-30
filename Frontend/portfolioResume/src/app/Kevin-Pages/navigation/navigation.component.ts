@@ -30,7 +30,9 @@ import { Component } from '@angular/core';
             <li>
               <a href="kevin/experience" (click)="toggleMenu()">Experience</a>
             </li>
-            <li><a href="kevin/projects" (click)="toggleMenu()">Projects</a></li>
+            <li>
+              <a href="kevin/projects" (click)="toggleMenu()">Projects</a>
+            </li>
             <li><a href="#contacts" (click)="toggleMenu()">Contacts</a></li>
           </div>
         </div>
@@ -39,7 +41,7 @@ import { Component } from '@angular/core';
   `,
   styleUrls: [
     './navigation.component.scss',
-    '../global/global-styles.component.scss',
+    '../global/global.component.scss',
   ],
 })
 export class KevinNavigationComponent {

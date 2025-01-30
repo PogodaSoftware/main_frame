@@ -27,10 +27,6 @@
   margin-top: 2rem;
 }
 
-.experience-containers,
-.experience-details-containers {
-  display: flex;
-}
 
 .article-container {
   display: flex;
@@ -38,7 +34,7 @@
   flex-wrap: wrap;
   flex-direction: row;
   gap: 2.5rem;
-  // justify-content: space-around;
+  justify-content: space-around;
 }
 
 article {
@@ -48,9 +44,6 @@ article {
   gap: 0.5rem;
 }
 
-article .icon {
-  cursor: default;
-}
 .details-container {
   padding: 0.5rem;
   flex: 1;

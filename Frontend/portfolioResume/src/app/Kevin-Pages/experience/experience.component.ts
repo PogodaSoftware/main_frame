@@ -142,7 +142,7 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
   `,
   styleUrls: [
     './experience.component.scss',
-    '../global/global-styles.component.scss',
+    '../global/global.component.scss',
   ],
 })
 export class KevinExperienceComponent {}
