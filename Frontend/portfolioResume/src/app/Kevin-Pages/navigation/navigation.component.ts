@@ -12,7 +12,7 @@ import { Component } from '@angular/core';
             <li><a href="kevin/about">About</a></li>
             <li><a href="kevin/experience">Experience</a></li>
             <li><a href="kevin/projects">Projects</a></li>
-            <li><a href="#contacts">Contacts</a></li>
+            <li><a href="kevin/contacts">Contacts</a></li>
           </ul>
         </div>
       </nav>
@@ -33,7 +33,7 @@ import { Component } from '@angular/core';
             <li>
               <a href="kevin/projects" (click)="toggleMenu()">Projects</a>
             </li>
-            <li><a href="#contacts" (click)="toggleMenu()">Contacts</a></li>
+            <li><a href="kevin/contacts" (click)="toggleMenu()">Contacts</a></li>
           </div>
         </div>
       </nav>

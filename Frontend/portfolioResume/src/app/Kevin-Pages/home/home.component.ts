@@ -19,7 +19,6 @@ import { KevinGlobalService } from '../global/global.service';
         </div>
 
         <div class="section-text">
-          <!-- <p class="section-text-p1">Hello I'm</p> -->
           <h1 class="title">Kevin Ortiz</h1>
           <p class="section-text-p2">Quality Assurance & DevOps Engineer</p>
           <div class="btn-container">
@@ -34,7 +33,7 @@ import { KevinGlobalService } from '../global/global.service';
 
             <button
               class="btn btn-color-1"
-              onclick="location.href='./#contacts'"
+              onclick="location.href='./kevin/contacts'"
             >
               Contact Me
             </button>
@@ -52,7 +51,6 @@ import { KevinGlobalService } from '../global/global.service';
               "
             />
 
-            <!--  -->
             <img
               src="./assets/github.png"
               alt="My GitHub profile"
