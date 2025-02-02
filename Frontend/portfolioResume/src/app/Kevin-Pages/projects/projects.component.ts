@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { KevinNavigationComponent } from '../navigation/navigation.component';
 import { KevinGlobalService } from '../global/global.service';
+import { KevinFooterComponent } from '../footer/footer.component';
 
 @Component({
   selector: 'app-projects',
-  imports: [KevinNavigationComponent],
+  imports: [KevinNavigationComponent, KevinFooterComponent],
   template: `
     <body>
       <app-navigation></app-navigation>
@@ -104,6 +105,7 @@ import { KevinGlobalService } from '../global/global.service';
           </div>
         </div>
       </section>
+      <app-footer></app-footer>
     </body>
   `,
   styleUrls: ['./projects.component.scss', '../global/global.component.scss'],

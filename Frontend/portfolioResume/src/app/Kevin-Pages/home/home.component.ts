@@ -1,9 +1,10 @@
 import { Component } from '@angular/core';
 import { KevinNavigationComponent } from '../navigation/navigation.component';
 import { KevinGlobalService } from '../global/global.service';
+import { KevinFooterComponent } from '../footer/footer.component';
 @Component({
   selector: 'app-home',
-  imports: [KevinNavigationComponent],
+  imports: [KevinNavigationComponent, KevinFooterComponent],
   template: `
     <head>
       <title>Kevin's portfolio project</title>
@@ -18,8 +19,8 @@ import { KevinGlobalService } from '../global/global.service';
           />
         </div>
 
+        <h1 class="title">Kevin Ortiz</h1>
         <div class="section-text">
-          <h1 class="title">Kevin Ortiz</h1>
           <p class="section-text-p2">Quality Assurance & DevOps Engineer</p>
           <div class="btn-container">
             <button
@@ -62,6 +63,7 @@ import { KevinGlobalService } from '../global/global.service';
           </div>
         </div>
       </section>
+      <app-footer></app-footer>
     </body>
   `,
   styleUrls: ['./home.component.scss', '../global/global.component.scss'],

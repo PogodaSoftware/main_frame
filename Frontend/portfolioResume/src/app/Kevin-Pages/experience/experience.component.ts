@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
 import { KevinNavigationComponent } from '../navigation/navigation.component';
+import { KevinFooterComponent } from '../footer/footer.component';
 @Component({
   selector: 'app-home',
-  imports: [KevinNavigationComponent],
+  imports: [KevinNavigationComponent, KevinFooterComponent],
   template: `
     <head>
       <title>Kevin's experience page</title>
@@ -138,11 +139,9 @@ import { KevinNavigationComponent } from '../navigation/navigation.component';
           </div>
         </div>
       </section>
+      <app-footer></app-footer>
     </body>
   `,
-  styleUrls: [
-    './experience.component.scss',
-    '../global/global.component.scss',
-  ],
+  styleUrls: ['./experience.component.scss', '../global/global.component.scss'],
 })
 export class KevinExperienceComponent {}
