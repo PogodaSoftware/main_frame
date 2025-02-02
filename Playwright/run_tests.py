@@ -1,14 +1,11 @@
 import sys
 import pytest
+import django
 
 def main():
-    # Run tests in parallel across all browsers
+
     pytest_args = [
-        "Playwright/steps",
-        "-v",  # Verbose mode
-        "--browser=chromium", 
-        "--browser=firefox",
-        "--browser=webkit"
+        "Playwright/steps"
     ]
     
     sys.exit(pytest.main(pytest_args))

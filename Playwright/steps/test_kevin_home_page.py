@@ -1,9 +1,10 @@
 import pytest
 from pytest_bdd import scenarios, given, then, parsers
-from playwright.sync_api import sync_playwright, expect
+from playwright.sync_api import  expect
 from Playwright.Hooks.hooks import selecting_different_routes
-from Playwright.pages.kevin.navigation import *
-from Playwright.pages.kevin.homepage import *
+from Playwright.pages.kevin.navigation_bar import *
+from Playwright.pages.kevin.home_page import *
+from Playwright.pages.kevin.footer_bar import *
 
 scenarios("../features/Kevin/kevin_home_page.feature")
 

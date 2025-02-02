@@ -56,10 +56,10 @@ import { KevinFooterComponent } from '../footer/footer.component';
             </div>
             <div class="text-container">
               <p>
-                Lorem ipsum dolor sit amet consectetur adipisicing elit. Quas
-                dignissimos ut blanditiis eius nisi deserunt repudiandae illo
-                numquam pariatur possimus, necessitatibus alias sint recusandae
-                facere a, voluptatem ad odio porro.
+                I am a software developer with a background in Marine
+                Environmental Science. I have experience in software development,
+                quality assurance, and DevOps. I am passionate about learning new
+                technologies and how to apply them to solve real-world problems.
               </p>
             </div>
           </div>

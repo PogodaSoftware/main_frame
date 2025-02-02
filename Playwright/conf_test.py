@@ -1,8 +1,6 @@
 import pytest
 from playwright.sync_api import sync_playwright
 
-from Playwright.Hooks.hooks import selecting_different_routes
-
 @pytest.fixture(scope="function")
 def browser(request):
     # Get the list of default browsers (you can add more if needed)
