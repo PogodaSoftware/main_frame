@@ -1,1 +1,0 @@
-home_page_paragraph_xpath = "xpath=/html/body/app-root/app-home/p"

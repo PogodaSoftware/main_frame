@@ -5,7 +5,7 @@ import django
 def main():
 
     pytest_args = [
-        "Playwright/steps"
+        "Playwright/*"
     ]
     
     sys.exit(pytest.main(pytest_args))
