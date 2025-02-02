@@ -5,7 +5,6 @@ def main():
     # Run tests in parallel across all browsers
     pytest_args = [
         "Playwright/steps",
-        "--max-workers=3",  # Number of parallel workers (adjust based on your system)
         "-v",  # Verbose mode
         "--browser=chromium", 
         "--browser=firefox",
