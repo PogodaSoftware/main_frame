@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright, expect
 from Playwright.Hooks.hooks import selecting_different_routes
 from Playwright.pages.pogoda.home_page import home_page_paragraph_xpath
 
-scenarios("../features/pogoda/pogoda_home_page.feature")
+scenarios("../features/pogoda_home_page.feature")
 
 @pytest.fixture
 

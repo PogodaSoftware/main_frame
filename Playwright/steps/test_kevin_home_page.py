@@ -5,7 +5,7 @@ from Playwright.Hooks.hooks import selecting_different_routes
 from Playwright.pages.kevin.navigation import *
 from Playwright.pages.kevin.homepage import *
 
-scenarios("../features/kevin/kevin_home_page.feature")
+scenarios("../features/kevin_home_page.feature")
 
 @pytest.fixture
 
