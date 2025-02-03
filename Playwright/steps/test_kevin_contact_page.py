@@ -1,6 +1,6 @@
 
 import pytest
-from pytest_bdd import scenarios, given, then, parsers, when
+from pytest_bdd import scenarios, given, then, when
 from playwright.sync_api import expect
 from Playwright.Hooks.hooks import selecting_different_routes
 from Playwright.pages.kevin.navigation_bar import *

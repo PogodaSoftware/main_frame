@@ -1,5 +1,5 @@
 import pytest
-from pytest_bdd import scenarios, given, then, parsers, when
+from pytest_bdd import scenarios, given, then, when
 from playwright.sync_api import expect
 from Playwright.Hooks.hooks import selecting_different_routes
 from Playwright.pages.kevin.navigation_bar import *
@@ -19,7 +19,6 @@ def click_experience_link(page):
 
 @then("it should display all of my current Experience")
 def verify_experience_text(page):
-
     expect(page.locator("h1")).to_contain_text("Experience")
     expect(page.locator("app-home")).to_contain_text("Languages")
     expect(page.locator("app-home")).to_contain_text("HTML5")
