@@ -15,6 +15,7 @@ def navigate_to_kevin_home_page(page):
 @when("I click on the Projects link")
 def click_projects_link(page):
     page.locator(projects_button).click()
+    page.wait_for_timeout(1000)
 
 @then(parsers.parse("It should display my project header"))
 def verify_project_header(page):

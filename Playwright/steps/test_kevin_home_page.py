@@ -13,6 +13,7 @@ scenarios("../features/Kevin/kevin_home_page.feature")
 @given("I navigate to kevin home page")
 def navigate_to_kevin_page(page):
     selecting_different_routes(page, 'kevin')  
+    page.wait_for_timeout(1000)
 
 @then(parsers.parse('it should display my name "{name}"'))
 def verify_name_displayed(page, name):

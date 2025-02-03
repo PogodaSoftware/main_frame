@@ -17,6 +17,7 @@ def navigate_to_kevin_about_page(page):
 @then("I click on the about link in the navigation bar")    
 def click_about_link(page):
     page.locator(about_button).click()
+    page.wait_for_timeout(1000)
 
 @then("it should display the experience icon")
 def verify_experience_icon(page):

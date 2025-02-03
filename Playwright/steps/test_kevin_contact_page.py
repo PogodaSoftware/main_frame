@@ -17,6 +17,7 @@ def navigate_to_kevin_contact_page(page):
 @when("I click on the Contact link")
 def click_contact_link(page):
     page.locator(contacts_button).click()
+    page.wait_for_timeout(1000)
 
 @then("It should display the Contact Me header")
 def verify_contact_me_header(page):

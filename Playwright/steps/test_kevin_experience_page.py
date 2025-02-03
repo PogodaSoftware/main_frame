@@ -15,6 +15,7 @@ def navigate_to_kevin_about_page(page):
 @when("I click on the Experience link")    
 def click_experience_link(page):
     page.locator(experience_button).click()
+    page.wait_for_timeout(1000)
 
 @then("it should display all of my current Experience")
 def verify_experience_text(page):

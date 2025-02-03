@@ -13,6 +13,7 @@ scenarios("../features/Pogoda/pogoda_home_page.feature")
 @given("I navigate to pogoda home page")
 def navigate_to_pogoda_home_page(page):
     selecting_different_routes(page, 'pogoda')
+    page.wait_for_timeout(1000)
 
 @then(parsers.parse('it should display the text "{text}"'))
 def verify_text(page, text):
