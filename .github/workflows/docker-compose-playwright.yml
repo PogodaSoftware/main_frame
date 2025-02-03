@@ -48,9 +48,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r "Backend/controller/requirements.txt"
 
-      # - name: Ensure browsers are installed
-      #   run: python -m playwright install --with-deps
-
+      - name: Ensure browsers are installed
+        run: python playwright install 
+        
       - name: Set PYTHONPATH
         run: echo "PYTHONPATH=$PWD:$PYTHONPATH" >> $GITHUB_ENV
 
