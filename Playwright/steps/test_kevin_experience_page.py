@@ -19,7 +19,7 @@ def click_experience_link(page):
 
 @then("it should display all of my current Experience")
 def verify_experience_text(page):
-    expect(page.locator("h1")).to_contain_text("Exerience")
+    expect(page.locator("h1")).to_contain_text("Experience")
     expect(page.locator("app-home")).to_contain_text("Languages")
     expect(page.locator("app-home")).to_contain_text("HTML5")
     expect(page.locator("app-home")).to_contain_text("JavaScript")
