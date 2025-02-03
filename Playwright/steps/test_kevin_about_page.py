@@ -25,7 +25,6 @@ def verify_experience_icon(page):
 
 @then(parsers.parse('it should display the experience display text "{experience}"'))
 def verify_experience_display_text(page, experience):
-    
     expect(page.locator(experience_paragraph)).to_contain_text(experience)
 
 @then(parsers.parse('it should display the experience first paragraph text "{experience_paragraph1}"'))

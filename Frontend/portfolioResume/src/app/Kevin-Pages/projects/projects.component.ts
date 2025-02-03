@@ -17,7 +17,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
               <div class="article-container">
                 <img
                   src="./assets/project-1.png"
-                  alt="First project, place holder"
+                  alt="First project"
                   class="project-image"
                 />
               </div>
@@ -47,11 +47,11 @@ import { KevinFooterComponent } from '../footer/footer.component';
               <div class="article-container">
                 <img
                   src="./assets/project-2.png"
-                  alt="First project, place holder"
+                  alt="Second project"
                   class="project-image"
                 />
               </div>
-              <h2 class="project-sub-title project-title">Project one</h2>
+              <h2 class="project-sub-title project-title">Project Two</h2>
               <div class="btn-container">
                 <button
                   class="btn btn-color-2 project-btn"
@@ -78,11 +78,11 @@ import { KevinFooterComponent } from '../footer/footer.component';
               <div class="article-container">
                 <img
                   src="./assets/project-3.png"
-                  alt="First project, place holder"
+                  alt="Third project"
                   class="project-image"
                 />
               </div>
-              <h2 class="project-sub-title project-title">Project one</h2>
+              <h2 class="project-sub-title project-title">Project three</h2>
               <div class="btn-container">
                 <button
                   class="btn btn-color-2 project-btn"
