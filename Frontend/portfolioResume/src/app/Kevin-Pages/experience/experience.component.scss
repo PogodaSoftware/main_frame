@@ -1,0 +1,54 @@
+.experience-text-p1 {
+  text-align: center;
+}
+
+#experience {
+  position: relative;
+}
+
+.experience-sub-title {
+  color: #555555;
+  font-weight: 600;
+  font-size: 1.75rem;
+  margin-bottom: 2rem;
+}
+
+.experience-details-containers {
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.experience-containers {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  margin-top: 2rem;
+}
+
+
+.article-container {
+  display: flex;
+  text-align: initial;
+  flex-wrap: wrap;
+  flex-direction: row;
+  gap: 2.5rem;
+  justify-content: space-around;
+}
+
+article {
+  display: flex;
+  width: 10rem;
+  gap: 0.5rem;
+}
+
+.details-container {
+  padding: 0.5rem;
+  flex: 1;
+  background: white;
+  border-radius: 2rem;
+  border: #353535 0.1rem solid;
+  border-color: #a3a3a3;
+  text-align: center;
+}
