@@ -16,9 +16,9 @@ def navigate_to_kevin_home_page(page):
 def click_projects_link(page):
     page.locator(projects_button).click()
 
-@then(parsers.parse('It should display my project header "{project}"'))
-def verify_project_header(page, project):
-    expect(page.locator("h1")).to_contain_text(project)
+@then(parsers.parse("It should display my project header"))
+def verify_project_header(page):
+    expect(page.locator("h1")).to_contain_text("Browse my projects")
 
 @then("it should display my first project image")
 def verify_first_project_image(page):

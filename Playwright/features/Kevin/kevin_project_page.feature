@@ -1,9 +1,9 @@
 Feature: Kevin Project Page Validation
 
-  Scenario Outline: Verify elements and text on the Projects page
+  Scenario: Verify elements and text on the Projects page
     Given I navigate to kevin home page
     When I click on the Projects link
-    Then It should display my project header "<project>"
+    Then It should display my project header 
     And it should display my first project image
     And It should display Project One
     And it should display my first project github link
@@ -14,7 +14,3 @@ Feature: Kevin Project Page Validation
     And it should display my third project image
     And it should display my third project github link
     And it should display my third project live demo link
-
-    Examples:
-      | project |
-      | Browse my projects |
