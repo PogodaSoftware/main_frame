@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { KevinHomeComponent } from './Kevin-Pages/home/home.component';
-import { PogodaHomeComponent } from './Pogoda-Software-Pages/home/home.component';
+import { JPLayoutComponent } from './Pogoda-Software-Pages/layout/layout.component';
 
 export const routes: Routes = [
     {
@@ -10,7 +10,8 @@ export const routes: Routes = [
     },
     {
         path: 'pogoda',
-        component: PogodaHomeComponent,
+        component: JPLayoutComponent,
+        title: 'Pogoda Software Page'
     }
 
 ];
