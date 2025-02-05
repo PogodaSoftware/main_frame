@@ -25,9 +25,7 @@ services:
 
     develop:
       watch:
-        - path: ./Frontend/portfolioResume
-          action: rebuild
-        - path: ./Backend/controller
+        - path: ../main_frame
           action: rebuild
 
-
+# C:\Users\kevin\main_frame\Frontend\portfolioResume
