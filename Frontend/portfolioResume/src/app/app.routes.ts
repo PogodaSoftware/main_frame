@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { KevinHomeComponent } from './Kevin-Pages/home/home.component';
 import { KevinAboutComponent } from './Kevin-Pages/about/about.component';
 import { KevinExperienceComponent } from './Kevin-Pages/experience/experience.component';
-import { PogodaHomeComponent } from './Pogoda-Software-Pages/home/home.component';
+
 import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.component';
 import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { JPLayoutComponent } from './Pogoda-Software-Pages/layout/layout.component';
@@ -37,6 +37,7 @@ export const routes: Routes = [
   },
   {
     path: 'pogoda',
-    component: PogodaHomeComponent,
+    component: JPLayoutComponent,
+    title: 'Pogoda Software Home Page',
   },
 ];
