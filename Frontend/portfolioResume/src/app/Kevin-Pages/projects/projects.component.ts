@@ -16,7 +16,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
             <div class="details-container color-container">
               <div class="article-container">
                 <img
-                  src="./assets/project-1.png"
+                  src="./assets/shark-blender-1.png"
                   alt="First project"
                   class="project-image"
                 />
