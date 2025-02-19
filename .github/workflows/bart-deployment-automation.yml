@@ -7,7 +7,7 @@ on:
 
 defaults:
     run:
-        working-directory: ../../../../main
+        working-directory: ../../../../main_frame/
 
 
 jobs:
@@ -55,7 +55,7 @@ jobs:
             ls
             git stash
             git fetch origin
-            git rebase origin/SCRUM-45-create-soltion-on-bart-server
+            git rebase origin/main
 
         - name: Start Docker Compose
           run: |
