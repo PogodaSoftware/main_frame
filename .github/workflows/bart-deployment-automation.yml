@@ -7,7 +7,7 @@ on:
 
 defaults:
     run:
-        working-directory: ../../../../main_frame/
+        working-directory: ../../../../main
 
 
 jobs:
