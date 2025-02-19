@@ -1,8 +1,7 @@
-
 import pytest
 from pytest_bdd import scenarios, given, then, when
 from playwright.sync_api import expect
-from Playwright.Hooks.hooks import selecting_different_routes
+from Playwright.Hooks.hooks import selecting_different_routes, timeout_for_testing
 from Playwright.pages.kevin.navigation_bar import *
 from Playwright.pages.kevin.about_page import *
 from Playwright.pages.kevin.footer_bar import *
@@ -17,7 +16,7 @@ def navigate_to_kevin_contact_page(page):
 @when("I click on the Contact link")
 def click_contact_link(page):
     page.locator(contacts_button).click()
-    page.wait_for_timeout(1000)
+    timeout_for_testing(page)
 
 @then("It should display the Contact Me header")
 def verify_contact_me_header(page):

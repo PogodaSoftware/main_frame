@@ -1,7 +1,7 @@
 import pytest
 from pytest_bdd import scenarios, given, then, when
 from playwright.sync_api import expect
-from Playwright.Hooks.hooks import selecting_different_routes
+from Playwright.Hooks.hooks import selecting_different_routes, timeout_for_testing
 from Playwright.pages.kevin.navigation_bar import *
 
 
@@ -15,7 +15,7 @@ def navigate_to_kevin_about_page(page):
 @when("I click on the Experience link")    
 def click_experience_link(page):
     page.locator(experience_button).click()
-    page.wait_for_timeout(1000)
+    timeout_for_testing(page)
 
 @then("it should display all of my current Experience")
 def verify_experience_text(page):
