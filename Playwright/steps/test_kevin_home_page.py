@@ -1,7 +1,7 @@
 import pytest
 from pytest_bdd import scenarios, given, then, parsers
 from playwright.sync_api import  expect
-from Playwright.Hooks.hooks import selecting_different_routes
+from Playwright.Hooks.hooks import selecting_different_routes, timeout_for_testing
 from Playwright.pages.kevin.navigation_bar import *
 from Playwright.pages.kevin.home_page import *
 from Playwright.pages.kevin.footer_bar import *
@@ -13,7 +13,7 @@ scenarios("../features/Kevin/kevin_home_page.feature")
 @given("I navigate to kevin home page")
 def navigate_to_kevin_page(page):
     selecting_different_routes(page, 'kevin')  
-    page.wait_for_timeout(1000)
+
 
 @then(parsers.parse('it should display my name "{name}"'))
 def verify_name_displayed(page, name):

@@ -1,7 +1,7 @@
 import pytest
 from pytest_bdd import scenarios, given, when, then, parsers
 from playwright.sync_api import expect
-from Playwright.Hooks.hooks import selecting_different_routes
+from Playwright.Hooks.hooks import selecting_different_routes, timeout_for_testing, timeout_for_testing
 from Playwright.pages.kevin.navigation_bar import *
 
 
@@ -15,7 +15,6 @@ def navigate_to_kevin_home_page(page):
 @when("I click on the Projects link")
 def click_projects_link(page):
     page.locator(projects_button).click()
-    page.wait_for_timeout(1000)
 
 @then(parsers.parse("It should display my project header"))
 def verify_project_header(page):
