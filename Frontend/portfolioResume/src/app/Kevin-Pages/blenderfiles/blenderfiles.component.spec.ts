@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { BlenderfilesComponent } from './blenderfiles.component';
+import { KevinBlenderFilesComponent } from './blenderfiles.component';
 
-describe('BlenderfilesComponent', () => {
-  let component: BlenderfilesComponent;
-  let fixture: ComponentFixture<BlenderfilesComponent>;
+describe('KevinBlenderFilesComponent', () => {
+  let component: KevinBlenderFilesComponent;
+  let fixture: ComponentFixture<KevinBlenderFilesComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [BlenderfilesComponent]
+      imports: [KevinBlenderFilesComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(BlenderfilesComponent);
+    fixture = TestBed.createComponent(KevinBlenderFilesComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
