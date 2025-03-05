@@ -4,7 +4,6 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-
 @Component({
   selector: 'app-blenderfiles',
   imports: [],
@@ -49,7 +48,7 @@ export class KevinBlenderFilesComponent implements OnInit {
     this.dLoader = new DRACOLoader();
     this.loader = new GLTFLoader();
 
-    this.camera.position.set(0, 1, 2);
+    this.camera.position.set(0, 1, 3);
 
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -63,6 +62,19 @@ export class KevinBlenderFilesComponent implements OnInit {
     this.light.position.set(2, 2, 5);
     this.scene.add(this.light);
 
+    // this.pointLight = new THREE.PointLight(0xffffff,30);
+    // this.pointLight.position.set(0, 2, 5);
+    // this.scene.add(this.pointLight);
+
+    this.ambientLight = new THREE.AmbientLight(0xffffff);
+    this.ambientLight.position.set(-2, 0, 5);
+    this.scene.add(this.ambientLight);
+
+    // this.lightHelper = new THREE.PointLightHelper(this.pointLight);
+    // this.scene.add(this.lightHelper);
+    // this.gridHelper = new THREE.GridHelper(200, 50);
+    // this.scene.add(this.gridHelper);
+ 
     this.dLoader.setDecoderPath(
       'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
     );
