@@ -13,6 +13,7 @@ export class KevinGlobalService {
   }
 
   threeDimensionModelBuilder(canvasId: string, modelPath: string): void {
+    const helpersOn = true;
     const canvas = document.querySelector(`#${canvasId}`) as HTMLCanvasElement;
     const renderer = new THREE.WebGLRenderer({ canvas });
     const scene = new THREE.Scene();
@@ -42,20 +43,26 @@ export class KevinGlobalService {
     light3.position.set(0, 10, -10);
     scene.add(light3);
 
-    // const helper1 = new THREE.DirectionalLightHelper(light1, 5);
-    // scene.add(helper1);
+    if (helpersOn) {
+      const helper1 = new THREE.DirectionalLightHelper(light1, 5);
+      scene.add(helper1);
 
-    // const helper2 = new THREE.DirectionalLightHelper(light2, 5);
-    // scene.add(helper2);
+      const helper2 = new THREE.DirectionalLightHelper(light2, 5);
+      scene.add(helper2);
 
-    // const helper3 = new THREE.DirectionalLightHelper(light3, 5);
-    // scene.add(helper3);
+      const helper3 = new THREE.DirectionalLightHelper(light3, 5);
+      scene.add(helper3);
 
-    const gridHelper = new THREE.GridHelper(100, 50);
-    scene.add(gridHelper);
+      const gridHelper = new THREE.GridHelper(100, 50);
+      scene.add(gridHelper);
+    } else {
+      console.log('Helpers are off');
+    }
 
     const dLoader = new DRACOLoader();
-    dLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+    dLoader.setDecoderPath(
+      'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
+    );
     dLoader.setDecoderConfig({ type: 'js' });
 
     const loader = new GLTFLoader();
