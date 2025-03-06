@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { Component, OnInit } from '@angular/core';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -13,13 +12,10 @@ export class KevinGlobalService {
     window.open(url, '_blank');
   }
 
-  threeDimensionModelBuilder(): void {
-    const renderer = new THREE.WebGLRenderer({
-      canvas: document.querySelector('#canvas1') as HTMLCanvasElement,
-    });
-
+  threeDimensionModelBuilder(canvasId: string, modelPath: string): void {
+    const canvas = document.querySelector(`#${canvasId}`) as HTMLCanvasElement;
+    const renderer = new THREE.WebGLRenderer({ canvas });
     const scene = new THREE.Scene();
-
     const camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -28,9 +24,7 @@ export class KevinGlobalService {
     );
     const controls = new OrbitControls(camera, renderer.domElement);
 
-
-
-    camera.position.set(0, 1, 3);
+    camera.position.set(0, 1, 4);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -48,33 +42,28 @@ export class KevinGlobalService {
     light3.position.set(0, 10, -10);
     scene.add(light3);
 
-    const helper1 = new THREE.DirectionalLightHelper(light1, 5);
-    scene.add(helper1);
+    // const helper1 = new THREE.DirectionalLightHelper(light1, 5);
+    // scene.add(helper1);
 
-    const helper2 = new THREE.DirectionalLightHelper(light2, 5);
-    scene.add(helper2);
+    // const helper2 = new THREE.DirectionalLightHelper(light2, 5);
+    // scene.add(helper2);
 
-    const helper3 = new THREE.DirectionalLightHelper(light3, 5);
-    scene.add(helper3);
+    // const helper3 = new THREE.DirectionalLightHelper(light3, 5);
+    // scene.add(helper3);
 
     const gridHelper = new THREE.GridHelper(100, 50);
     scene.add(gridHelper);
 
-    const dloader = new DRACOLoader();
+    const dLoader = new DRACOLoader();
+    dLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+    dLoader.setDecoderConfig({ type: 'js' });
+
     const loader = new GLTFLoader();
-
-    dloader.setDecoderPath(
-      'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
-    );
-
-    loader.setDRACOLoader(dloader);
-
-    dloader.setDecoderConfig({ type: 'js' });
+    loader.setDRACOLoader(dLoader);
 
     loader.load(
-      './assets/snowman.glb',
+      modelPath,
       (glb) => {
-        console.log(glb);
         const root = glb.scene;
         scene.add(root);
       },
@@ -88,8 +77,15 @@ export class KevinGlobalService {
 
     function animate() {
       requestAnimationFrame(animate);
+      controls.update();
       renderer.render(scene, camera);
     }
     animate();
+
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
   }
 }
