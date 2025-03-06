@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { KevinNavigationComponent } from '../navigation/navigation.component';
 import { KevinGlobalService } from '../global/global.service';
 import { KevinFooterComponent } from '../footer/footer.component';
@@ -15,11 +15,16 @@ import { KevinFooterComponent } from '../footer/footer.component';
           <div class="project-containers">
             <div class="details-container color-container">
               <div class="article-container">
-                <img
+                <canvas
+                  id="snowmanCanvas"
+                  alt="First project"
+                  class="project-image"
+                ></canvas>
+                <!-- <img
                   src="./assets/shark-blender-1.png"
                   alt="First project"
                   class="project-image"
-                />
+                /> -->
               </div>
               <h2 class="project-sub-title project-title">Project one</h2>
               <div class="btn-container">
@@ -110,6 +115,18 @@ import { KevinFooterComponent } from '../footer/footer.component';
   `,
   styleUrls: ['./projects.component.scss', '../global/global.component.scss'],
 })
-export class KevinProjectsComponent {
+export class KevinProjectsComponent implements OnInit {
   constructor(public kevinGlobalService: KevinGlobalService) {}
+
+  ngOnInit(): void {
+    this.kevinGlobalService.threeDimensionModelBuilder(
+      'snowmanCanvas',
+      'snowman',
+      false,
+      'black',
+      0,
+      1,
+      4
+    );
+  }
 }

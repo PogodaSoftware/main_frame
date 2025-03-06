@@ -12,11 +12,21 @@ export class KevinGlobalService {
     window.open(url, '_blank');
   }
 
-  threeDimensionModelBuilder(canvasId: string, modelPath: string): void {
-    const helpersOn = true;
+  threeDimensionModelBuilder(
+    canvasId: string,
+    modelPath: string,
+    helpersBoolean: boolean,
+    canvasColor: string,
+    cameraPositionX: number,
+    cameraPositionY: number,
+    cameraPositionZ: number
+  ): void {
+    const helpersOn = helpersBoolean;
     const canvas = document.querySelector(`#${canvasId}`) as HTMLCanvasElement;
     const renderer = new THREE.WebGLRenderer({ canvas });
     const scene = new THREE.Scene();
+    scene.background = new THREE.Color(`${canvasColor}`);
+
     const camera = new THREE.PerspectiveCamera(
       75,
       window.innerWidth / window.innerHeight,
@@ -25,7 +35,7 @@ export class KevinGlobalService {
     );
     const controls = new OrbitControls(camera, renderer.domElement);
 
-    camera.position.set(0, 1, 4);
+    camera.position.set(cameraPositionX, cameraPositionY, cameraPositionZ);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
@@ -42,6 +52,9 @@ export class KevinGlobalService {
     const light3 = new THREE.DirectionalLight(0xffffff, 1);
     light3.position.set(0, 10, -10);
     scene.add(light3);
+    
+    const gridHelper = new THREE.GridHelper(100, 50);
+    scene.add(gridHelper);
 
     if (helpersOn) {
       const helper1 = new THREE.DirectionalLightHelper(light1, 5);
@@ -53,10 +66,9 @@ export class KevinGlobalService {
       const helper3 = new THREE.DirectionalLightHelper(light3, 5);
       scene.add(helper3);
 
-      const gridHelper = new THREE.GridHelper(100, 50);
-      scene.add(gridHelper);
+
     } else {
-      console.log('Helpers are off');
+      console.log('Light Helpers are off');
     }
 
     const dLoader = new DRACOLoader();
@@ -69,7 +81,7 @@ export class KevinGlobalService {
     loader.setDRACOLoader(dLoader);
 
     loader.load(
-      modelPath,
+      `./assets/${modelPath}.glb`,
       (glb) => {
         const root = glb.scene;
         scene.add(root);
