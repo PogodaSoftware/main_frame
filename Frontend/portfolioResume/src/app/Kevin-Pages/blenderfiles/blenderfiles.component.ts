@@ -9,15 +9,15 @@ import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
   imports: [],
   template: `
     <body>
-      <!-- <canvas id="bg"> </canvas> -->
-
-      <canvas id="webgl"></canvas>
+      <canvas id="canvas"></canvas>
+      <canvas id="canvas1"></canvas>
       <script src="blenderfiles.js"></script>
     </body>
   `,
   styleUrls: ['./blenderfiles.component.scss'],
 })
-export class KevinBlenderFilesComponent implements OnInit {
+// implements OnInit
+export class KevinBlenderFilesComponent {
   scene!: THREE.Scene;
   camera!: THREE.PerspectiveCamera;
   renderer!: THREE.WebGLRenderer;
@@ -28,13 +28,11 @@ export class KevinBlenderFilesComponent implements OnInit {
   controls!: OrbitControls;
   loader!: GLTFLoader;
   dLoader!: DRACOLoader;
-  light!: THREE.DirectionalLight;
 
   ngOnInit(): void {
     this.renderer = new THREE.WebGLRenderer({
-      canvas: document.querySelector('#webgl') as HTMLCanvasElement,
+      canvas: document.querySelector('#canvas') as HTMLCanvasElement,
     });
-
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(
       75,
@@ -42,39 +40,41 @@ export class KevinBlenderFilesComponent implements OnInit {
       0.1,
       1000
     );
-
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-
     this.dLoader = new DRACOLoader();
     this.loader = new GLTFLoader();
 
     this.camera.position.set(0, 1, 3);
-
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
     this.renderer.shadowMap.enabled = true;
-
     this.scene.add(this.camera);
 
-    this.light = new THREE.DirectionalLight(0xffffff, 1);
-    this.light.position.set(2, 2, 5);
-    this.scene.add(this.light);
+    // directional light
+    const light1 = new THREE.DirectionalLight(0xffffff, 1);
+    light1.position.set(10, 10, 10);
+    this.scene.add(light1);
 
-    // this.pointLight = new THREE.PointLight(0xffffff,30);
-    // this.pointLight.position.set(0, 2, 5);
-    // this.scene.add(this.pointLight);
+    const light2 = new THREE.DirectionalLight(0xffffff, 1);
+    light2.position.set(-10, 10, 10);
+    this.scene.add(light2);
 
-    this.ambientLight = new THREE.AmbientLight(0xffffff);
-    this.ambientLight.position.set(-2, 0, 5);
-    this.scene.add(this.ambientLight);
+    const light3 = new THREE.DirectionalLight(0xffffff, 1);
+    light3.position.set(0, 10, -10);
+    this.scene.add(light3);
 
-    // this.lightHelper = new THREE.PointLightHelper(this.pointLight);
-    // this.scene.add(this.lightHelper);
-    // this.gridHelper = new THREE.GridHelper(200, 50);
-    // this.scene.add(this.gridHelper);
- 
+    const helper1 = new THREE.DirectionalLightHelper(light1, 5);
+    this.scene.add(helper1);
+
+    const helper2 = new THREE.DirectionalLightHelper(light2, 5);
+    this.scene.add(helper2);
+
+    const helper3 = new THREE.DirectionalLightHelper(light3, 5);
+    this.scene.add(helper3);
+
+    this.gridHelper = new THREE.GridHelper(100, 50);
+    this.scene.add(this.gridHelper);
+
     this.dLoader.setDecoderPath(
       'https://www.gstatic.com/draco/versioned/decoders/1.5.7/'
     );
