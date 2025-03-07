@@ -4,10 +4,20 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
+interface ThreeScene {
+  scene: THREE.Scene;
+  renderer: THREE.WebGLRenderer;
+  camera: THREE.PerspectiveCamera;
+  controls: OrbitControls;
+  currentModel?: THREE.Object3D;
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class KevinGlobalService {
+  private scenes: { [canvasId: string]: ThreeScene } = {};
+
   openPage(url: string): void {
     window.open(url, '_blank');
   }
@@ -19,56 +29,81 @@ export class KevinGlobalService {
     canvasColor: string,
     cameraPositionX: number,
     cameraPositionY: number,
-    cameraPositionZ: number
+    cameraPositionZ: number,
+    renderPositionWidth: number,
+    renderPositionHeight: number
   ): void {
+    let threeScene = this.scenes[canvasId];
     const helpersOn = helpersBoolean;
-    const canvas = document.querySelector(`#${canvasId}`) as HTMLCanvasElement;
-    const renderer = new THREE.WebGLRenderer({ canvas });
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(`${canvasColor}`);
 
-    const camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    const controls = new OrbitControls(camera, renderer.domElement);
+    if (!threeScene) {
+      const canvas = document.querySelector(
+        `#${canvasId}`
+      ) as HTMLCanvasElement;
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+      const scene = new THREE.Scene();
+      scene.background = new THREE.Color(canvasColor);
 
-    camera.position.set(cameraPositionX, cameraPositionY, cameraPositionZ);
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    scene.add(camera);
+      const camera = new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth / window.innerHeight,
+        0.1,
+        1000
+      );
+      const controls = new OrbitControls(camera, renderer.domElement);
 
-    const light1 = new THREE.DirectionalLight(0xffffff, 1);
-    light1.position.set(10, 10, 10);
-    scene.add(light1);
+      camera.position.set(cameraPositionX, cameraPositionY, cameraPositionZ);
+      controls.update();
 
-    const light2 = new THREE.DirectionalLight(0xffffff, 1);
-    light2.position.set(-10, 10, 10);
-    scene.add(light2);
+      renderer.setSize(
+        window.innerWidth / renderPositionWidth,
+        window.innerHeight / renderPositionHeight
+      );
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.shadowMap.enabled = true;
 
-    const light3 = new THREE.DirectionalLight(0xffffff, 1);
-    light3.position.set(0, 10, -10);
-    scene.add(light3);
-    
-    const gridHelper = new THREE.GridHelper(100, 50);
-    scene.add(gridHelper);
+      const light1 = new THREE.DirectionalLight(0xffffff, 1);
+      light1.position.set(10, 10, 10);
+      scene.add(light1);
 
-    if (helpersOn) {
-      const helper1 = new THREE.DirectionalLightHelper(light1, 5);
-      scene.add(helper1);
+      const light2 = new THREE.DirectionalLight(0xffffff, 1);
+      light2.position.set(-10, 10, 10);
+      scene.add(light2);
 
-      const helper2 = new THREE.DirectionalLightHelper(light2, 5);
-      scene.add(helper2);
+      const light3 = new THREE.DirectionalLight(0xffffff, 1);
+      light3.position.set(0, 10, -10);
+      scene.add(light3);
 
-      const helper3 = new THREE.DirectionalLightHelper(light3, 5);
-      scene.add(helper3);
+      if (helpersOn) {
+        scene.add(
+          new THREE.DirectionalLightHelper(light1, 5),
+          new THREE.DirectionalLightHelper(light2, 5),
+          new THREE.DirectionalLightHelper(light3, 5)
+        );
+      }
 
+      scene.add(new THREE.GridHelper(100, 50));
 
-    } else {
-      console.log('Light Helpers are off');
+      // Animation loop
+      const animate = () => {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+      };
+      animate();
+
+      const onResize = () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(
+          window.innerWidth / renderPositionWidth,
+          window.innerHeight / renderPositionHeight
+        );
+      };
+      window.addEventListener('resize', onResize);
+
+      threeScene = { scene, renderer, camera, controls };
+      this.scenes[canvasId] = threeScene;
     }
 
     const dLoader = new DRACOLoader();
@@ -83,28 +118,15 @@ export class KevinGlobalService {
     loader.load(
       `./assets/${modelPath}.glb`,
       (glb) => {
-        const root = glb.scene;
-        scene.add(root);
+        threeScene.currentModel = glb.scene;
+        threeScene.scene.add(glb.scene);
       },
       (xhr) => {
         console.log((xhr.loaded / xhr.total) * 100 + '% loaded');
       },
       (error) => {
-        console.log('An error happened');
+        console.error('Error loading model:', error);
       }
     );
-
-    function animate() {
-      requestAnimationFrame(animate);
-      controls.update();
-      renderer.render(scene, camera);
-    }
-    animate();
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
   }
 }

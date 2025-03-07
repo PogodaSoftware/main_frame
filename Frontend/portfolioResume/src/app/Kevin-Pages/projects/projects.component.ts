@@ -20,11 +20,6 @@ import { KevinFooterComponent } from '../footer/footer.component';
                   alt="First project"
                   class="project-image"
                 ></canvas>
-                <!-- <img
-                  src="./assets/shark-blender-1.png"
-                  alt="First project"
-                  class="project-image"
-                /> -->
               </div>
               <h2 class="project-sub-title project-title">Project one</h2>
               <div class="btn-container">
@@ -40,7 +35,11 @@ import { KevinFooterComponent } from '../footer/footer.component';
                 </button>
                 <button
                   class="btn btn-color-2 project-btn"
-                  onclick="location.href=''"
+                  (click)="
+                    kevinGlobalService.openPage(
+                      'kevin/blender-projects?model=snowman'
+                    )
+                  "
                 >
                   Live Demo
                 </button>
@@ -70,7 +69,11 @@ import { KevinFooterComponent } from '../footer/footer.component';
                 </button>
                 <button
                   class="btn btn-color-2 project-btn"
-                  onclick="location.href=''"
+                  (click)="
+                    kevinGlobalService.openPage(
+                      'kevin/blender-projects?model=shark'
+                    )
+                  "
                 >
                   Live Demo
                 </button>
@@ -101,7 +104,11 @@ import { KevinFooterComponent } from '../footer/footer.component';
                 </button>
                 <button
                   class="btn btn-color-2 project-btn"
-                  onclick="location.href=''"
+                  (click)="
+                    kevinGlobalService.openPage(
+                      'kevin/blender-projects?model=scifiCrate'
+                    )
+                  "
                 >
                   Live Demo
                 </button>
@@ -125,8 +132,10 @@ export class KevinProjectsComponent implements OnInit {
       false,
       'black',
       0,
-      1,
-      4
+      2,
+      3.1,
+      3.5,
+      2
     );
   }
 }
