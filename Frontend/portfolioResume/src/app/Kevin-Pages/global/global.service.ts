@@ -52,6 +52,7 @@ export class KevinGlobalService {
       );
       const controls = new OrbitControls(camera, renderer.domElement);
 
+      // cameraPositionX, cameraPositionY - UP, cameraPositionZ - BACK
       camera.position.set(cameraPositionX, cameraPositionY, cameraPositionZ);
       controls.update();
 
@@ -84,7 +85,6 @@ export class KevinGlobalService {
 
       scene.add(new THREE.GridHelper(100, 50));
 
-      // Animation loop
       const animate = () => {
         requestAnimationFrame(animate);
         controls.update();

@@ -17,7 +17,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
               <div class="article-container">
                 <canvas
                   id="snowmanCanvas"
-                  alt="First project"
+                  alt="Model of a snowman"
                   class="project-image"
                 ></canvas>
               </div>
@@ -35,7 +35,11 @@ import { KevinFooterComponent } from '../footer/footer.component';
                 </button>
                 <button
                   class="btn btn-color-2 project-btn"
-           (click)="kevinGlobalService.openPage('kevin/blender-projects?model=snowman&helpers=false&color=black&cameraX=0&cameraY=1&cameraZ=4')"
+                  (click)="
+                    kevinGlobalService.openPage(
+                      'kevin/blender-projects?model=snowman&helpers=false&color=black&cameraX=0&cameraY=1&cameraZ=4'
+                    )
+                  "
                 >
                   Live Demo
                 </button>
@@ -44,7 +48,14 @@ import { KevinFooterComponent } from '../footer/footer.component';
 
             <!-- Project 2 -->
             <div class="details-container color-container">
-              <div class="article-container"></div>
+              <div class="article-container">
+                <canvas
+                  id="sharkCanvas"
+                  alt="Model of a shark"
+                  class="project-image"
+                ></canvas>
+              </div>
+
               <h2 class="project-sub-title project-title">Project Two</h2>
               <div class="btn-container">
                 <button
@@ -61,7 +72,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
                   class="btn btn-color-2 project-btn"
                   (click)="
                     kevinGlobalService.openPage(
-                      'kevin/blender-projects?model=shark'
+                      'kevin/blender-projects?model=shark&helpers=false&color=black&cameraX=6&cameraY=2&cameraZ=0'
                     )
                   "
                 >
@@ -73,7 +84,13 @@ import { KevinFooterComponent } from '../footer/footer.component';
             <!-- Project 3 -->
 
             <div class="details-container color-container">
-              <div class="article-container"></div>
+              <div class="article-container">
+                <canvas
+                  id="scifiCrateCanvas"
+                  alt="Model of a scifi crate"
+                  class="project-image"
+                ></canvas>
+              </div>
               <h2 class="project-sub-title project-title">Project three</h2>
               <div class="btn-container">
                 <button
@@ -90,7 +107,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
                   class="btn btn-color-2 project-btn"
                   (click)="
                     kevinGlobalService.openPage(
-                      'kevin/blender-projects?model=scifiCrate'
+                      'kevin/blender-projects?model=scifiCrate&helpers=false&color=white&cameraX=0&cameraY=1&cameraZ=4'
                     )
                   "
                 >
@@ -115,6 +132,33 @@ export class KevinProjectsComponent implements OnInit {
       'snowman',
       false,
       'black',
+      0,
+      2,
+      3.1,
+
+      3.5,
+      2
+    );
+    this.kevinGlobalService.threeDimensionModelBuilder(
+      'sharkCanvas',
+      'shark',
+      false,
+      'black',
+      // cameraPositionX, cameraPositionY - UP, cameraPositionZ - BACK
+      6, // X: Centered horizontally
+      2, // Y: Elevated position for top-down angle
+      0, // Z: Closer to the model
+
+      // renderPositionWidth, renderPositionHeight
+      3.5,
+      2
+    );
+
+    this.kevinGlobalService.threeDimensionModelBuilder(
+      'scifiCrateCanvas',
+      'scifiCrate',
+      false,
+      'white',
       0,
       2,
       3.1,
