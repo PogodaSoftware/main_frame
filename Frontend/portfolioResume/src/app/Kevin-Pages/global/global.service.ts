@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 
 interface ThreeScene {
   scene: THREE.Scene;
@@ -16,11 +17,11 @@ interface ThreeScene {
   providedIn: 'root',
 })
 export class KevinGlobalService {
-  private scenes: { [canvasId: string]: ThreeScene } = {};
-
   openPage(url: string): void {
     window.open(url, '_blank');
   }
+
+  private scenes: { [canvasId: string]: ThreeScene } = {};
 
   threeDimensionModelBuilder(
     canvasId: string,
@@ -31,7 +32,8 @@ export class KevinGlobalService {
     cameraPositionY: number,
     cameraPositionZ: number,
     renderPositionWidth: number,
-    renderPositionHeight: number
+    renderPositionHeight: number,
+    hdrPath : string
   ): void {
     let threeScene = this.scenes[canvasId];
     const helpersOn = helpersBoolean;
@@ -85,6 +87,13 @@ export class KevinGlobalService {
 
       scene.add(new THREE.GridHelper(100, 50));
 
+      const rgbeLoader = new RGBELoader();
+      rgbeLoader.load(`./assets/${hdrPath}.hdr`, (texture) => {
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        scene.background = texture;
+        scene.environment = texture;
+      });
+
       const animate = () => {
         requestAnimationFrame(animate);
         controls.update();
@@ -105,6 +114,7 @@ export class KevinGlobalService {
       threeScene = { scene, renderer, camera, controls };
       this.scenes[canvasId] = threeScene;
     }
+    // ./assets/industrial_sunset_puresky_1k.hdr
 
     const dLoader = new DRACOLoader();
     dLoader.setDecoderPath(
@@ -118,6 +128,7 @@ export class KevinGlobalService {
     loader.load(
       `./assets/${modelPath}.glb`,
       (glb) => {
+        console.log(glb.scene);
         threeScene.currentModel = glb.scene;
         threeScene.scene.add(glb.scene);
       },

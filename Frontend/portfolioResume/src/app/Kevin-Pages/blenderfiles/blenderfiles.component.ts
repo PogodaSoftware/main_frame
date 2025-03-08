@@ -24,38 +24,29 @@ export class KevinBlenderFilesComponent implements OnInit, OnDestroy {
     this.routeSub = this.route.queryParams.subscribe((params) => {
       const model = params['model'] || 'snowman';
 
-      const helpers = params['helpers'] === 'true'; 
+      const helpers = params['helpers'] === 'true';
 
       const color = params['color'] || 'black';
-      
 
       const cameraX = Number(params['cameraX']) || 0;
       const cameraY = Number(params['cameraY']) || 0;
       const cameraZ = Number(params['cameraZ']) || 0;
-  
+      const hdrPath = params['hdrPath'] || '';
+
       this.kevinGlobalService.threeDimensionModelBuilder(
         'canvas',
         model,
-        helpers, 
+        helpers,
         color,
-        cameraX, 
-        cameraY, 
+        cameraX,
+        cameraY,
         cameraZ,
-        1, 
-        1
+        1,
+        1,
+        hdrPath
       );
     });
   }
-  // this.kevinGlobalService.threeDimensionModelBuilder(
-  //   'canvas',
-  //   model,
-  //   false,
-  //   'black',
-  //   0,
-  //   1,
-  //   4,
-  //   1,
-  //   1
 
   ngOnDestroy(): void {
     if (this.routeSub) {
