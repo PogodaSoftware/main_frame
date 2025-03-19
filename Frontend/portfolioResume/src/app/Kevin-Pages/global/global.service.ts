@@ -76,6 +76,7 @@ export class KevinGlobalService {
       const light3 = new THREE.DirectionalLight(0xffffff, 1);
       light3.position.set(0, 10, -10);
       scene.add(light3);
+      
 
       if (helpersOn) {
         scene.add(
@@ -85,7 +86,7 @@ export class KevinGlobalService {
         );
       }
 
-      scene.add(new THREE.GridHelper(100, 50));
+      // scene.add(new THREE.GridHelper(100, 50));
 
       const rgbeLoader = new RGBELoader();
       rgbeLoader.load(`./assets/${hdrPath}.hdr`, (texture) => {
