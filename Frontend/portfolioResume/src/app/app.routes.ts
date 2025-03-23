@@ -5,6 +5,8 @@ import { KevinExperienceComponent } from './Kevin-Pages/experience/experience.co
 
 import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.component';
 import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
+import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
+
 import { JPLayoutComponent } from './Pogoda-Software-Pages/layout/layout.component';
 
 export const routes: Routes = [
@@ -34,6 +36,10 @@ export const routes: Routes = [
     path: 'kevin/contacts',
     component: KevinContactComponent,
     title: 'Kevin Contact Page',
+  },
+  {
+    path: 'kevin/blender-projects',
+    component: KevinBlenderFilesComponent,
   },
   {
     path: 'pogoda',
