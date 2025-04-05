@@ -1,18 +1,32 @@
-.project-details-containers {
+
+.project-containers {
   display: flex;
+  flex-wrap: wrap;
+  gap: 2rem; 
   justify-content: center;
-  flex-direction: column;
+  width: 100%; 
+  max-width: 1400px; 
+  margin: 0 auto; 
 }
 
 .details-container {
+  flex: 0 0 calc(50% - 2rem); 
   padding: 0.5rem;
-  flex: 1;
   background: white;
   border-radius: 2rem;
   border: #353535 0.1rem solid;
   border-color: #a3a3a3;
   text-align: center;
+  box-sizing: border-box; 
 }
+
+
+@media (max-width: 768px) {
+  .details-container {
+    flex: 0 0 calc(100% - 2rem); 
+  }
+}
+
 
 .article-container {
   display: flex;
@@ -40,6 +54,7 @@
 
 .project-image {
   border-radius: 2rem;
+  
 }
 
 .project-title {

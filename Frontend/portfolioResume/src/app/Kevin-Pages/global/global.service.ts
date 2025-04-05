@@ -115,7 +115,7 @@ export class KevinGlobalService {
       threeScene = { scene, renderer, camera, controls };
       this.scenes[canvasId] = threeScene;
     }
-    // ./assets/industrial_sunset_puresky_1k.hdr
+
 
     const dLoader = new DRACOLoader();
     dLoader.setDecoderPath(
