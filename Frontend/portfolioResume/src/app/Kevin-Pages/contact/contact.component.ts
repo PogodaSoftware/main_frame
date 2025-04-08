@@ -17,7 +17,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
             <img
               src="./assets/email.png"
               alt="email icon"
-              class="icon email-icon"
+              class="icon"
             />
             <p>
               <a href="mailto:kevin.ortiz.software@gmail.com"
@@ -29,8 +29,8 @@ import { KevinFooterComponent } from '../footer/footer.component';
           <div class="contact-info-container">
             <img
               src="./assets/linkedin.png"
-              alt="My LinkedIn profile"
-              class="icon contact-icon"
+              alt="LinkedIn icon"
+              class="icon"
               (click)="
                 kevinGlobalService.openPage(
                   'https://www.linkedin.com/in/kevino73/'
