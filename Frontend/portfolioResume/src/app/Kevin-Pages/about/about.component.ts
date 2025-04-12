@@ -27,17 +27,17 @@ import { KevinFooterComponent } from '../footer/footer.component';
                   alt="Experience icon"
                   class="icon"
                 />
-                <h3>Experience</h3>
-                <p>
+                <h3 class="Experience-tag">Experience</h3>
+                <p class="first-experience-paragraph">
                   3 + years
                   Software Developer
                 </p><br />
-                <p>
+                <p class="second-experience-paragraph">
                   2 + years
                   Quality Assurance Engineer
                 </p><br />
 
-                <p>
+                <p class="third-experience-paragraph">
                   3 + months
                   DevOps Engineer
                 </p>
@@ -49,14 +49,14 @@ import { KevinFooterComponent } from '../footer/footer.component';
                   alt="Education icon"
                   class="icon"
                 />
-                <h3>Education</h3>
-                <p>B.Sc. in Marine Environmental Science</p> <br />
-                <p>Software Engineering training at Perscholas</p> <br />
-                <p>Quality Assurance training at FDM Group</p>
+                <h3 class="Education-tag">Education</h3>
+                <p class = "first-education-tag">B.Sc. in Marine Environmental Science</p> <br />
+                <p class = "second-education-tag">Software Engineering training at Perscholas</p> <br />
+                <p class = "third-education-tag">Quality Assurance training at FDM Group</p>
               </div>
             </div>
             <div class="text-container">
-              <p>
+              <p class = "about-me-paragraph-one" >
                 I am a dynamic and detail-oriented Quality Assurance Engineer
                 with a robust background in software testing, DevOps, cloud
                 infrastructure, and full-stack development. With experience
@@ -65,7 +65,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
                 efficiency in both manual and automated testing.
               </p>
               <br>
-              <p>
+              <p class = "about-me-paragraph-two">
                 I have hands-on experience with Selenium, Playwright, TestNG,
                 Cucumber, and a variety of DevOps tools, including Docker,
                 Kubernetes, Terraform, Jenkins, and Azure. I have demonstrated
@@ -76,7 +76,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
                 effective communication skills.
               </p>
               <br>
-              <p>
+              <p class = "about-me-paragraph-three">
                 As a U.S. Navy veteran and a SUNY Maritime graduate, I bring a
                 solid foundation in leadership, discipline, and teamwork. With
                 continuous upskilling in Salesforce, Java, Python, React, and
