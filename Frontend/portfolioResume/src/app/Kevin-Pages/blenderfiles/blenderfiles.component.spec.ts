@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { KevinBlenderFilesComponent } from './blenderfiles.component';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('KevinBlenderFilesComponent', () => {
   let component: KevinBlenderFilesComponent;
@@ -8,7 +9,8 @@ describe('KevinBlenderFilesComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [KevinBlenderFilesComponent], // Use declarations for components
+      declarations: [KevinBlenderFilesComponent],
+      imports: [HttpClientTestingModule], // Mock HTTP requests
       providers: [
         {
           provide: ActivatedRoute,
