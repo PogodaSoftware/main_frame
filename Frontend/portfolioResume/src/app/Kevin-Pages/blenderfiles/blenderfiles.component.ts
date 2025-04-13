@@ -12,7 +12,7 @@ import { Subscription } from 'rxjs';
   `,
   styleUrls: ['./blenderfiles.component.scss'],
 })
-export class KevinBlenderFilesComponent implements OnInit, OnDestroy {
+export class KevinBlenderFilesComponent implements OnInit {
   private routeSub?: Subscription;
 
   constructor(
@@ -48,9 +48,5 @@ export class KevinBlenderFilesComponent implements OnInit, OnDestroy {
     });
   }
 
-  ngOnDestroy(): void {
-    if (this.routeSub) {
-      this.routeSub.unsubscribe();
-    }
-  }
+
 }

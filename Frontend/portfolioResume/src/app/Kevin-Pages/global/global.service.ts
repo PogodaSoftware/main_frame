@@ -111,14 +111,14 @@ export class KevinGlobalService {
 
 
         if(window.innerWidth <= 468) {
-          // auto scaling for mobile devices
+
 
         renderer.setSize(window.innerWidth * 0.7, window.innerHeight * 0.7);
 
         }
         else if(window.innerWidth <= 768) {
         
-          // auto scaling for tablet devices
+   
           renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
         }
         else{
