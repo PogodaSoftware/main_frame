@@ -8,7 +8,7 @@ describe('KevinBlenderFilesComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [KevinBlenderFilesComponent], // Changed from declarations to imports
+      declarations: [KevinBlenderFilesComponent], // Use declarations for components
       providers: [
         {
           provide: ActivatedRoute,
@@ -23,7 +23,7 @@ describe('KevinBlenderFilesComponent', () => {
 
     fixture = TestBed.createComponent(KevinBlenderFilesComponent);
     component = fixture.componentInstance;
-    fixture.detectChanges();
+    fixture.detectChanges(); // Trigger change detection
   });
 
   it('should create', () => {
