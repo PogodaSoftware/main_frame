@@ -8,7 +8,7 @@ describe('KevinBlenderFilesComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [KevinBlenderFilesComponent],
+      imports: [KevinBlenderFilesComponent], // Changed from declarations to imports
       providers: [
         {
           provide: ActivatedRoute,
