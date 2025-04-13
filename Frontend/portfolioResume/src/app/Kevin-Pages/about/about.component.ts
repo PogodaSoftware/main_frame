@@ -50,9 +50,9 @@ import { KevinFooterComponent } from '../footer/footer.component';
                   class="icon"
                 />
                 <h3 class="Education-tag">Education</h3>
-                <p class = "first-education-tag">B.Sc. in Marine Environmental Science</p> <br />
-                <p class = "second-education-tag">Software Engineering training at Perscholas</p> <br />
-                <p class = "third-education-tag">Quality Assurance training at FDM Group</p>
+                <p class = "first-education-paragraph">B.Sc. in Marine Environmental Science</p> <br />
+                <p class = "second-education-paragraph">Software Engineering training at Perscholas</p> <br />
+                <p class = "third-education-paragraph">Quality Assurance training at FDM Group</p>
               </div>
             </div>
             <div class="text-container">
