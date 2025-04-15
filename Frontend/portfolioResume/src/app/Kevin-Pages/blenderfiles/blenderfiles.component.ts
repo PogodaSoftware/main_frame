@@ -43,7 +43,8 @@ export class KevinBlenderFilesComponent implements OnInit {
         cameraZ,
         1,
         1,
-        hdrPath
+        hdrPath 
+        
       );
     });
   }
