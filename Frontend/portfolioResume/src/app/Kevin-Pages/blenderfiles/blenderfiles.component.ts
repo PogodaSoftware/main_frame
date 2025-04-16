@@ -12,7 +12,7 @@ import { Subscription } from 'rxjs';
   `,
   styleUrls: ['./blenderfiles.component.scss'],
 })
-export class KevinBlenderFilesComponent implements OnInit, OnDestroy {
+export class KevinBlenderFilesComponent implements OnInit {
   private routeSub?: Subscription;
 
   constructor(
@@ -43,14 +43,11 @@ export class KevinBlenderFilesComponent implements OnInit, OnDestroy {
         cameraZ,
         1,
         1,
-        hdrPath
+        hdrPath 
+        
       );
     });
   }
 
-  ngOnDestroy(): void {
-    if (this.routeSub) {
-      this.routeSub.unsubscribe();
-    }
-  }
+
 }

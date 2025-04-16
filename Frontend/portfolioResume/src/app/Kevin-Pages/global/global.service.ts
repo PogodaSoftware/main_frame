@@ -33,7 +33,7 @@ export class KevinGlobalService {
     cameraPositionZ: number,
     renderPositionWidth: number,
     renderPositionHeight: number,
-    hdrPath : string
+    hdrPath: string
   ): void {
     let threeScene = this.scenes[canvasId];
     const helpersOn = helpersBoolean;
@@ -58,13 +58,6 @@ export class KevinGlobalService {
       camera.position.set(cameraPositionX, cameraPositionY, cameraPositionZ);
       controls.update();
 
-      renderer.setSize(
-        window.innerWidth / renderPositionWidth,
-        window.innerHeight / renderPositionHeight
-      );
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
-
       const light1 = new THREE.DirectionalLight(0xffffff, 1);
       light1.position.set(10, 10, 10);
       scene.add(light1);
@@ -76,7 +69,6 @@ export class KevinGlobalService {
       const light3 = new THREE.DirectionalLight(0xffffff, 1);
       light3.position.set(0, 10, -10);
       scene.add(light3);
-      
 
       if (helpersOn) {
         scene.add(
@@ -102,20 +94,49 @@ export class KevinGlobalService {
       };
       animate();
 
+      renderer.setSize(
+        window.innerWidth / renderPositionWidth,
+        window.innerHeight / renderPositionHeight
+      );
+
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      renderer.shadowMap.enabled = true;
+
       const onResize = () => {
+        
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-        renderer.setSize(
+       
+
+
+        if(window.innerWidth <= 468) {
+
+
+        renderer.setSize(window.innerWidth * 0.7, window.innerHeight * 0.7);
+
+        }
+        else if(window.innerWidth <= 768) {
+        
+   
+          renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
+        }
+        else{
+          renderer.setSize(
           window.innerWidth / renderPositionWidth,
           window.innerHeight / renderPositionHeight
         );
+        }
       };
+
+ 
+
+
       window.addEventListener('resize', onResize);
 
       threeScene = { scene, renderer, camera, controls };
       this.scenes[canvasId] = threeScene;
     }
-    // ./assets/industrial_sunset_puresky_1k.hdr
 
     const dLoader = new DRACOLoader();
     dLoader.setDecoderPath(

@@ -2,9 +2,10 @@ import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-navigation',
-  imports: [],
+  standalone: true,
   template: `
     <body>
+
       <nav id="desktop-navigation">
         <div class="logo"><a href="kevin">Home</a></div>
         <div>
@@ -16,6 +17,7 @@ import { Component } from '@angular/core';
           </ul>
         </div>
       </nav>
+      
 
       <nav id="hamburger-navigation">
         <div class="logo"><a href="kevin">Home</a></div>
@@ -26,14 +28,12 @@ import { Component } from '@angular/core';
             <span></span>
           </div>
           <div class="menu-links">
-            <li><a href="kevin/about" (click)="toggleMenu()">About</a></li>
-            <li>
-              <a href="kevin/experience" (click)="toggleMenu()">Experience</a>
-            </li>
-            <li>
-              <a href="kevin/projects" (click)="toggleMenu()">Projects</a>
-            </li>
-            <li><a href="kevin/contacts" (click)="toggleMenu()">Contacts</a></li>
+            <ul>
+              <li><a href="kevin/about" (click)="toggleMenu()">About</a></li>
+              <li><a href="kevin/experience" (click)="toggleMenu()">Experience</a></li>
+              <li><a href="kevin/projects" (click)="toggleMenu()">Projects</a></li>
+              <li><a href="kevin/contacts" (click)="toggleMenu()">Contacts</a></li>
+            </ul>
           </div>
         </div>
       </nav>

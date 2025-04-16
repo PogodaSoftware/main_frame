@@ -33,7 +33,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
             </button>
 
             <button
-              class="btn btn-color-1"
+              class="btn btn-color-2"
               onclick="location.href='./kevin/contacts'"
             >
               Contact Me

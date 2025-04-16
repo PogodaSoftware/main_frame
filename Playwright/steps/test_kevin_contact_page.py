@@ -30,4 +30,4 @@ def verify_email_icon_and_address(page):
 @then("It should display my LinkedIn icon and link")
 def verify_linkedin_icon_and_link(page):
     expect(page.locator("#contact")).to_contain_text("LinkedIn")
-    expect(page.get_by_role("img", name="My LinkedIn profile")).to_be_visible()
+    expect(page.get_by_role("img", name="LinkedIn icon")).to_be_visible()

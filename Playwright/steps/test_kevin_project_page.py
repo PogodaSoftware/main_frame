@@ -29,7 +29,7 @@ def verify_project_one(page):
      expect(page.get_by_role("heading", name="Snowman")).to_be_visible()
 
      expect(page.get_by_role("heading", name="Shark")).to_be_visible()
-     expect(page.get_by_role("heading", name="SciFi Crate")).to_be_visible()
+     expect(page.get_by_role("heading", name="Sci-Fi Crate")).to_be_visible()
 
 @then("it should display my first project github link")
 def verify_first_project_github_link(page):

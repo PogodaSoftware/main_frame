@@ -1,19 +1,18 @@
 #contact {
   display: flex;
-  justify-content: center;
   flex-direction: column;
+  justify-content: center;
   height: 70vh;
 }
 
 .contact-info-upper-container {
   display: flex;
   justify-content: center;
-  border-radius: 2rem;
-  border: #353535 0.1rem solid;
-  border-color: #a3a3a3;
-  background: #fafafa;
   margin: 2rem auto;
   padding: 0.5rem;
+  background: #fafafa;
+  border: 0.1rem solid #a3a3a3;
+  border-radius: 2rem;
 }
 
 .contact-info-container {
@@ -28,21 +27,13 @@
   font-size: larger;
 }
 
-.email-icon {
-  height: 2.5rem;
-}
-
-
-
-
 
 a {
   display: block;
   padding: 10px;
-  text-align: center;
   font-size: 1.5rem;
-  color: #000000;
+  color: #000;
+  text-align: center;
   text-decoration: none;
   transition: all 0.3s ease-in-out;
 }
-
