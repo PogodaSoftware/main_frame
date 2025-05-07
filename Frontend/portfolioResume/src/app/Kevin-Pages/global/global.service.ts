@@ -104,33 +104,22 @@ export class KevinGlobalService {
       renderer.shadowMap.enabled = true;
 
       const onResize = () => {
-        
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-       
 
-
-        if(window.innerWidth <= 468) {
-
-
-        renderer.setSize(window.innerWidth * 0.7, window.innerHeight * 0.7);
-
-        }
-        else if(window.innerWidth <= 768) {
-        
-   
+        if (window.innerWidth <= 468) {
+          renderer.setSize(window.innerWidth * 0.7, window.innerHeight * 0.7);
+        } else if (window.innerWidth <= 768) {
           renderer.setSize(window.innerWidth * 0.9, window.innerHeight * 0.9);
-        }
-        else{
+        } else if (window.innerWidth > 768) {
+          renderer.setSize(window.innerWidth * 0.1, window.innerHeight * 0.1);
+        } else {
           renderer.setSize(
-          window.innerWidth / renderPositionWidth,
-          window.innerHeight / renderPositionHeight
-        );
+            window.innerWidth / renderPositionWidth,
+            window.innerHeight / renderPositionHeight
+          );
         }
       };
-
- 
-
 
       window.addEventListener('resize', onResize);
 
