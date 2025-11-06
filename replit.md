@@ -8,6 +8,43 @@ This is a full-stack portfolio and resume application featuring:
 
 The application showcases Kevin Ortiz's portfolio as a Quality Assurance & DevOps Engineer, with sections for About, Experience, Projects, and Contact information.
 
+## Running the Application
+
+This project supports two deployment approaches:
+
+### Option 1: Docker (Universal - Recommended for Local Development)
+The original Docker-based setup works on any system with Docker installed:
+
+```bash
+# Set environment variables
+export FRONTEND_PORT=4200
+export BACKEND_PORT=8000
+
+# Run with docker-compose
+docker-compose up
+```
+
+The application will be available at:
+- Frontend: http://localhost:4200
+- Backend: http://localhost:8000
+
+### Option 2: Replit (Cloud Development)
+On Replit, Docker is not supported. Instead, the application runs natively:
+
+**Frontend**: 
+```bash
+cd Frontend/portfolioResume
+ng serve --port 5000 --host 0.0.0.0
+```
+
+**Backend**:
+```bash
+cd Backend/controller
+python manage.py runserver 0.0.0.0:8000
+```
+
+**Note**: The Angular configuration in `angular.json` is kept universal (no hardcoded ports). Port and host are specified via command-line arguments in the Replit workflow.
+
 ## Project Structure
 ```
 .
@@ -58,15 +95,12 @@ The application showcases Kevin Ortiz's portfolio as a Quality Assurance & DevOp
 ### Workflow
 The project uses a single workflow for the frontend:
 - **Name**: `frontend`
-- **Command**: `cd Frontend/portfolioResume && npm start`
+- **Command**: `cd Frontend/portfolioResume && ng serve --port 5000 --host 0.0.0.0`
 - **Output**: Webview on port 5000
 - **Status**: Running
 
 ### Angular Configuration
-The Angular dev server is configured in `angular.json` to work with Replit's proxy:
-- Port: 5000
-- Host: 0.0.0.0
-- The newer Angular application builder handles host checking automatically when bound to 0.0.0.0
+The Angular configuration in `angular.json` remains universal with no hardcoded ports. When running on Replit, port and host are specified via command-line flags in the workflow command to enable Replit's proxy access while keeping the codebase portable for Docker deployment.
 
 ### Routes
 - `/` - Redirects to `/kevin` (home page)
@@ -85,13 +119,15 @@ Configured for Replit autoscale deployment:
 - **Type**: Autoscale (stateless, scales based on traffic)
 
 ## Recent Changes
-- **2025-11-06**: Initial Replit setup
-  - Installed Node.js 20 and Python 3.11
-  - Configured Angular to run on port 5000 with host 0.0.0.0
+- **2025-11-06**: Initial Replit setup (maintained Docker compatibility)
+  - Installed Node.js 20 and Python 3.11 modules
+  - Installed frontend (npm) and backend (pip) dependencies
+  - Kept Angular configuration universal (no hardcoded ports in angular.json)
   - Added default route redirect from `/` to `/kevin`
-  - Set up frontend workflow
-  - Configured deployment settings
+  - Set up frontend workflow with command-line port/host flags for Replit
+  - Configured autoscale deployment settings
   - Updated .gitignore for Angular build artifacts
+  - Documented both Docker and Replit deployment approaches
 
 ## Known Issues
 - Backend is not currently running (minimal setup only)

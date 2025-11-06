@@ -21,17 +21,21 @@ args = "frontend"
 name = "frontend"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "cd Frontend/portfolioResume && npm start"
-waitForPort = 5000
-
 [workflows.workflow.metadata]
 outputType = "webview"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd Frontend/portfolioResume && ng serve --port 5000 --host 0.0.0.0"
+waitForPort = 5000
 
 [[ports]]
 localPort = 5000
 externalPort = 80
+
+[[ports]]
+localPort = 34699
+externalPort = 3000
 
 [deployment]
 deploymentTarget = "autoscale"
