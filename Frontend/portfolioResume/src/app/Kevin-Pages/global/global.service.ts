@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, PLATFORM_ID, Inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -17,8 +18,12 @@ interface ThreeScene {
   providedIn: 'root',
 })
 export class KevinGlobalService {
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+
   openPage(url: string): void {
-    window.open(url, '_blank');
+    if (isPlatformBrowser(this.platformId)) {
+      window.open(url, '_blank');
+    }
   }
 
   private scenes: { [canvasId: string]: ThreeScene } = {};
@@ -35,6 +40,10 @@ export class KevinGlobalService {
     renderPositionHeight: number,
     hdrPath: string
   ): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     let threeScene = this.scenes[canvasId];
     const helpersOn = helpersBoolean;
 

@@ -1,5 +1,20 @@
 # Portfolio Resume Application
 
+## Recent Changes (November 6, 2025)
+- **Security Updates**: Updated dependencies in response to security scan
+  - Django: Updated to 5.1.5
+  - @angular/platform-server: Updated to 19.0.0
+  - @angular/ssr: Updated to 19.0.4
+- **Bug Fixes**: 
+  - Added favicon.svg to resolve 404 error in browser console
+  - Fixed SSR compatibility issue with THREE.js by adding platform detection to global service
+  - Ensured browser-specific code (document, window, WebGL) only runs in browser context
+- **Verification**: All core functionality tested and working properly
+  - Frontend: Angular SSR working correctly with no server-side errors
+  - Backend: Django 5.1.5 running without issues
+  - Navigation: All routes functioning properly
+  - 3D models: Platform detection prevents SSR errors while maintaining client-side functionality
+
 ## Overview
 This is a full-stack portfolio and resume application featuring:
 - **Frontend**: Angular 19 application with Server-Side Rendering (SSR)
