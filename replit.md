@@ -114,11 +114,10 @@ The Angular configuration in `angular.json` remains universal with no hardcoded 
 
 ## Deployment
 Configured for Replit autoscale deployment:
-- **Working Directory**: `Frontend/portfolioResume`
-- **Build**: `npm install && npm run build`
-- **Run**: `npx --yes serve dist/portfolio-resume-frontend/browser -l 5000`
+- **Build**: `cd Frontend/portfolioResume && npm install && npm run build`
+- **Run**: `cd Frontend/portfolioResume && npx --yes serve dist/portfolio-resume-frontend/browser -l 5000`
 - **Type**: Autoscale (stateless, scales based on traffic)
-- **Note**: Uses `workingDirectory` setting in `.replit` to handle monorepo structure
+- **Note**: Commands navigate to the subdirectory first to handle monorepo structure
 
 ## Recent Changes
 - **2025-11-06**: Initial Replit setup (maintained Docker compatibility)
