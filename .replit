@@ -26,7 +26,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd Frontend/portfolioResume && ng serve --port 5000 --host 0.0.0.0"
+args = "cd Frontend/portfolioResume && npm start -- --port 5000 --host 0.0.0.0"
 waitForPort = 5000
 
 [[ports]]
@@ -34,7 +34,7 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 34699
+localPort = 33335
 externalPort = 3000
 
 [deployment]

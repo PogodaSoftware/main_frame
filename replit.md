@@ -34,7 +34,7 @@ On Replit, Docker is not supported. Instead, the application runs natively:
 **Frontend**: 
 ```bash
 cd Frontend/portfolioResume
-ng serve --port 5000 --host 0.0.0.0
+npm start -- --port 5000 --host 0.0.0.0
 ```
 
 **Backend**:
@@ -43,7 +43,7 @@ cd Backend/controller
 python manage.py runserver 0.0.0.0:8000
 ```
 
-**Note**: The Angular configuration in `angular.json` is kept universal (no hardcoded ports). Port and host are specified via command-line arguments in the Replit workflow.
+**Note**: The Angular configuration in `angular.json` is kept universal (no hardcoded ports). Port and host are specified via command-line arguments passed through npm to the Angular dev server in the Replit workflow.
 
 ## Project Structure
 ```
@@ -95,7 +95,7 @@ python manage.py runserver 0.0.0.0:8000
 ### Workflow
 The project uses a single workflow for the frontend:
 - **Name**: `frontend`
-- **Command**: `cd Frontend/portfolioResume && ng serve --port 5000 --host 0.0.0.0`
+- **Command**: `cd Frontend/portfolioResume && npm start -- --port 5000 --host 0.0.0.0`
 - **Output**: Webview on port 5000
 - **Status**: Running
 
