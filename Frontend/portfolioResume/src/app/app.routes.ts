@@ -10,6 +10,11 @@ import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfi
 
 export const routes: Routes = [
   {
+    path: '',
+    redirectTo: 'kevin',
+    pathMatch: 'full',
+  },
+  {
     path: 'kevin',
     component: KevinHomeComponent,
     title: 'Kevin Home Page',

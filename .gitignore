@@ -168,3 +168,6 @@ node_modules/
 /main_frame_project/node_modules/
 /main_frame_project/Frontend/node_modules/
 /main_frame_project/Frontend/protfolioResume/node_modules/
+Frontend/portfolioResume/.angular/
+Frontend/portfolioResume/dist/
+Frontend/portfolioResume/.angular-cache/
