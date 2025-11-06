@@ -34,14 +34,15 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
+localPort = 37145
+externalPort = 3001
+
+[[ports]]
 localPort = 39305
 externalPort = 3000
 
-[[ports]]
-localPort = 42525
-externalPort = 3001
-
 [deployment]
+workingDirectory = "Frontend/portfolioResume"
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "npx --yes serve Frontend/portfolioResume/dist/portfolio-resume-frontend/browser -l 5000"]
-build = ["bash", "-c", "npm install --prefix Frontend/portfolioResume && npm run build --prefix Frontend/portfolioResume"]
+run = ["bash", "-c", "npx --yes serve dist/portfolio-resume-frontend/browser -l 5000"]
+build = ["bash", "-c", "npm install && npm run build"]
