@@ -43,10 +43,12 @@ interface Education {
               <ul class="responsibilities">
                 <li *ngFor="let item of exp.description">{{ item }}</li>
               </ul>
-              <div class="technologies" *ngIf="exp.technologies && exp.technologies.length > 0">
-                <strong>Technologies:</strong>
-                <span class="tech-tag" *ngFor="let tech of exp.technologies">{{ tech }}</span>
-              </div>
+              @if (exp.technologies && exp.technologies.length > 0) {
+                <div class="technologies">
+                  <strong>Technologies:</strong>
+                  <span class="tech-tag" *ngFor="let tech of exp.technologies">{{ tech }}</span>
+                </div>
+              }
             </div>
           </div>
         </div>
