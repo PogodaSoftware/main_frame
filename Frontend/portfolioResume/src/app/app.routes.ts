@@ -3,6 +3,7 @@ import { KevinHomeComponent } from './Kevin-Pages/home/home.component';
 import { KevinAboutComponent } from './Kevin-Pages/about/about.component';
 import { KevinExperienceComponent } from './Kevin-Pages/experience/experience.component';
 import { PogodaHomeComponent } from './Pogoda-Software-Pages/home/home.component';
+import { PogodaExperienceComponent } from './Pogoda-Software-Pages/experience/experience.component';
 import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.component';
 import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
@@ -48,5 +49,11 @@ export const routes: Routes = [
   {
     path: 'pogoda',
     component: PogodaHomeComponent,
+    title: 'Pogoda Software - Home',
+  },
+  {
+    path: 'pogoda/experience',
+    component: PogodaExperienceComponent,
+    title: 'Pogoda Software - Experience',
   },
 ];
