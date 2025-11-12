@@ -1,6 +1,14 @@
 # Portfolio Resume Application
 
 ## Recent Changes (November 12, 2025)
+- **New Pogoda Software Pages**:
+  - Created complete Pogoda Software section with professional experience display
+  - Added navigation and footer components for Pogoda pages
+  - Created `/pogoda` home page with LinkedIn integration
+  - Created `/pogoda/experience` page with professional timeline layout
+  - Static data structure ready for LinkedIn profile information
+  - Modern card-based design with technology tags and timeline visualization
+  
 - **Major Security Upgrade & Dependency Cleanup**:
   - Angular: Upgraded from 19.0.0 to 19.2.15 (fixed high severity SSR vulnerability)
   - All packages updated to latest secure versions
@@ -138,6 +146,7 @@ The project uses a single workflow for the frontend:
 The Angular configuration in `angular.json` remains universal with no hardcoded ports. When running on Replit, port and host are specified via command-line flags in the workflow command to enable Replit's proxy access while keeping the codebase portable for Docker deployment.
 
 ### Routes
+**Kevin Ortiz Portfolio:**
 - `/` - Redirects to `/kevin` (home page)
 - `/kevin` - Kevin Ortiz portfolio home
 - `/kevin/about` - About page
@@ -145,7 +154,10 @@ The Angular configuration in `angular.json` remains universal with no hardcoded 
 - `/kevin/projects` - Projects showcase
 - `/kevin/contacts` - Contact form
 - `/kevin/blender-projects` - Blender projects showcase
-- `/pogoda` - Pogoda Software page
+
+**Pogoda Software:**
+- `/pogoda` - Pogoda Software home page
+- `/pogoda/experience` - Professional experience timeline with LinkedIn integration
 
 ## Deployment
 Configured for Replit autoscale deployment:
@@ -154,23 +166,14 @@ Configured for Replit autoscale deployment:
 - **Type**: Autoscale (stateless, scales based on traffic)
 - **Note**: Commands navigate to the subdirectory first to handle monorepo structure
 
-## Recent Changes
-- **2025-11-06**: Initial Replit setup (maintained Docker compatibility)
-  - Installed Node.js 20 and Python 3.11 modules
-  - Installed frontend (npm) and backend (pip) dependencies
-  - Kept Angular configuration universal (no hardcoded ports in angular.json)
-  - Added default route redirect from `/` to `/kevin`
-  - Set up frontend workflow with command-line port/host flags for Replit
-  - Configured autoscale deployment settings
-  - Updated .gitignore for Angular build artifacts
-  - Documented both Docker and Replit deployment approaches
-
 ## Known Issues
 - Backend is not currently running (minimal setup only)
 - WebGL/Three.js features may not work in Replit's browser preview due to lack of WebGL context support in the iframe environment. These features will work when deployed or accessed directly via the public URL.
 
 ## Future Enhancements
+- **Pogoda Experience Data**: Update experience component with actual LinkedIn data from Jaroslaw Pogoda's profile
 - Connect frontend to Django backend API
 - Implement backend endpoints for contact forms and data management
 - Set up database for dynamic content
 - Deploy backend alongside frontend
+- Optional: Integrate LinkedIn API for real-time profile data updates
