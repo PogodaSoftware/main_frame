@@ -1,19 +1,39 @@
 # Portfolio Resume Application
 
-## Recent Changes (November 6, 2025)
-- **Security Updates**: Updated dependencies in response to security scan
-  - Django: Updated to 5.1.5
-  - @angular/platform-server: Updated to 19.0.0
-  - @angular/ssr: Updated to 19.0.4
-- **Bug Fixes**: 
+## Recent Changes (November 12, 2025)
+- **Major Security Upgrade & Dependency Cleanup**:
+  - Angular: Upgraded from 19.0.0 to 19.2.15 (fixed high severity SSR vulnerability)
+  - All packages updated to latest secure versions
+  - **0 security vulnerabilities** remaining (verified with npm audit)
+  
+- **Dependency Reduction**:
+  - **Removed unused frontend dependencies**: @angular/forms, @angular/animations, portfolio-resume-frontend self-reference
+  - **Removed unused dev dependencies**: Karma, Jasmine testing framework (using Playwright for E2E)
+  - **Removed unused backend dependencies**: behave (using pytest-bdd instead)
+  - **Result**: Reduced package count from 1157 to 849 packages (-27% reduction)
+  
+- **Code Cleanup**:
+  - Removed all unused Jasmine/Karma test files (.spec.ts files)
+  - Removed karma.conf.js and test configuration directory
+  - Removed unused backend unit test examples
+  - **Result**: Smaller, more maintainable codebase
+  
+- **SSR Fixes**:
+  - Updated main.server.ts to support Angular 19.2.x SSR API changes (BootstrapContext)
+  - Fixed NG0401 error by properly passing bootstrap context
+  - THREE.js platform detection maintained for browser-only rendering
+  
+- **Bug Fixes from Previous Session** (November 6, 2025):
   - Added favicon.svg to resolve 404 error in browser console
-  - Fixed SSR compatibility issue with THREE.js by adding platform detection to global service
-  - Ensured browser-specific code (document, window, WebGL) only runs in browser context
+  - Fixed SSR compatibility issue with THREE.js by adding platform detection
+  - Ensured browser-specific code only runs in browser context
+  
 - **Verification**: All core functionality tested and working properly
-  - Frontend: Angular SSR working correctly with no server-side errors
+  - Frontend: Angular 19.2.15 SSR working correctly
   - Backend: Django 5.1.5 running without issues
   - Navigation: All routes functioning properly
-  - 3D models: Platform detection prevents SSR errors while maintaining client-side functionality
+  - 3D models: Platform detection prevents SSR errors
+  - Security: 0 vulnerabilities in production and dev dependencies
 
 ## Overview
 This is a full-stack portfolio and resume application featuring:
