@@ -4,6 +4,10 @@ RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
+# Updated 2025-11-12: Angular 19.2.15, removed unused dependencies
+# - Removed: @angular/forms, @angular/animations, Karma, Jasmine
+# - Security: Fixed high severity SSR vulnerability
+# - Result: 308 fewer packages (-27% reduction)
 COPY package.json package-lock.json ./
 RUN npm install && \
     npm cache clean --force && \
