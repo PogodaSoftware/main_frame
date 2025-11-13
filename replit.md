@@ -1,12 +1,19 @@
 # Portfolio Resume Application
 
+## Recent Changes (November 13, 2025)
+- **Pogoda Experience Page - Real LinkedIn Data**:
+  - Populated experience page with Jaroslaw Pogoda's actual LinkedIn professional history
+  - Added 6 work experiences: Gesture (current), Per Scholas, Sprint, Azodio.com, Bellevue Hospital, Freelance IT
+  - Updated education with Queens College BS in Computer Science (2010-2016) and Triplebyte certification (2022)
+  - All job descriptions, technologies, dates, and locations now reflect real professional background
+  - Experience extracted from public LinkedIn profile via web search (LinkedIn direct fetch not supported)
+
 ## Recent Changes (November 12, 2025)
 - **New Pogoda Software Pages**:
   - Created complete Pogoda Software section with professional experience display
   - Added navigation and footer components for Pogoda pages
   - Created `/pogoda` home page with LinkedIn integration
   - Created `/pogoda/experience` page with professional timeline layout
-  - Static data structure ready for LinkedIn profile information
   - Modern card-based design with technology tags and timeline visualization
   
 - **Major Security Upgrade & Dependency Cleanup**:
