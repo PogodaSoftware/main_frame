@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { PogodaNavigationComponent } from '../navigation/navigation.component';
 import { PogodaFooterComponent } from '../footer/footer.component';
 import { NgFor } from '@angular/common';
@@ -61,11 +62,21 @@ export class PogodaExperienceComponent implements OnInit {
   education: Education[] = [];
   loading = true;
 
-  constructor(private pogodaApiService: PogodaApiService) {}
+  constructor(
+    private pogodaApiService: PogodaApiService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    // Initialize with fallback data for SSR
+    this.loadFallbackExperiences();
+    this.loadFallbackEducation();
+  }
 
   ngOnInit(): void {
-    this.loadExperiences();
-    this.loadEducation();
+    // Only make HTTP calls in the browser
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadExperiences();
+      this.loadEducation();
+    }
   }
 
   loadExperiences(): void {
