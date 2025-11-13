@@ -1,23 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { PogodaNavigationComponent } from '../navigation/navigation.component';
 import { PogodaFooterComponent } from '../footer/footer.component';
 import { NgFor } from '@angular/common';
-
-interface Experience {
-  company: string;
-  role: string;
-  period: string;
-  location: string;
-  description: string[];
-  technologies?: string[];
-}
-
-interface Education {
-  institution: string;
-  degree: string;
-  period: string;
-  location: string;
-}
+import { PogodaApiService, Experience, Education } from '../services/pogoda-api.service';
 
 @Component({
   selector: 'app-pogoda-experience',
@@ -71,9 +56,48 @@ interface Education {
   `,
   styleUrls: ['./experience.component.scss', '../../Kevin-Pages/global/global.component.scss'],
 })
-export class PogodaExperienceComponent {
-  experiences: Experience[] = [
+export class PogodaExperienceComponent implements OnInit {
+  experiences: Experience[] = [];
+  education: Education[] = [];
+  loading = true;
+
+  constructor(private pogodaApiService: PogodaApiService) {}
+
+  ngOnInit(): void {
+    this.loadExperiences();
+    this.loadEducation();
+  }
+
+  loadExperiences(): void {
+    this.pogodaApiService.getExperiences().subscribe({
+      next: (data) => {
+        this.experiences = data;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error loading experiences:', err);
+        this.loadFallbackExperiences();
+        this.loading = false;
+      }
+    });
+  }
+
+  loadEducation(): void {
+    this.pogodaApiService.getEducation().subscribe({
+      next: (data) => {
+        this.education = data;
+      },
+      error: (err) => {
+        console.error('Error loading education:', err);
+        this.loadFallbackEducation();
+      }
+    });
+  }
+
+  loadFallbackExperiences(): void {
+    this.experiences = [
     {
+      id: 1,
       company: 'Gesture',
       role: 'Full Stack Software Engineer - Level 1',
       period: '2022 - Present',
@@ -84,9 +108,11 @@ export class PogodaExperienceComponent {
         'Built full-stack solutions combining frontend development with backend API control',
         'Contributed to product features enhancing user experience and business workflows'
       ],
-      technologies: ['JavaScript', 'React', 'Node.js', 'API Development', 'Full Stack Development']
+      technologies: ['JavaScript', 'React', 'Node.js', 'API Development', 'Full Stack Development'],
+      order: 0
     },
     {
+      id: 2,
       company: 'Per Scholas',
       role: 'Software Engineer Learner',
       period: '2021',
@@ -97,9 +123,11 @@ export class PogodaExperienceComponent {
         'Built practical projects demonstrating full-stack development skills',
         'Developed foundation in software engineering best practices'
       ],
-      technologies: ['JavaScript', 'HTML/CSS', 'Git', 'Software Engineering']
+      technologies: ['JavaScript', 'HTML/CSS', 'Git', 'Software Engineering'],
+      order: 1
     },
     {
+      id: 3,
       company: 'Sprint by WirelessRitz',
       role: 'Technician/Sales Representative',
       period: '2012',
@@ -110,9 +138,11 @@ export class PogodaExperienceComponent {
         'Diagnosed and resolved hardware and software issues',
         'Managed sales operations and customer relationships'
       ],
-      technologies: ['Technical Support', 'Customer Service', 'Mobile Technology']
+      technologies: ['Technical Support', 'Customer Service', 'Mobile Technology'],
+      order: 2
     },
     {
+      id: 4,
       company: 'Azodio.com',
       role: 'Owner/Developer',
       period: '2011',
@@ -123,9 +153,11 @@ export class PogodaExperienceComponent {
         'Managed full project lifecycle from conception to deployment',
         'Built business operations and client relationships'
       ],
-      technologies: ['Web Development', 'HTML', 'CSS', 'JavaScript', 'Entrepreneurship']
+      technologies: ['Web Development', 'HTML', 'CSS', 'JavaScript', 'Entrepreneurship'],
+      order: 3
     },
     {
+      id: 5,
       company: 'Bellevue Hospital Center',
       role: 'Patient Translator',
       period: '2011',
@@ -136,9 +168,11 @@ export class PogodaExperienceComponent {
         'Ensured accurate interpretation of medical information',
         'Supported patient care through effective bilingual communication'
       ],
-      technologies: ['Translation', 'Healthcare', 'Communication']
+      technologies: ['Translation', 'Healthcare', 'Communication'],
+      order: 4
     },
     {
+      id: 6,
       company: 'Freelance',
       role: 'IT Support Specialist',
       period: '2005 - 2011',
@@ -149,22 +183,30 @@ export class PogodaExperienceComponent {
         'Maintained computer systems and networks',
         'Built strong foundation in technical problem-solving'
       ],
-      technologies: ['IT Support', 'Hardware', 'Software', 'Troubleshooting', 'Networking']
+      technologies: ['IT Support', 'Hardware', 'Software', 'Troubleshooting', 'Networking'],
+      order: 5
     }
   ];
+  }
 
-  education: Education[] = [
-    {
-      institution: 'Queens College',
-      degree: 'Bachelor of Science in Computer Science',
-      period: '2010 - 2016',
-      location: 'Queens, New York'
-    },
-    {
-      institution: 'Triplebyte',
-      degree: 'Triplebyte Certified Software Engineer',
-      period: '2022',
-      location: 'Remote'
-    }
-  ];
+  loadFallbackEducation(): void {
+    this.education = [
+      {
+        id: 1,
+        institution: 'Queens College',
+        degree: 'Bachelor of Science in Computer Science',
+        period: '2010 - 2016',
+        location: 'Queens, New York',
+        order: 0
+      },
+      {
+        id: 2,
+        institution: 'Triplebyte',
+        degree: 'Triplebyte Certified Software Engineer',
+        period: '2022',
+        location: 'Remote',
+        order: 1
+      }
+    ];
+  }
 }
