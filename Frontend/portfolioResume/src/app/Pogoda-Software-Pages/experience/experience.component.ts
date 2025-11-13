@@ -74,39 +74,97 @@ interface Education {
 export class PogodaExperienceComponent {
   experiences: Experience[] = [
     {
-      company: 'Company Name',
-      role: 'Senior Position Title',
-      period: 'Month YYYY - Present',
-      location: 'City, Country',
+      company: 'Gesture',
+      role: 'Full Stack Software Engineer - Level 1',
+      period: '2022 - Present',
+      location: 'New York, United States',
       description: [
-        'Key responsibility or achievement description',
-        'Another major contribution or project leadership role',
-        'Technical implementation or process improvement',
-        'Team collaboration or mentorship activity'
+        'Engineered the Shop Flow feature to guide users through product selection process',
+        'Developed frontend interfaces and API integrations for real-world applications',
+        'Built full-stack solutions combining frontend development with backend API control',
+        'Contributed to product features enhancing user experience and business workflows'
       ],
-      technologies: ['Technology 1', 'Technology 2', 'Technology 3', 'Technology 4']
+      technologies: ['JavaScript', 'React', 'Node.js', 'API Development', 'Full Stack Development']
     },
     {
-      company: 'Previous Company',
-      role: 'Position Title',
-      period: 'Month YYYY - Month YYYY',
-      location: 'City, Country',
+      company: 'Per Scholas',
+      role: 'Software Engineer Learner',
+      period: '2021',
+      location: 'New York, United States',
       description: [
-        'Primary responsibility or project',
-        'Achievement or contribution',
-        'Technical work or implementation',
-        'Cross-functional collaboration'
+        'Completed intensive software engineering training program',
+        'Gained hands-on experience in modern web development technologies',
+        'Built practical projects demonstrating full-stack development skills',
+        'Developed foundation in software engineering best practices'
       ],
-      technologies: ['Tech A', 'Tech B', 'Tech C']
+      technologies: ['JavaScript', 'HTML/CSS', 'Git', 'Software Engineering']
+    },
+    {
+      company: 'Sprint by WirelessRitz',
+      role: 'Technician/Sales Representative',
+      period: '2012',
+      location: 'New York, United States',
+      description: [
+        'Provided technical support and troubleshooting for mobile devices',
+        'Delivered customer service and product consultation',
+        'Diagnosed and resolved hardware and software issues',
+        'Managed sales operations and customer relationships'
+      ],
+      technologies: ['Technical Support', 'Customer Service', 'Mobile Technology']
+    },
+    {
+      company: 'Azodio.com',
+      role: 'Owner/Developer',
+      period: '2011',
+      location: 'New York, United States',
+      description: [
+        'Founded and developed web development company',
+        'Created custom websites and web applications for clients',
+        'Managed full project lifecycle from conception to deployment',
+        'Built business operations and client relationships'
+      ],
+      technologies: ['Web Development', 'HTML', 'CSS', 'JavaScript', 'Entrepreneurship']
+    },
+    {
+      company: 'Bellevue Hospital Center',
+      role: 'Patient Translator',
+      period: '2011',
+      location: 'New York, United States',
+      description: [
+        'Provided medical translation services for patients',
+        'Facilitated communication between healthcare providers and patients',
+        'Ensured accurate interpretation of medical information',
+        'Supported patient care through effective bilingual communication'
+      ],
+      technologies: ['Translation', 'Healthcare', 'Communication']
+    },
+    {
+      company: 'Freelance',
+      role: 'IT Support Specialist',
+      period: '2005 - 2011',
+      location: 'New York, United States',
+      description: [
+        'Started career providing freelance IT support services',
+        'Troubleshot hardware and software issues for clients',
+        'Maintained computer systems and networks',
+        'Built strong foundation in technical problem-solving'
+      ],
+      technologies: ['IT Support', 'Hardware', 'Software', 'Troubleshooting', 'Networking']
     }
   ];
 
   education: Education[] = [
     {
-      institution: 'University Name',
-      degree: 'Degree Type in Field of Study',
-      period: 'YYYY - YYYY',
-      location: 'City, Country'
+      institution: 'Queens College',
+      degree: 'Bachelor of Science in Computer Science',
+      period: '2010 - 2016',
+      location: 'Queens, New York'
+    },
+    {
+      institution: 'Triplebyte',
+      degree: 'Triplebyte Certified Software Engineer',
+      period: '2022',
+      location: 'Remote'
     }
   ];
 }
