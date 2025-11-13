@@ -1,6 +1,16 @@
 # Portfolio Resume Application
 
 ## Recent Changes (November 13, 2025)
+- **PostgreSQL Backend Integration for Pogoda Software**:
+  - **Database**: Created PostgreSQL database with WorkExperience and Education models
+  - **Django REST API**: Built API endpoints at `/api/pogoda/experience/` and `/api/pogoda/education/`
+  - **Anti-Scraping Protection**: Implemented rate limiting (10 requests/minute per IP) using DRF throttling
+  - **Data Migration**: Database seeded with 6 work experiences and 2 education entries from Jaroslaw Pogoda's LinkedIn
+  - **Angular Integration**: Created HTTP service to fetch data dynamically from backend API
+  - **Fallback System**: Component falls back to static data if API is unavailable for reliability
+  - **CORS Configuration**: Configured CORS to allow frontend access while maintaining security
+  - **Workflows**: Both backend (port 8000) and frontend (port 5000) running successfully
+  
 - **Pogoda Experience Page - Real LinkedIn Data**:
   - Populated experience page with Jaroslaw Pogoda's actual LinkedIn professional history
   - Added 6 work experiences: Gesture (current), Per Scholas, Sprint, Azodio.com, Bellevue Hospital, Freelance IT
@@ -130,10 +140,16 @@ python manage.py runserver 0.0.0.0:8000
   - Contact forms and project showcases
 
 ### Backend (Django)
-- **Port**: Not currently configured (backend is minimal setup)
-- **Start Command**: `python manage.py runserver` (from Backend/controller directory)
-- **Technologies**: Django 5.1.5, SQLite, Gunicorn
-- **Status**: Basic Django project setup, ready for API development
+- **Port**: 8000
+- **Start Command**: `python manage.py runserver 0.0.0.0:8000` (from Backend/controller directory)
+- **Technologies**: Django 5.1.5, PostgreSQL, Django REST Framework, Gunicorn
+- **Features**:
+  - REST API endpoints for Pogoda experience and education data
+  - Rate limiting (10 requests/minute) for anti-scraping protection
+  - CORS configuration for frontend integration
+  - Database models for WorkExperience and Education
+  - Management command for seeding database: `python manage.py seed_pogoda_data`
+- **Status**: Fully functional API serving dynamic data from PostgreSQL
 
 ### Testing
 - **Framework**: Playwright with pytest-bdd
@@ -142,11 +158,20 @@ python manage.py runserver 0.0.0.0:8000
 
 ## Replit Configuration
 
-### Workflow
-The project uses a single workflow for the frontend:
+### Workflows
+The project uses two workflows:
+
+**Frontend Workflow:**
 - **Name**: `frontend`
 - **Command**: `cd Frontend/portfolioResume && npm start -- --port 5000 --host 0.0.0.0`
 - **Output**: Webview on port 5000
+- **Status**: Running
+
+**Backend Workflow:**
+- **Name**: `backend`
+- **Command**: `cd Backend/controller && python manage.py runserver 0.0.0.0:8000`
+- **Output**: Console (internal API)
+- **Port**: 8000
 - **Status**: Running
 
 ### Angular Configuration
@@ -174,13 +199,42 @@ Configured for Replit autoscale deployment:
 - **Note**: Commands navigate to the subdirectory first to handle monorepo structure
 
 ## Known Issues
-- Backend is not currently running (minimal setup only)
 - WebGL/Three.js features may not work in Replit's browser preview due to lack of WebGL context support in the iframe environment. These features will work when deployed or accessed directly via the public URL.
+- Frontend may initially show fallback data if backend takes time to start (this is expected behavior)
+
+## Backend API Documentation
+
+### Pogoda API Endpoints
+
+**Base URL**: `http://localhost:8000/api/pogoda/`
+
+#### Experience Endpoint
+- **URL**: `/api/pogoda/experience/`
+- **Method**: GET
+- **Authentication**: None (rate limited to 10 requests/minute per IP)
+- **Response**: JSON array of work experience objects
+- **Fields**: id, company, role, period, location, description (array), technologies (array), order
+
+#### Education Endpoint
+- **URL**: `/api/pogoda/education/`
+- **Method**: GET
+- **Authentication**: None (rate limited to 10 requests/minute per IP)
+- **Response**: JSON array of education objects
+- **Fields**: id, institution, degree, period, location, order
+
+### Database Setup
+To set up the database on a fresh deployment:
+```bash
+# Run migrations
+python manage.py migrate
+
+# Seed Pogoda data
+python manage.py seed_pogoda_data
+```
 
 ## Future Enhancements
-- **Pogoda Experience Data**: Update experience component with actual LinkedIn data from Jaroslaw Pogoda's profile
-- Connect frontend to Django backend API
-- Implement backend endpoints for contact forms and data management
-- Set up database for dynamic content
-- Deploy backend alongside frontend
+- Implement backend endpoints for Kevin's contact form
+- Add admin interface for managing experience/education data
+- Integrate additional portfolio projects into database
 - Optional: Integrate LinkedIn API for real-time profile data updates
+- Deploy backend alongside frontend on production
