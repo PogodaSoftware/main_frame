@@ -4,14 +4,12 @@ import { Component } from '@angular/core';
   selector: 'app-pogoda-footer',
   standalone: true,
   template: `
-    <body>
-      <footer>
-        <nav></nav>
-        <p>
-          Copyright &#169; {{ currentYear }} Pogoda Software. All Rights Reserved.
-        </p>
-      </footer>
-    </body>
+    <footer>
+      <nav></nav>
+      <p>
+        Copyright &#169; {{ currentYear }} Pogoda Software. All Rights Reserved.
+      </p>
+    </footer>
   `,
   styleUrls: ['./footer.component.scss', '../../Kevin-Pages/global/global.component.scss'],
 })

@@ -10,50 +10,45 @@ import { PogodaApiService, Experience, Education } from '../services/pogoda-api.
   standalone: true,
   imports: [PogodaNavigationComponent, PogodaFooterComponent, NgFor],
   template: `
-    <head>
-      <title>Jaroslaw Pogoda - Professional Experience</title>
-    </head>
-    <body>
-      <app-pogoda-navigation></app-pogoda-navigation>
+    <app-pogoda-navigation></app-pogoda-navigation>
+    
+    <section id="experience">
+      <h1 class="title">Professional Experience</h1>
       
-      <section id="experience">
-        <h1 class="title">Professional Experience</h1>
-        
-        <div class="timeline-container">
-          <div class="experience-item" *ngFor="let exp of experiences">
-            <div class="timeline-marker"></div>
-            <div class="experience-card">
-              <h2 class="role-title">{{ exp.role }}</h2>
-              <h3 class="company-name">{{ exp.company }}</h3>
-              <p class="period">{{ exp.period }} | {{ exp.location }}</p>
-              <ul class="responsibilities">
-                <li *ngFor="let item of exp.description">{{ item }}</li>
-              </ul>
-              @if (exp.technologies && exp.technologies.length > 0) {
-                <div class="technologies">
-                  <strong>Technologies:</strong>
-                  <span class="tech-tag" *ngFor="let tech of exp.technologies">{{ tech }}</span>
-                </div>
-              }
-            </div>
+      <div class="timeline-container">
+        <div class="experience-item" *ngFor="let exp of experiences">
+          <div class="timeline-marker"></div>
+          <div class="experience-card">
+            <h2 class="role-title">{{ exp.role }}</h2>
+            <h3 class="company-name">{{ exp.company }}</h3>
+            <p class="period">{{ exp.period }} | {{ exp.location }}</p>
+            <ul class="responsibilities">
+              <li *ngFor="let item of exp.description">{{ item }}</li>
+            </ul>
+            @if (exp.technologies && exp.technologies.length > 0) {
+              <div class="technologies">
+                <strong>Technologies:</strong>
+                <span class="tech-tag" *ngFor="let tech of exp.technologies">{{ tech }}</span>
+              </div>
+            }
           </div>
         </div>
+      </div>
 
-        <h1 class="title education-title">Education</h1>
-        <div class="education-container">
-          <div class="education-item" *ngFor="let edu of education">
-            <img src="./assets/education.png" alt="Education icon" class="icon" />
-            <div class="education-details">
-              <h3>{{ edu.degree }}</h3>
-              <p class="institution">{{ edu.institution }}</p>
-              <p class="period">{{ edu.period }} | {{ edu.location }}</p>
-            </div>
+      <h1 class="title education-title">Education</h1>
+      <div class="education-container">
+        <div class="education-item" *ngFor="let edu of education">
+          <img src="./assets/education.png" alt="Education icon" class="icon" />
+          <div class="education-details">
+            <h3>{{ edu.degree }}</h3>
+            <p class="institution">{{ edu.institution }}</p>
+            <p class="period">{{ edu.period }} | {{ edu.location }}</p>
           </div>
         </div>
-      </section>
-      
-      <app-pogoda-footer></app-pogoda-footer>
-    </body>
+      </div>
+    </section>
+    
+    <app-pogoda-footer></app-pogoda-footer>
   `,
   styleUrls: ['./experience.component.scss', '../../Kevin-Pages/global/global.component.scss'],
 })

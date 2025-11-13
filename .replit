@@ -50,10 +50,6 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 8000
-externalPort = 8000
-
-[[ports]]
 localPort = 36161
 externalPort = 4200
 
@@ -72,6 +68,10 @@ externalPort = 3002
 [[ports]]
 localPort = 44929
 externalPort = 3003
+
+[[ports]]
+localPort = 8000
+externalPort = 8000
 
 [deployment]
 workingDirectory = "Frontend/portfolioResume"
