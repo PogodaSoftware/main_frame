@@ -1,12 +1,19 @@
 # Portfolio Resume Application
 
 ## Recent Changes (November 13, 2025)
+- **Pogoda Software - Complete Separation from Kevin's Portfolio**:
+  - Removed all links to Kevin's portfolio from Pogoda navigation (desktop and mobile)
+  - Removed "Kevin's Portfolio" button from Pogoda home page
+  - Pogoda Software section now operates completely independently
+  - Navigation shows only: Home and Experience
+  
 - **PostgreSQL Backend Integration for Pogoda Software**:
   - **Database**: Created PostgreSQL database with WorkExperience and Education models
   - **Django REST API**: Built API endpoints at `/api/pogoda/experience/` and `/api/pogoda/education/`
   - **Anti-Scraping Protection**: Implemented rate limiting (10 requests/minute per IP) using DRF throttling
   - **Data Migration**: Database seeded with 6 work experiences and 2 education entries from Jaroslaw Pogoda's LinkedIn
   - **Angular Integration**: Created HTTP service to fetch data dynamically from backend API
+  - **SSR Compatibility**: Added platform detection to only make API calls in browser (not during SSR)
   - **Fallback System**: Component falls back to static data if API is unavailable for reliability
   - **CORS Configuration**: Configured CORS to allow frontend access while maintaining security
   - **Workflows**: Both backend (port 8000) and frontend (port 5000) running successfully
@@ -17,6 +24,7 @@
   - Updated education with Queens College BS in Computer Science (2010-2016) and Triplebyte certification (2022)
   - All job descriptions, technologies, dates, and locations now reflect real professional background
   - Experience extracted from public LinkedIn profile via web search (LinkedIn direct fetch not supported)
+  - Data dynamically loaded from PostgreSQL database via REST API
 
 ## Recent Changes (November 12, 2025)
 - **New Pogoda Software Pages**:
