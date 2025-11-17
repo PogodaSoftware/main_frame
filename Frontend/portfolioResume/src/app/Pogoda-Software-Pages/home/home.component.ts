@@ -18,9 +18,6 @@ import { PogodaFooterComponent } from '../footer/footer.component';
             <button class="btn btn-color-2" (click)="navigateToExperience()">
               View Experience
             </button>
-            <button class="btn btn-color-1" (click)="navigateToKevin()">
-              Kevin's Portfolio
-            </button>
           </div>
           <div class="socials-container">
             <a href="https://www.linkedin.com/in/jaroslaw-pogoda/" target="_blank" rel="noopener noreferrer">
@@ -43,9 +40,5 @@ import { PogodaFooterComponent } from '../footer/footer.component';
 export class PogodaHomeComponent {
   navigateToExperience(): void {
     window.location.href = 'pogoda/experience';
-  }
-
-  navigateToKevin(): void {
-    window.location.href = 'kevin';
   }
 }

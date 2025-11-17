@@ -10,7 +10,6 @@ import { Component } from '@angular/core';
         <ul class="nav-links">
           <li><a href="pogoda">Home</a></li>
           <li><a href="pogoda/experience">Experience</a></li>
-          <li><a href="kevin">Kevin's Portfolio</a></li>
         </ul>
       </div>
     </nav>
@@ -27,7 +26,6 @@ import { Component } from '@angular/core';
           <ul>
             <li><a href="pogoda" (click)="toggleMenu()">Home</a></li>
             <li><a href="pogoda/experience" (click)="toggleMenu()">Experience</a></li>
-            <li><a href="kevin" (click)="toggleMenu()">Kevin's Portfolio</a></li>
           </ul>
         </div>
       </div>
