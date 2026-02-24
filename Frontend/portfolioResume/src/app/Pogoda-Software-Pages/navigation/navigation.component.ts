@@ -1,3 +1,15 @@
+/**
+ * Pogoda Software Navigation Component
+ *
+ * Responsive navigation bar for the Pogoda Software section.
+ * Includes two layouts:
+ *   1. Desktop navigation - Horizontal nav links visible on wider screens
+ *   2. Hamburger navigation - Collapsible menu for mobile/tablet screens
+ *
+ * Navigation links: Home (/pogoda), Experience (/pogoda/experience)
+ * This navigation is independent from Kevin's portfolio navigation.
+ */
+
 import { Component } from '@angular/core';
 
 @Component({
@@ -37,6 +49,11 @@ import { Component } from '@angular/core';
   ],
 })
 export class PogodaNavigationComponent {
+  /**
+   * Toggles the mobile hamburger menu open/closed state.
+   * Adds or removes the 'open' CSS class on the menu-links container
+   * and the hamburger-icon to trigger CSS transition animations.
+   */
   toggleMenu(): void {
     const menu = document.querySelector('.menu-links');
     const icon = document.querySelector('.hamburger-icon');

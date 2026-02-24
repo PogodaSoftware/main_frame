@@ -53,26 +53,6 @@ externalPort = 80
 localPort = 8000
 externalPort = 8000
 
-[[ports]]
-localPort = 36161
-externalPort = 4200
-
-[[ports]]
-localPort = 36641
-externalPort = 3001
-
-[[ports]]
-localPort = 39305
-externalPort = 3000
-
-[[ports]]
-localPort = 39779
-externalPort = 3002
-
-[[ports]]
-localPort = 44929
-externalPort = 3003
-
 [deployment]
 workingDirectory = "Frontend/portfolioResume"
 deploymentTarget = "autoscale"

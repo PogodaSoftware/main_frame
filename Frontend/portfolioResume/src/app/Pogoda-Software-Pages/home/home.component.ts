@@ -1,3 +1,14 @@
+/**
+ * Pogoda Software Home Page Component
+ *
+ * Landing page for Pogoda Software's portfolio section. Displays the
+ * company name, tagline, a link to LinkedIn, and a call-to-action button
+ * to view professional experience. This section operates independently
+ * from Kevin Ortiz's portfolio.
+ *
+ * Route: /pogoda
+ */
+
 import { Component } from '@angular/core';
 import { PogodaNavigationComponent } from '../navigation/navigation.component';
 import { PogodaFooterComponent } from '../footer/footer.component';
@@ -38,6 +49,10 @@ import { PogodaFooterComponent } from '../footer/footer.component';
   styleUrls: ['./home.component.scss', '../../Kevin-Pages/global/global.component.scss'],
 })
 export class PogodaHomeComponent {
+  /**
+   * Navigates the user to the Pogoda experience page.
+   * Uses direct window.location navigation for full page load.
+   */
   navigateToExperience(): void {
     window.location.href = 'pogoda/experience';
   }

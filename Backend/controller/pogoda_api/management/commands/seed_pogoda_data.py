@@ -1,14 +1,51 @@
+"""
+Database Seeder Management Command
+
+Populates the PostgreSQL database with Jaroslaw Pogoda's professional
+experience and education data sourced from his public LinkedIn profile.
+
+Usage:
+    python manage.py seed_pogoda_data
+
+This command clears all existing WorkExperience and Education records
+before inserting fresh data, ensuring a clean and consistent state.
+Run this after migrations on a fresh deployment.
+"""
+
 from django.core.management.base import BaseCommand
 from pogoda_api.models import WorkExperience, Education
 
 
 class Command(BaseCommand):
+    """
+    Django management command to seed the database with Pogoda portfolio data.
+
+    Deletes all existing WorkExperience and Education records, then creates
+    new entries with Jaroslaw Pogoda's professional history. Each entry
+    includes an 'order' field to control display sequence on the frontend.
+    """
     help = 'Seeds the database with Jaroslaw Pogoda LinkedIn data'
 
     def handle(self, *args, **kwargs):
+        """
+        Executes the seeding process.
+
+        Steps:
+            1. Deletes all existing WorkExperience records.
+            2. Deletes all existing Education records.
+            3. Creates 6 work experience entries (Gesture, Per Scholas, etc.).
+            4. Creates 2 education entries (Queens College, Triplebyte).
+            5. Prints success messages to stdout for each created record.
+
+        Args:
+            *args: Variable length argument list (unused).
+            **kwargs: Arbitrary keyword arguments (unused).
+        """
+        # Clear existing data to prevent duplicates on re-runs
         WorkExperience.objects.all().delete()
         Education.objects.all().delete()
 
+        # Professional work experience data sourced from LinkedIn
         experiences_data = [
             {
                 'company': 'Gesture',
@@ -96,6 +133,7 @@ class Command(BaseCommand):
             },
         ]
 
+        # Education and certification data sourced from LinkedIn
         education_data = [
             {
                 'institution': 'Queens College',
@@ -113,10 +151,12 @@ class Command(BaseCommand):
             },
         ]
 
+        # Create work experience records and log each creation
         for exp_data in experiences_data:
             WorkExperience.objects.create(**exp_data)
             self.stdout.write(self.style.SUCCESS(f'Created experience: {exp_data["role"]} at {exp_data["company"]}'))
 
+        # Create education records and log each creation
         for edu_data in education_data:
             Education.objects.create(**edu_data)
             self.stdout.write(self.style.SUCCESS(f'Created education: {edu_data["degree"]} from {edu_data["institution"]}'))

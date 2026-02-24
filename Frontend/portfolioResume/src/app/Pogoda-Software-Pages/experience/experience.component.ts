@@ -1,3 +1,18 @@
+/**
+ * Pogoda Experience Page Component
+ *
+ * Displays Jaroslaw Pogoda's professional work experience and education
+ * in a timeline layout with technology tags. Data is dynamically loaded
+ * from the PostgreSQL database via the Django REST API.
+ *
+ * SSR Strategy:
+ *   - Constructor loads fallback (static) data immediately for server rendering.
+ *   - ngOnInit checks if running in browser before making HTTP API calls.
+ *   - If API calls fail, the component gracefully falls back to static data.
+ *
+ * Route: /pogoda/experience
+ */
+
 import { Component, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { PogodaNavigationComponent } from '../navigation/navigation.component';
@@ -53,27 +68,44 @@ import { PogodaApiService, Experience, Education } from '../services/pogoda-api.
   styleUrls: ['./experience.component.scss', '../../Kevin-Pages/global/global.component.scss'],
 })
 export class PogodaExperienceComponent implements OnInit {
+  /** Array of work experience entries displayed in the timeline. */
   experiences: Experience[] = [];
+
+  /** Array of education entries displayed below the experience section. */
   education: Education[] = [];
+
+  /** Loading state flag (true while API data is being fetched). */
   loading = true;
 
+  /**
+   * @param pogodaApiService - Service for fetching data from the backend API.
+   * @param platformId - Angular platform identifier used to detect browser vs server.
+   */
   constructor(
     private pogodaApiService: PogodaApiService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
-    // Initialize with fallback data for SSR
     this.loadFallbackExperiences();
     this.loadFallbackEducation();
   }
 
+  /**
+   * Lifecycle hook called after component initialization.
+   * Only makes API calls when running in the browser to avoid
+   * SSR issues (the backend isn't accessible during server rendering).
+   */
   ngOnInit(): void {
-    // Only make HTTP calls in the browser
     if (isPlatformBrowser(this.platformId)) {
       this.loadExperiences();
       this.loadEducation();
     }
   }
 
+  /**
+   * Fetches work experience data from the Django REST API.
+   * On success, replaces the fallback data with live database data.
+   * On error, retains the fallback data and logs the error.
+   */
   loadExperiences(): void {
     this.pogodaApiService.getExperiences().subscribe({
       next: (data) => {
@@ -88,6 +120,11 @@ export class PogodaExperienceComponent implements OnInit {
     });
   }
 
+  /**
+   * Fetches education data from the Django REST API.
+   * On success, replaces the fallback data with live database data.
+   * On error, retains the fallback data and logs the error.
+   */
   loadEducation(): void {
     this.pogodaApiService.getEducation().subscribe({
       next: (data) => {
@@ -100,6 +137,11 @@ export class PogodaExperienceComponent implements OnInit {
     });
   }
 
+  /**
+   * Loads hardcoded fallback work experience data.
+   * Used during SSR and as a safety net when the API is unavailable.
+   * This data mirrors what is stored in the PostgreSQL database.
+   */
   loadFallbackExperiences(): void {
     this.experiences = [
     {
@@ -195,6 +237,11 @@ export class PogodaExperienceComponent implements OnInit {
   ];
   }
 
+  /**
+   * Loads hardcoded fallback education data.
+   * Used during SSR and as a safety net when the API is unavailable.
+   * This data mirrors what is stored in the PostgreSQL database.
+   */
   loadFallbackEducation(): void {
     this.education = [
       {
