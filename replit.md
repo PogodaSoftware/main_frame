@@ -240,6 +240,13 @@ python manage.py migrate
 python manage.py seed_pogoda_data
 ```
 
+## GitHub Integration Note
+The Replit GitHub OAuth connector was attempted but could not be completed via the built-in OAuth flow. To push changes to `https://github.com/PogodaSoftware/main_frame`, use a GitHub Personal Access Token (classic) with `repo` scope, stored as a secret named `GITHUB_TOKEN`. Then push using:
+```bash
+git remote set-url origin https://<username>:$GITHUB_TOKEN@github.com/PogodaSoftware/main_frame.git
+git push origin main
+```
+
 ## Future Enhancements
 - Implement backend endpoints for Kevin's contact form
 - Add admin interface for managing experience/education data
