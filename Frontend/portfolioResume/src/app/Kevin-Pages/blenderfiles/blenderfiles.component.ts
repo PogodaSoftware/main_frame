@@ -8,7 +8,7 @@
  *
  * Query Parameters:
  *   - model: Name of the .glb model file (default: 'snowman')
- *   - helpers: Show Three.js debug helpers (default: false)
+ *   - helpers: Show Three.js debug he333lpers (default: false)
  *   - color: Background color of the canvas (default: 'black')
  *   - cameraX/Y/Z: Initial camera position coordinates (default: 0)
  *   - hdrPath: HDR environment map filename (optional)
