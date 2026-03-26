@@ -1,8 +1,15 @@
+/**
+ * Application Bootstrap Entry Point (Browser)
+ *
+ * Entry point for the Angular application in the browser environment.
+ * Bootstraps the root AppComponent using the application configuration
+ * from app.config.ts, which includes routing, HTTP client, hydration,
+ * and zone change detection providers.
+ */
+
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
-import { provideRouter } from '@angular/router';
-import {routes} from './app/app.routes'
+import { appConfig } from './app/app.config';
 
-bootstrapApplication(AppComponent, {
-  providers: [provideRouter(routes)],
-}).catch((err) => console.error(err));
+bootstrapApplication(AppComponent, appConfig)
+  .catch((err) => console.error(err));

@@ -1,3 +1,10 @@
+# Updated 2025-11-12: Major dependency cleanup and security update
+# - Angular: 19.0.0 → 19.2.15 (fixed SSR vulnerability)
+# - Django: 5.1.5 (already up-to-date)
+# - Removed unused dependencies: @angular/forms, @angular/animations, behave
+# - Package reduction: 1,157 → 849 packages (-27%)
+# - Security: 0 vulnerabilities remaining
+
 services:
   backend:
     build:
@@ -27,5 +34,3 @@ services:
       watch:
         - path: ../main_frame
           action: rebuild
-
-# C:\Users\kevin\main_frame\Frontend\portfolioResume
