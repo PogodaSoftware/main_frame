@@ -58,6 +58,7 @@ cover/
 # Django stuff:
 *.log
 local_settings.py
+settings.py
 db.sqlite3
 db.sqlite3-journal
 
@@ -167,3 +168,6 @@ node_modules/
 /main_frame_project/node_modules/
 /main_frame_project/Frontend/node_modules/
 /main_frame_project/Frontend/protfolioResume/node_modules/
+Frontend/portfolioResume/.angular/
+Frontend/portfolioResume/dist/
+Frontend/portfolioResume/.angular-cache/

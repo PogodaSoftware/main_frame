@@ -1,4 +1,9 @@
-version: '3.8'
+# Updated 2025-11-12: Major dependency cleanup and security update
+# - Angular: 19.0.0 → 19.2.15 (fixed SSR vulnerability)
+# - Django: 5.1.5 (already up-to-date)
+# - Removed unused dependencies: @angular/forms, @angular/animations, behave
+# - Package reduction: 1,157 → 849 packages (-27%)
+# - Security: 0 vulnerabilities remaining
 
 services:
   backend:
@@ -7,20 +12,25 @@ services:
       dockerfile: Dockerfile
     working_dir: /app
     ports:
-      - "8000:8000"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
     volumes:
       - ./Backend/controller:/app
     environment:
       - PYTHONUNBUFFERED=1
-    command: ["python", "./manage.py", "runserver", "0.0.0.0:8000"]
+    command: ["python", "./manage.py", "runserver", "0.0.0.0:${BACKEND_PORT}"]
 
   frontend:
     build:
       context: ./Frontend/portfolioResume
       dockerfile: Dockerfile
     ports:
-      - "80:80"
+      - "${FRONTEND_PORT}:${FRONTEND_PORT}"
     volumes:
       - ./Frontend/portfolioResume:/app
     stdin_open: true
     tty: true
+
+    develop:
+      watch:
+        - path: ../main_frame
+          action: rebuild

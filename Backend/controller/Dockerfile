@@ -1,19 +1,15 @@
-FROM python:3.9.21 
+FROM python:3.12.8-slim
 
 WORKDIR /app
 
+ENV PYTHONDONTWRITEBYTECODE=1
+
+ENV PYTHONUNBUFFERED=1 
+
+# Updated 2025-11-12: Removed unused 'behave' package
+# Using pytest-bdd for BDD testing instead
 COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
-# Currently do not have the code underneath, will comment out for now 
-
-
-# COPY --from=build-backend /app/backend/ .
-# COPY --from=build-frontend /app/frontend/build /app/backend/static
-
-EXPOSE 8000
-
-CMD ["python", "./manage.py", "runserver", "0.0.0.0:8000"]
-
