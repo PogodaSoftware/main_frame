@@ -243,9 +243,21 @@ python manage.py seed_pogoda_data
 ## GitHub Integration Note
 The Replit GitHub OAuth connector was attempted but could not be completed via the built-in OAuth flow. To push changes to `https://github.com/PogodaSoftware/main_frame`, use a GitHub Personal Access Token (classic) with `repo` scope, stored as a secret named `GITHUB_TOKEN`. Then push using:
 ```bash
-git remote set-url origin https://<username>:$GITHUB_TOKEN@github.com/PogodaSoftware/main_frame.git
-git push origin main
+git push https://PogodaSoftware:$GITHUB_TOKEN@github.com/PogodaSoftware/main_frame.git main:your-branch-name
 ```
+
+## CI/CD: GitHub → Replit Sync
+A GitHub Actions workflow (`.github/workflows/sync-to-replit.yml`) triggers on every push to `main`. It calls the Replit webhook endpoint which fetches and resets the workspace to match GitHub.
+
+**Webhook endpoint**: `https://<REPLIT_DEV_DOMAIN>:8000/api/deploy/github-sync/`
+- Implemented in `Backend/controller/main_frame_project/deploy_views.py`
+- Protected by `DEPLOY_WEBHOOK_SECRET` environment variable (constant-time comparison)
+
+**Two secrets required in GitHub repo Settings → Secrets → Actions**:
+1. `REPLIT_WEBHOOK_URL` = full URL of the webhook endpoint above
+2. `REPLIT_DEPLOY_SECRET` = value of the `DEPLOY_WEBHOOK_SECRET` Replit secret
+
+**Note**: The `REPLIT_DEV_DOMAIN` URL changes if the Replit environment is reset. Update `REPLIT_WEBHOOK_URL` in GitHub secrets when that happens.
 
 ## Future Enhancements
 - Implement backend endpoints for Kevin's contact form
