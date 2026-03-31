@@ -55,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'beauty_api.middleware.BeautyAuthMiddleware',  # Device-bound cookie auth for Beauty routes
 ]
 
 ROOT_URLCONF = 'main_frame_project.urls'
@@ -133,6 +134,27 @@ CORS_ALLOWED_ORIGINS = [
 
 # Allow all origins in development mode for easier testing
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('DEBUG', 'True') == 'True'
+
+# Required so the browser sends cookies and the X-Device-ID header cross-origin
+CORS_ALLOW_CREDENTIALS = True
+
+# Expose the custom device-ID header to CORS preflight checks
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-device-id',  # Custom header used to bind requests to a specific device
+]
+
+
+# --- Beauty Auth Cookie Configuration ---
+BEAUTY_SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
 
 
 # --- REST Framework Configuration ---
