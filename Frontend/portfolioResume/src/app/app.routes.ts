@@ -15,6 +15,8 @@
  * 3. Beauty App (/pogoda/beauty/*):
  *    - Main page with service categories and Google Maps
  *    - Sign-up page with email/password form
+ *    - Login page (customer)
+ *    - Business provider login page
  *
  * The root path '/' redirects to '/kevin' by default.
  */
@@ -30,6 +32,8 @@ import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
 import { BeautyMainComponent } from './Pogoda-Software-Pages/beauty/beauty-main.component';
 import { BeautySignupComponent } from './Pogoda-Software-Pages/beauty/beauty-signup.component';
+import { BeautyLoginComponent } from './Pogoda-Software-Pages/beauty/beauty-login.component';
+import { BeautyBusinessLoginComponent } from './Pogoda-Software-Pages/beauty/beauty-business-login.component';
 
 
 export const routes: Routes = [
@@ -93,5 +97,15 @@ export const routes: Routes = [
     path: 'pogoda/beauty/signup',
     component: BeautySignupComponent,
     title: 'Beauty - Sign Up',
+  },
+  {
+    path: 'pogoda/beauty/login',
+    component: BeautyLoginComponent,
+    title: 'Beauty - Sign In',
+  },
+  {
+    path: 'pogoda/beauty/business/login',
+    component: BeautyBusinessLoginComponent,
+    title: 'Beauty - Business Sign In',
   },
 ];
