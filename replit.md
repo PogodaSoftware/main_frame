@@ -1,5 +1,16 @@
 # Portfolio Resume Application
 
+## Recent Changes (March 31, 2026) — bcrypt Password Hashing
+- Replaced Django's default PBKDF2 hasher with **BCryptSHA256PasswordHasher**
+- Added `bcrypt==4.2.1` to `requirements.txt`
+- Configured `PASSWORD_HASHERS` in `settings.py` — bcrypt is primary, PBKDF2 kept as fallback for any existing rows
+- `make_password()` and `check_password()` in models and views use bcrypt automatically — no other code changes needed
+- SHA-256 pre-hashing removes bcrypt's 72-byte input limit
+- Password fields carry **no unique constraint**; only email fields are unique
+- Pull Request: https://github.com/PogodaSoftware/main_frame/pull/42
+
+---
+
 ## Recent Changes (March 31, 2026) — Auth Middleware
 - **Beauty Auth Middleware (`beauty_api/middleware.py`):**
   - `BeautyAuthMiddleware` intercepts all `/api/beauty/protected/*` routes
