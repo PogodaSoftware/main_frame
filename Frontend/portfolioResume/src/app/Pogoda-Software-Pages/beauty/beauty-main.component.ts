@@ -9,7 +9,7 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { environment } from '../../../environments/environment';
 
 declare const google: any;
@@ -22,14 +22,14 @@ interface ServiceCategory {
 @Component({
   selector: 'app-beauty-main',
   standalone: true,
-  imports: [],
+  imports: [RouterLink],
   template: `
     <div class="beauty-app">
       <!-- Header -->
       <header class="beauty-header">
         <div class="header-brand">
           <span class="brand-icon">✨</span>
-          <span class="brand-name">Beauty</span>
+          <a class="brand-name" routerLink="/pogoda/beauty">Beauty</a>
         </div>
         <div class="header-actions">
           @if (!userEmail) {

@@ -1,6 +1,6 @@
 import { Component, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
@@ -8,13 +8,13 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-beauty-signup',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   template: `
     <div class="signup-page">
       <header class="signup-header">
         <div class="header-brand">
           <span class="brand-icon">✨</span>
-          <span class="brand-name">Beauty</span>
+          <a class="brand-name" routerLink="/pogoda/beauty">Beauty</a>
         </div>
       </header>
 
