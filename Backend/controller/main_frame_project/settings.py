@@ -94,6 +94,21 @@ DATABASES = {
 }
 
 
+# --- Password Hashing ---
+# BCryptSHA256PasswordHasher is the primary hasher.
+# SHA-256 pre-hashing removes bcrypt's 72-byte password length limit.
+# Django's make_password() and check_password() use this automatically,
+# so no changes are needed in models or views.
+# The fallback hashers allow existing PBKDF2 hashes to be verified
+# (e.g. any rows that existed before this change) and re-hashed to
+# bcrypt on next successful login.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+]
+
+
 # --- Password Validation ---
 AUTH_PASSWORD_VALIDATORS = [
     {
