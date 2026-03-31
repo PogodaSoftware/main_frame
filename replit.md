@@ -1,5 +1,28 @@
 # Portfolio Resume Application
 
+## Recent Changes (March 31, 2026)
+- **Beauty App Pages (Mobile-first):**
+  - Created two new pages under `/pogoda/beauty` and `/pogoda/beauty/signup`
+  - Mobile-first design (iPhone 16/17 393px, Samsung S25 390px, Pixel 9 412px, iPhone 17 Plus 430px)
+  - Main page: dark header with "Beauty" brand + Sign up button, horizontal scrollable service row (Beauty, Lashes, Nails, Makeup), Google Maps placeholder (ready for API key)
+  - Sign-up page: email + password form with validation, show/hide password toggle, loading state
+  - After sign-up, user email saved to localStorage and displayed in header
+  - Google Maps: loads dynamically when `googleMapsApiKey` is set in `src/environments/environment.ts`
+  
+- **Django: beauty_api app:**
+  - New `BeautyUser` model (email, hashed password, created_at) in `beauty_api` app
+  - `POST /api/beauty/signup/` endpoint with email uniqueness and password length validation
+  - Uses Django's built-in password hashing (`make_password`)
+  - Migration applied to PostgreSQL database
+
+- **Angular: @angular/forms added:**
+  - Installed `@angular/forms@19.2.15` for template-driven forms in sign-up page
+
+- **Environment files created:**
+  - `src/environments/environment.ts` (dev) and `src/environments/environment.prod.ts` (prod)
+  - Contains `googleMapsApiKey` (empty by default) and `apiBaseUrl`
+  - angular.json configured with fileReplacements for prod build
+
 ## Recent Changes (November 13, 2025)
 - **Pogoda Software - Complete Separation from Kevin's Portfolio**:
   - Removed all links to Kevin's portfolio from Pogoda navigation (desktop and mobile)
@@ -199,6 +222,10 @@ The Angular configuration in `angular.json` remains universal with no hardcoded 
 - `/pogoda` - Pogoda Software home page
 - `/pogoda/experience` - Professional experience timeline with LinkedIn integration
 
+**Beauty App:**
+- `/pogoda/beauty` - Beauty app main page (service categories + Google Maps)
+- `/pogoda/beauty/signup` - Sign-up page (email + password)
+
 ## Deployment
 Configured for Replit autoscale deployment:
 - **Build**: `cd Frontend/portfolioResume && npm install && npm run build`
@@ -243,9 +270,21 @@ python manage.py seed_pogoda_data
 ## GitHub Integration Note
 The Replit GitHub OAuth connector was attempted but could not be completed via the built-in OAuth flow. To push changes to `https://github.com/PogodaSoftware/main_frame`, use a GitHub Personal Access Token (classic) with `repo` scope, stored as a secret named `GITHUB_TOKEN`. Then push using:
 ```bash
-git remote set-url origin https://<username>:$GITHUB_TOKEN@github.com/PogodaSoftware/main_frame.git
-git push origin main
+git push https://PogodaSoftware:$GITHUB_TOKEN@github.com/PogodaSoftware/main_frame.git main:your-branch-name
 ```
+
+## CI/CD: GitHub → Replit Sync
+A GitHub Actions workflow (`.github/workflows/sync-to-replit.yml`) triggers on every push to `main`. It calls the Replit webhook endpoint which fetches and resets the workspace to match GitHub.
+
+**Webhook endpoint**: `https://<REPLIT_DEV_DOMAIN>:8000/api/deploy/github-sync/`
+- Implemented in `Backend/controller/main_frame_project/deploy_views.py`
+- Protected by `DEPLOY_WEBHOOK_SECRET` environment variable (constant-time comparison)
+
+**Two secrets required in GitHub repo Settings → Secrets → Actions**:
+1. `REPLIT_WEBHOOK_URL` = full URL of the webhook endpoint above
+2. `REPLIT_DEPLOY_SECRET` = value of the `DEPLOY_WEBHOOK_SECRET` Replit secret
+
+**Note**: The `REPLIT_DEV_DOMAIN` URL changes if the Replit environment is reset. Update `REPLIT_WEBHOOK_URL` in GitHub secrets when that happens.
 
 ## Future Enhancements
 - Implement backend endpoints for Kevin's contact form
