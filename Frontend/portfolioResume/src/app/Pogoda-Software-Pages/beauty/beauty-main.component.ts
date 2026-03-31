@@ -113,9 +113,13 @@ export class BeautyMainComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadGoogleMapsScript(): void {
-    const existingScript = this.document.querySelector('#google-maps-script');
+    const existingScript = this.document.querySelector('#google-maps-script') as HTMLScriptElement | null;
     if (existingScript) {
-      this.initMap();
+      if (typeof google !== 'undefined') {
+        this.initMap();
+      } else {
+        existingScript.addEventListener('load', () => this.initMap(), { once: true });
+      }
       return;
     }
 
