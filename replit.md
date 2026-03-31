@@ -1,8 +1,47 @@
 # Portfolio Resume Application
 
-## Recent Changes (March 31, 2026)
-- **Beauty App Pages (Mobile-first):**
-  - Created two new pages under `/pogoda/beauty` and `/pogoda/beauty/signup`
+## Recent Changes (March 31, 2026) — Auth Middleware
+- **Beauty Auth Middleware (`beauty_api/middleware.py`):**
+  - `BeautyAuthMiddleware` intercepts all `/api/beauty/protected/*` routes
+  - Validates a Django-signed HttpOnly cookie (`beauty_auth`) — tamper-proof and expiry-checked
+  - Confirms `device_id` inside the cookie matches the `X-Device-ID` request header
+  - Verifies the session record is still active in the DB
+  - Returns HTTP 401 on any failure; Angular guard redirects to login page
+  - Multiple devices stay independent — each gets its own cookie/session
+
+- **New DB models (migration 0002):**
+  - `BeautySession` — tracks (user_id, user_type, device_id, token_hash, expires_at, is_active)
+  - `BusinessProvider` — email, hashed password, business_name
+
+- **New API endpoints:**
+  - `POST /api/beauty/login/` — issues 24-hour HttpOnly SameSite=Strict cookie
+  - `POST /api/beauty/logout/` — invalidates session, clears cookie
+  - `POST /api/beauty/business/login/` and `/business/logout/` — business provider flow
+  - `GET  /api/beauty/protected/me/` — returns current user info; used by Angular auth guard
+
+- **Angular auth (Frontend):**
+  - `BeautyAuthService` — generates persistent device fingerprint (localStorage), sends `X-Device-ID` header
+  - `beautyAuthGuard` and `beautyBusinessAuthGuard` functional route guards
+  - `BeautyLoginComponent` at `/pogoda/beauty/login` (email + password)
+  - `BeautyBusinessLoginComponent` at `/pogoda/beauty/business/login`
+  - Beauty main page header now shows "Sign in" + "Sign up" buttons when logged out
+
+- **Security measures applied:**
+  - HttpOnly cookie — JS cannot read the token (XSS-proof)
+  - SameSite=Strict — cookie never sent on cross-site requests (CSRF-proof)
+  - Secure flag — HTTPS only in production
+  - Django signed token — built-in expiry, tamper-proof
+  - SHA-256 token hash — raw token never stored in DB
+  - Device ID binding — request must match the device the token was issued for
+  - Generic 401 errors — no user enumeration possible
+  - Constant-time `check_password` — prevents timing attacks
+
+- **Pull Request:** https://github.com/PogodaSoftware/main_frame/pull/41
+
+---
+
+## Recent Changes (March 31, 2026) — Beauty App Pages (Mobile-first)
+- Created two new pages under `/pogoda/beauty` and `/pogoda/beauty/signup`
   - Mobile-first design (iPhone 16/17 393px, Samsung S25 390px, Pixel 9 412px, iPhone 17 Plus 430px)
   - Main page: dark header with "Beauty" brand + Sign up button, horizontal scrollable service row (Beauty, Lashes, Nails, Makeup), Google Maps placeholder (ready for API key)
   - Sign-up page: email + password form with validation, show/hide password toggle, loading state
@@ -225,6 +264,8 @@ The Angular configuration in `angular.json` remains universal with no hardcoded 
 **Beauty App:**
 - `/pogoda/beauty` - Beauty app main page (service categories + Google Maps)
 - `/pogoda/beauty/signup` - Sign-up page (email + password)
+- `/pogoda/beauty/login` - Customer login page
+- `/pogoda/beauty/business/login` - Business provider login page
 
 ## Deployment
 Configured for Replit autoscale deployment:

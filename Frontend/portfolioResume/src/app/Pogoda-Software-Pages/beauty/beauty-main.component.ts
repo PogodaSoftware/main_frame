@@ -33,6 +33,7 @@ interface ServiceCategory {
         </div>
         <div class="header-actions">
           @if (!userEmail) {
+            <button class="btn-login" (click)="goToLogin()">Sign in</button>
             <button class="btn-signup" (click)="goToSignUp()">Sign up</button>
           } @else {
             <div class="user-email-badge">{{ userEmail }}</div>
@@ -106,6 +107,10 @@ export class BeautyMainComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.scriptEl && this.scriptEl.parentNode) {
       this.scriptEl.parentNode.removeChild(this.scriptEl);
     }
+  }
+
+  goToLogin(): void {
+    this.router.navigate(['/pogoda/beauty/login']);
   }
 
   goToSignUp(): void {
