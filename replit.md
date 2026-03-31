@@ -1,5 +1,28 @@
 # Portfolio Resume Application
 
+## Recent Changes (March 31, 2026)
+- **Beauty App Pages (Mobile-first):**
+  - Created two new pages under `/pogoda/beauty` and `/pogoda/beauty/signup`
+  - Mobile-first design (iPhone 16/17 393px, Samsung S25 390px, Pixel 9 412px, iPhone 17 Plus 430px)
+  - Main page: dark header with "Beauty" brand + Sign up button, horizontal scrollable service row (Beauty, Lashes, Nails, Makeup), Google Maps placeholder (ready for API key)
+  - Sign-up page: email + password form with validation, show/hide password toggle, loading state
+  - After sign-up, user email saved to localStorage and displayed in header
+  - Google Maps: loads dynamically when `googleMapsApiKey` is set in `src/environments/environment.ts`
+  
+- **Django: beauty_api app:**
+  - New `BeautyUser` model (email, hashed password, created_at) in `beauty_api` app
+  - `POST /api/beauty/signup/` endpoint with email uniqueness and password length validation
+  - Uses Django's built-in password hashing (`make_password`)
+  - Migration applied to PostgreSQL database
+
+- **Angular: @angular/forms added:**
+  - Installed `@angular/forms@19.2.15` for template-driven forms in sign-up page
+
+- **Environment files created:**
+  - `src/environments/environment.ts` (dev) and `src/environments/environment.prod.ts` (prod)
+  - Contains `googleMapsApiKey` (empty by default) and `apiBaseUrl`
+  - angular.json configured with fileReplacements for prod build
+
 ## Recent Changes (November 13, 2025)
 - **Pogoda Software - Complete Separation from Kevin's Portfolio**:
   - Removed all links to Kevin's portfolio from Pogoda navigation (desktop and mobile)
@@ -198,6 +221,10 @@ The Angular configuration in `angular.json` remains universal with no hardcoded 
 **Pogoda Software:**
 - `/pogoda` - Pogoda Software home page
 - `/pogoda/experience` - Professional experience timeline with LinkedIn integration
+
+**Beauty App:**
+- `/pogoda/beauty` - Beauty app main page (service categories + Google Maps)
+- `/pogoda/beauty/signup` - Sign-up page (email + password)
 
 ## Deployment
 Configured for Replit autoscale deployment:

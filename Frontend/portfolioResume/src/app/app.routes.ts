@@ -12,6 +12,10 @@
  *    - Home, Experience
  *    - Professional experience loaded dynamically from PostgreSQL via REST API
  *
+ * 3. Beauty App (/pogoda/beauty/*):
+ *    - Main page with service categories and Google Maps
+ *    - Sign-up page with email/password form
+ *
  * The root path '/' redirects to '/kevin' by default.
  */
 
@@ -24,6 +28,8 @@ import { PogodaExperienceComponent } from './Pogoda-Software-Pages/experience/ex
 import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.component';
 import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
+import { BeautyMainComponent } from './Pogoda-Software-Pages/beauty/beauty-main.component';
+import { BeautySignupComponent } from './Pogoda-Software-Pages/beauty/beauty-signup.component';
 
 
 export const routes: Routes = [
@@ -75,5 +81,17 @@ export const routes: Routes = [
     path: 'pogoda/experience',
     component: PogodaExperienceComponent,
     title: 'Pogoda Software - Experience',
+  },
+
+  /** Beauty App Routes */
+  {
+    path: 'pogoda/beauty',
+    component: BeautyMainComponent,
+    title: 'Beauty - Home',
+  },
+  {
+    path: 'pogoda/beauty/signup',
+    component: BeautySignupComponent,
+    title: 'Beauty - Sign Up',
   },
 ];

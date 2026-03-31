@@ -19,4 +19,5 @@ from django.urls import path, include
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/pogoda/', include('pogoda_api.urls')),
+    path('api/beauty/', include('beauty_api.urls')),
 ]

@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',       # Django REST Framework for API endpoints
     'corsheaders',          # CORS headers for cross-origin frontend requests
     'pogoda_api',           # Pogoda portfolio API app
+    'beauty_api',           # Beauty marketplace API app
 ]
 
 MIDDLEWARE = [
