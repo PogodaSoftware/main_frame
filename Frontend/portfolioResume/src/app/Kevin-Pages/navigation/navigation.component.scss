@@ -3,13 +3,14 @@ nav {
   justify-content: space-around;
   align-items: center;
   height: 15vh;
+  background-color: #0a0a0a;
 }
 
 .logo a {
   font-size: 1.5rem;
   font-weight: bold;
   text-decoration: none;
-  color: #000;
+  color: #e0e0e0;
 }
 
 #desktop-navigation {
@@ -26,7 +27,7 @@ nav {
 
 .nav-links a {
   text-decoration: none;
-  color: #000;
+  color: #b0d4ff;
 }
 
 #hamburger-navigation {
@@ -51,7 +52,7 @@ nav {
 .hamburger-icon span {
   width: 100%;
   height: 2px;
-  background-color: #000;
+  background-color: #e0e0e0;
   transition: all 0.3s ease-in-out;
 }
 
@@ -71,12 +72,12 @@ nav {
   position: absolute;
   top: 100%;
   right: 0;
-  background-color: white;
+  background-color: #1a1a1a;
   width: 200px;
   max-height: 0;
   overflow: hidden;
   transition: all 0.3s ease-in-out;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
   z-index: 100;
 }
 
@@ -98,13 +99,13 @@ nav {
   padding: 15px;
   text-align: center;
   font-size: 1.2rem;
-  color: #000000;
+  color: #b0d4ff;
   text-decoration: none;
   transition: all 0.3s ease-in-out;
 }
 
 .menu-links a:hover {
-  background-color: #f5f5f5;
+  background-color: #333333;
 }
 
 @media screen and (max-width: 768px) {

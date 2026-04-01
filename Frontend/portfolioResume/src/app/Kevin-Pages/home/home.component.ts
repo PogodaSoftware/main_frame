@@ -34,7 +34,7 @@ import { KevinFooterComponent } from '../footer/footer.component';
           <button
             class="btn btn-color-2"
             (click)="
-              kevinGlobalService.openPage('./assets/Ortiz_Kevin_Resume.pdf')
+              kevinGlobalService.openPage('./assets/Kevin_Ortiz_Resume_Developer.pdf')
             "
           >
             Download CV
