@@ -1,8 +1,80 @@
 # Portfolio Resume Application
 
-## Recent Changes (March 31, 2026)
-- **Beauty App Pages (Mobile-first):**
-  - Created two new pages under `/pogoda/beauty` and `/pogoda/beauty/signup`
+## Recent Changes (April 1, 2026) — BFF SDUI Architecture for Beauty App (PR #43)
+
+### What changed
+Implemented a complete **Server-Driven UI (SDUI) / Backend-for-Frontend (BFF)** layer for all `/pogoda/beauty/*` routes. The Angular shell now stores **nothing** — it queries the backend on every navigation and renders exactly what the server instructs.
+
+**Backend — new `bff_api` Django app:**
+- `POST /api/bff/beauty/resolve/` — single entry point for the Angular shell
+- **Microservices:** `auth_service.py` (cookie + device_id validation) and `beauty_config_service.py` (static config)
+- **Screen resolvers:** `beauty_home`, `beauty_login`, `beauty_signup`, `beauty_business_login` — each runs independently, can be unit-tested in isolation
+- Returns `{action: "render" | "redirect", screen, data, meta}` — shell renders what BFF says
+- Registered in `INSTALLED_APPS` and `urls.py` at `/api/bff/`
+
+**Frontend:**
+- `BeautyBffService` — POSTs `{version, screen, device_id}` to resolve endpoint
+- `BeautyShellComponent` — SDUI orchestrator; reads screen from route `data`, re-resolves on every navigation, renders child from BFF response, handles events
+- All four beauty components refactored to **presentational** (accept `@Input() data`, emit `@Output()` events, no localStorage, no Router)
+- `app.routes.ts` — all four beauty paths now point to `BeautyShellComponent` with `data: {screen}`
+
+**Pull Request:** https://github.com/PogodaSoftware/main_frame/pull/43
+
+---
+
+## Recent Changes (March 31, 2026) — bcrypt Password Hashing
+- Replaced Django's default PBKDF2 hasher with **BCryptSHA256PasswordHasher**
+- Added `bcrypt==4.2.1` to `requirements.txt`
+- Configured `PASSWORD_HASHERS` in `settings.py` — bcrypt is primary, PBKDF2 kept as fallback for any existing rows
+- `make_password()` and `check_password()` in models and views use bcrypt automatically — no other code changes needed
+- SHA-256 pre-hashing removes bcrypt's 72-byte input limit
+- Password fields carry **no unique constraint**; only email fields are unique
+- Pull Request: https://github.com/PogodaSoftware/main_frame/pull/42
+
+---
+
+## Recent Changes (March 31, 2026) — Auth Middleware
+- **Beauty Auth Middleware (`beauty_api/middleware.py`):**
+  - `BeautyAuthMiddleware` intercepts all `/api/beauty/protected/*` routes
+  - Validates a Django-signed HttpOnly cookie (`beauty_auth`) — tamper-proof and expiry-checked
+  - Confirms `device_id` inside the cookie matches the `X-Device-ID` request header
+  - Verifies the session record is still active in the DB
+  - Returns HTTP 401 on any failure; Angular guard redirects to login page
+  - Multiple devices stay independent — each gets its own cookie/session
+
+- **New DB models (migration 0002):**
+  - `BeautySession` — tracks (user_id, user_type, device_id, token_hash, expires_at, is_active)
+  - `BusinessProvider` — email, hashed password, business_name
+
+- **New API endpoints:**
+  - `POST /api/beauty/login/` — issues 24-hour HttpOnly SameSite=Strict cookie
+  - `POST /api/beauty/logout/` — invalidates session, clears cookie
+  - `POST /api/beauty/business/login/` and `/business/logout/` — business provider flow
+  - `GET  /api/beauty/protected/me/` — returns current user info; used by Angular auth guard
+
+- **Angular auth (Frontend):**
+  - `BeautyAuthService` — generates persistent device fingerprint (localStorage), sends `X-Device-ID` header
+  - `beautyAuthGuard` and `beautyBusinessAuthGuard` functional route guards
+  - `BeautyLoginComponent` at `/pogoda/beauty/login` (email + password)
+  - `BeautyBusinessLoginComponent` at `/pogoda/beauty/business/login`
+  - Beauty main page header now shows "Sign in" + "Sign up" buttons when logged out
+
+- **Security measures applied:**
+  - HttpOnly cookie — JS cannot read the token (XSS-proof)
+  - SameSite=Strict — cookie never sent on cross-site requests (CSRF-proof)
+  - Secure flag — HTTPS only in production
+  - Django signed token — built-in expiry, tamper-proof
+  - SHA-256 token hash — raw token never stored in DB
+  - Device ID binding — request must match the device the token was issued for
+  - Generic 401 errors — no user enumeration possible
+  - Constant-time `check_password` — prevents timing attacks
+
+- **Pull Request:** https://github.com/PogodaSoftware/main_frame/pull/41
+
+---
+
+## Recent Changes (March 31, 2026) — Beauty App Pages (Mobile-first)
+- Created two new pages under `/pogoda/beauty` and `/pogoda/beauty/signup`
   - Mobile-first design (iPhone 16/17 393px, Samsung S25 390px, Pixel 9 412px, iPhone 17 Plus 430px)
   - Main page: dark header with "Beauty" brand + Sign up button, horizontal scrollable service row (Beauty, Lashes, Nails, Makeup), Google Maps placeholder (ready for API key)
   - Sign-up page: email + password form with validation, show/hide password toggle, loading state
@@ -225,6 +297,8 @@ The Angular configuration in `angular.json` remains universal with no hardcoded 
 **Beauty App:**
 - `/pogoda/beauty` - Beauty app main page (service categories + Google Maps)
 - `/pogoda/beauty/signup` - Sign-up page (email + password)
+- `/pogoda/beauty/login` - Customer login page
+- `/pogoda/beauty/business/login` - Business provider login page
 
 ## Deployment
 Configured for Replit autoscale deployment:

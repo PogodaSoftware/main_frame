@@ -105,6 +105,62 @@ export class KevinProjectsComponent implements OnInit {
       model: 'TOC_Gladius',
       camera: { x: 0, y: -1.5, z: 6.5 },
       hdrPath: 'industrial_sunset_puresky_1k'
+    },
+    {
+      id: 'hardDriveCanvas',
+      title: 'Hard Drive',
+      model: 'hardDrive',
+      camera: { x: 0, y: 0, z: 3 },
+      hdrPath: 'industrial_sunset_puresky_1k'
+    },
+    {
+      id: 'M89ThurgoodCanvas',
+      title: 'M89 Thurgood',
+      model: 'M89Thurgood',
+      camera: { x: 0, y: 0, z: 3.5 },
+      hdrPath: 'industrial_sunset_puresky_1k'
+    },
+    {
+      id: 'SecutariiBackpackCanvas',
+      title: 'Secutarii Backpack',
+      model: 'Secutarii_Backpack',
+      camera: { x: 0, y: 0, z: 3 },
+      hdrPath: 'industrial_sunset_puresky_1k'
+    },
+    {
+      id: 'SecutariiHelmetCanvas',
+      title: 'Secutarii Helmet',
+      model: 'Secutarii_HelmetV2blend',
+      camera: { x: 0, y: 0, z: 3 },
+      hdrPath: 'industrial_sunset_puresky_1k'
+    },
+    {
+      id: 'SollexPowerAxeCanvas',
+      title: 'Sollex Power Axe',
+      model: 'Sollex_Power_Axe',
+      camera: { x: 0, y: 0, z: 3 },
+      hdrPath: 'industrial_sunset_puresky_1k'
+    },
+    {
+      id: 'TOCHumanPowerGladiusCanvas',
+      title: 'TOC Human Power Gladius',
+      model: 'TOC_Human_Power_Gladius',
+      camera: { x: 0, y: -1.5, z: 6.5 },
+      hdrPath: 'industrial_sunset_puresky_1k'
+    },
+    {
+      id: 'ArcLanceCanvas',
+      title: 'Arc Lance',
+      model: 'Arc_Lance',
+      camera: { x: 0, y: 0, z: 3 },
+      hdrPath: 'industrial_sunset_puresky_1k'
+    },
+    {
+      id: 'EnclaveGeneralCanvas',
+      title: 'Enclave General',
+      model: 'Enclave_General_source',
+      camera: { x: 0, y: 0, z: 3.5 },
+      hdrPath: 'industrial_sunset_puresky_1k'
     }
   ];
 

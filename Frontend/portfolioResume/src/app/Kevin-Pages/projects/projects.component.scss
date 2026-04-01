@@ -11,9 +11,9 @@
 .details-container {
   flex: 0 0 calc(50% - 2rem);
   padding: 0.5rem;
-  background: white;
+  background: #1a1a1a;
   border-radius: 2rem;
-  border: 0.1rem solid #a3a3a3;
+  border: 0.1rem solid #444444;
   text-align: center;
   box-sizing: border-box;
 }
@@ -34,7 +34,7 @@
 }
 
 .project-sub-title {
-  color: #555555;
+  color: #b0d4ff;
   font-weight: 600;
   font-size: 1.75rem;
   margin-bottom: 2rem;
@@ -45,8 +45,8 @@
 }
 
 .color-container {
-  border-color: #a3a3a3;
-  background: #fafafa;
+  border-color: #444444;
+  background: #1a1a1a;
 }
 
 .project-image {
@@ -55,10 +55,10 @@
 
 .project-title {
   margin: 1rem;
-  color: #000000;
+  color: #e0e0e0;
 }
 
 .project-btn {
-  color: #000000;
-  border-color: #a3a3a3; 
+  color: #e0e0e0;
+  border-color: #555555; 
 }
