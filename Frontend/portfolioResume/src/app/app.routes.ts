@@ -1,24 +1,15 @@
 /**
  * Application Route Configuration
  *
- * Defines all URL routes for the Angular application. The app serves
- * two independent portfolio sections:
+ * Kevin Ortiz Portfolio (/kevin/*) and Pogoda Software (/pogoda/*) routes
+ * are unchanged — each loads its own component directly.
  *
- * 1. Kevin Ortiz Portfolio (/kevin/*):
- *    - Home, About, Experience, Projects, Contact, Blender Projects
- *    - Showcases QA & DevOps engineering skills with 3D model viewer
- *
- * 2. Pogoda Software (/pogoda/*):
- *    - Home, Experience
- *    - Professional experience loaded dynamically from PostgreSQL via REST API
- *
- * 3. Beauty App (/pogoda/beauty/*):
- *    - Main page with service categories and Google Maps
- *    - Sign-up page with email/password form
- *    - Login page (customer)
- *    - Business provider login page
- *
- * The root path '/' redirects to '/kevin' by default.
+ * Beauty App (/pogoda/beauty/*) uses a SDUI shell pattern:
+ *   - Every beauty route maps to BeautyShellComponent.
+ *   - The shell sends the 'screen' name to the BFF middleware.
+ *   - The BFF decides what to render and returns the data.
+ *   - The shell renders the appropriate presentational component.
+ *   - No data is stored in the frontend between renders.
  */
 
 import { Routes } from '@angular/router';
@@ -30,10 +21,7 @@ import { PogodaExperienceComponent } from './Pogoda-Software-Pages/experience/ex
 import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.component';
 import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
-import { BeautyMainComponent } from './Pogoda-Software-Pages/beauty/beauty-main.component';
-import { BeautySignupComponent } from './Pogoda-Software-Pages/beauty/beauty-signup.component';
-import { BeautyLoginComponent } from './Pogoda-Software-Pages/beauty/beauty-login.component';
-import { BeautyBusinessLoginComponent } from './Pogoda-Software-Pages/beauty/beauty-business-login.component';
+import { BeautyShellComponent } from './Pogoda-Software-Pages/beauty/beauty-shell.component';
 
 
 export const routes: Routes = [
@@ -87,25 +75,33 @@ export const routes: Routes = [
     title: 'Pogoda Software - Experience',
   },
 
-  /** Beauty App Routes */
+  /**
+   * Beauty App Routes — SDUI Shell
+   * Each route passes a `screen` name in route data.
+   * BeautyShellComponent resolves the screen via the BFF middleware.
+   */
   {
     path: 'pogoda/beauty',
-    component: BeautyMainComponent,
+    component: BeautyShellComponent,
     title: 'Beauty - Home',
+    data: { screen: 'beauty_home' },
   },
   {
     path: 'pogoda/beauty/signup',
-    component: BeautySignupComponent,
+    component: BeautyShellComponent,
     title: 'Beauty - Sign Up',
+    data: { screen: 'beauty_signup' },
   },
   {
     path: 'pogoda/beauty/login',
-    component: BeautyLoginComponent,
+    component: BeautyShellComponent,
     title: 'Beauty - Sign In',
+    data: { screen: 'beauty_login' },
   },
   {
     path: 'pogoda/beauty/business/login',
-    component: BeautyBusinessLoginComponent,
+    component: BeautyShellComponent,
     title: 'Beauty - Business Sign In',
+    data: { screen: 'beauty_business_login' },
   },
 ];

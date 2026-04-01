@@ -1,5 +1,27 @@
 # Portfolio Resume Application
 
+## Recent Changes (April 1, 2026) — BFF SDUI Architecture for Beauty App (PR #43)
+
+### What changed
+Implemented a complete **Server-Driven UI (SDUI) / Backend-for-Frontend (BFF)** layer for all `/pogoda/beauty/*` routes. The Angular shell now stores **nothing** — it queries the backend on every navigation and renders exactly what the server instructs.
+
+**Backend — new `bff_api` Django app:**
+- `POST /api/bff/beauty/resolve/` — single entry point for the Angular shell
+- **Microservices:** `auth_service.py` (cookie + device_id validation) and `beauty_config_service.py` (static config)
+- **Screen resolvers:** `beauty_home`, `beauty_login`, `beauty_signup`, `beauty_business_login` — each runs independently, can be unit-tested in isolation
+- Returns `{action: "render" | "redirect", screen, data, meta}` — shell renders what BFF says
+- Registered in `INSTALLED_APPS` and `urls.py` at `/api/bff/`
+
+**Frontend:**
+- `BeautyBffService` — POSTs `{version, screen, device_id}` to resolve endpoint
+- `BeautyShellComponent` — SDUI orchestrator; reads screen from route `data`, re-resolves on every navigation, renders child from BFF response, handles events
+- All four beauty components refactored to **presentational** (accept `@Input() data`, emit `@Output()` events, no localStorage, no Router)
+- `app.routes.ts` — all four beauty paths now point to `BeautyShellComponent` with `data: {screen}`
+
+**Pull Request:** https://github.com/PogodaSoftware/main_frame/pull/43
+
+---
+
 ## Recent Changes (March 31, 2026) — bcrypt Password Hashing
 - Replaced Django's default PBKDF2 hasher with **BCryptSHA256PasswordHasher**
 - Added `bcrypt==4.2.1` to `requirements.txt`

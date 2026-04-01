@@ -277,3 +277,34 @@
     min-height: 100dvh;
   }
 }
+
+/* ── SDUI presentational button helpers ─────────────────────────────────── */
+/* Brand name rendered as a button (replaces <a routerLink>) */
+.brand-name-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  padding: 0;
+  font-family: inherit;
+
+  &:hover { opacity: 0.85; }
+}
+
+/* Sign-out button — matches existing header action button styles */
+.btn-logout {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  padding: 7px 16px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+
+  &:hover { background: rgba(255, 255, 255, 0.2); }
+}
