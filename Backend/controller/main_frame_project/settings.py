@@ -178,7 +178,7 @@ BEAUTY_SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
 # Protects against scraping and excessive API usage
 REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
+        'main_frame_project.throttling.LocalhostExemptAnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
         'anon': '10/minute',
