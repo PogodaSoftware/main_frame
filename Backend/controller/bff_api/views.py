@@ -43,9 +43,12 @@ from rest_framework.views import APIView
 
 from .resolvers import (
     beauty_business_login,
+    beauty_business_providers,
     beauty_home,
     beauty_login,
+    beauty_sessions,
     beauty_signup,
+    beauty_users,
     beauty_wireframe,
 )
 
@@ -59,6 +62,7 @@ SCREEN_RESOLVERS = {
     'beauty_signup': beauty_signup.resolve,
     'beauty_business_login': beauty_business_login.resolve,
     'beauty_wireframe': beauty_wireframe.resolve,
+    'beauty_users': beauty_users.resolve,
 }
 
 VALID_SCREENS = frozenset(SCREEN_RESOLVERS.keys())
