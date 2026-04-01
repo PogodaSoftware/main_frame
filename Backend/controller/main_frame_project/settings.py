@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'corsheaders',          # CORS headers for cross-origin frontend requests
     'pogoda_api',           # Pogoda portfolio API app
     'beauty_api',           # Beauty marketplace API app
+    'bff_api',              # Backend-for-Frontend middleware (SDUI orchestrator)
 ]
 
 MIDDLEWARE = [

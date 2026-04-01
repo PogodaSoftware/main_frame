@@ -1,19 +1,25 @@
-import { Component, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+/**
+ * BeautyLoginComponent (Presentational)
+ * ---------------------------------------
+ * Renders the customer login form using data from [data] @Input().
+ * On successful login emits (loginSuccess) — the shell re-resolves and
+ * decides what to render next.  No routing or localStorage here.
+ */
+
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BeautyAuthService } from './beauty-auth.service';
 
 @Component({
   selector: 'app-beauty-login',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule],
   template: `
     <div class="login-page">
       <header class="login-header">
         <div class="header-brand">
           <span class="brand-icon">✨</span>
-          <a class="brand-name" routerLink="/pogoda/beauty">Beauty</a>
+          <button class="brand-name-btn" (click)="navigate.emit('beauty_home')">Beauty</button>
         </div>
       </header>
 
@@ -65,11 +71,9 @@ import { BeautyAuthService } from './beauty-auth.service';
               <button
                 type="button"
                 class="password-toggle"
-                (click)="togglePassword()"
+                (click)="showPassword = !showPassword"
                 aria-label="Toggle password visibility"
-              >
-                {{ showPassword ? 'Hide' : 'Show' }}
-              </button>
+              >{{ showPassword ? 'Hide' : 'Show' }}</button>
             </div>
             @if (passwordInput.touched && passwordInput.errors?.['required']) {
               <span class="field-error">Password is required.</span>
@@ -85,23 +89,19 @@ import { BeautyAuthService } from './beauty-auth.service';
             class="btn-login"
             [disabled]="loginForm.invalid || isLoading"
           >
-            @if (isLoading) {
-              <span class="spinner"></span>
-            } @else {
-              Sign in
-            }
+            @if (isLoading) { <span class="spinner"></span> } @else { Sign in }
           </button>
         </form>
 
         <div class="login-footer">
           <span>Don't have an account?</span>
-          <a routerLink="/pogoda/beauty/signup" class="link-signup">Sign up</a>
+          <button class="link-btn link-signup" (click)="navigate.emit('beauty_signup')">Sign up</button>
         </div>
 
         <div class="login-footer business-link">
-          <a routerLink="/pogoda/beauty/business/login" class="link-business">
+          <button class="link-btn link-business" (click)="navigate.emit('beauty_business_login')">
             Business provider? Sign in here
-          </a>
+          </button>
         </div>
       </main>
     </div>
@@ -109,21 +109,17 @@ import { BeautyAuthService } from './beauty-auth.service';
   styleUrls: ['./beauty-login.component.scss'],
 })
 export class BeautyLoginComponent {
+  @Input() data: Record<string, unknown> = {};
+  @Output() loginSuccess = new EventEmitter<void>();
+  @Output() navigate = new EventEmitter<string>();
+
   email = '';
   password = '';
   showPassword = false;
   isLoading = false;
   serverError = '';
 
-  constructor(
-    private router: Router,
-    private authService: BeautyAuthService,
-    @Inject(PLATFORM_ID) private platformId: object,
-  ) {}
-
-  togglePassword(): void {
-    this.showPassword = !this.showPassword;
-  }
+  constructor(private authService: BeautyAuthService) {}
 
   onSubmit(): void {
     if (this.isLoading) return;
@@ -131,12 +127,9 @@ export class BeautyLoginComponent {
     this.isLoading = true;
 
     this.authService.login(this.email, this.password).subscribe({
-      next: (response) => {
+      next: () => {
         this.isLoading = false;
-        if (isPlatformBrowser(this.platformId)) {
-          localStorage.setItem('beautyUserEmail', response.email);
-        }
-        this.router.navigate(['/pogoda/beauty']);
+        this.loginSuccess.emit();
       },
       error: (err) => {
         this.isLoading = false;
@@ -146,7 +139,7 @@ export class BeautyLoginComponent {
           const errors = err.error;
           const firstKey = Object.keys(errors)[0];
           const msg = errors[firstKey];
-          this.serverError = Array.isArray(msg) ? msg[0] : msg;
+          this.serverError = Array.isArray(msg) ? msg[0] : String(msg);
         } else {
           this.serverError = 'Something went wrong. Please try again.';
         }
