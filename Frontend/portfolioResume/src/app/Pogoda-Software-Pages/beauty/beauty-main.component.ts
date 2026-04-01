@@ -1,6 +1,17 @@
+/**
+ * BeautyMainComponent (Presentational)
+ * -------------------------------------
+ * Renders the Beauty home screen using data passed from the shell.
+ * Owns no state — everything comes from [data] @Input().
+ * Emits (navigate) and (logout) events; the shell handles routing.
+ */
+
 import {
   Component,
-  OnInit,
+  Input,
+  Output,
+  EventEmitter,
+  OnChanges,
   OnDestroy,
   Inject,
   PLATFORM_ID,
@@ -9,8 +20,6 @@ import {
   AfterViewInit,
 } from '@angular/core';
 import { isPlatformBrowser, DOCUMENT } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
-import { environment } from '../../../environments/environment';
 
 declare const google: any;
 
@@ -22,21 +31,22 @@ interface ServiceCategory {
 @Component({
   selector: 'app-beauty-main',
   standalone: true,
-  imports: [RouterLink],
+  imports: [],
   template: `
     <div class="beauty-app">
       <!-- Header -->
       <header class="beauty-header">
         <div class="header-brand">
           <span class="brand-icon">✨</span>
-          <a class="brand-name" routerLink="/pogoda/beauty">Beauty</a>
+          <button class="brand-name-btn" (click)="navigate.emit('beauty_home')">Beauty</button>
         </div>
         <div class="header-actions">
-          @if (!userEmail) {
-            <button class="btn-login" (click)="goToLogin()">Sign in</button>
-            <button class="btn-signup" (click)="goToSignUp()">Sign up</button>
+          @if (!isAuthenticated) {
+            <button class="btn-login" (click)="navigate.emit('beauty_login')">Sign in</button>
+            <button class="btn-signup" (click)="navigate.emit('beauty_signup')">Sign up</button>
           } @else {
             <div class="user-email-badge">{{ userEmail }}</div>
+            <button class="btn-logout" (click)="logout.emit()">Sign out</button>
           }
         </div>
       </header>
@@ -55,7 +65,7 @@ interface ServiceCategory {
 
       <!-- Google Maps -->
       <section class="map-section">
-        @if (!mapApiKey) {
+        @if (!googleMapsKeyPresent) {
           <div class="map-placeholder">
             <div class="map-placeholder-content">
               <span class="map-placeholder-icon">🗺️</span>
@@ -64,73 +74,66 @@ interface ServiceCategory {
             </div>
           </div>
         }
-        <div #mapContainer class="map-container" [class.hidden]="!mapApiKey"></div>
+        <div #mapContainer class="map-container" [class.hidden]="!googleMapsKeyPresent"></div>
       </section>
     </div>
   `,
   styleUrls: ['./beauty-main.component.scss'],
 })
-export class BeautyMainComponent implements OnInit, AfterViewInit, OnDestroy {
+export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy {
   @ViewChild('mapContainer') mapContainer!: ElementRef;
 
+  @Input() data: Record<string, unknown> = {};
+  @Output() navigate = new EventEmitter<string>();
+  @Output() logout = new EventEmitter<void>();
+
+  isAuthenticated = false;
   userEmail: string | null = null;
-  mapApiKey = environment.googleMapsApiKey;
+  googleMapsKeyPresent = false;
+  services: ServiceCategory[] = [];
+
   private map: any = null;
   private scriptEl: HTMLScriptElement | null = null;
 
-  services: ServiceCategory[] = [
-    { icon: '💄', label: 'Beauty' },
-    { icon: '👁️', label: 'Lashes' },
-    { icon: '💅', label: 'Nails' },
-    { icon: '💋', label: 'Makeup' },
-  ];
-
   constructor(
-    private router: Router,
     @Inject(PLATFORM_ID) private platformId: object,
-    @Inject(DOCUMENT) private document: Document
+    @Inject(DOCUMENT) private document: Document,
   ) {}
 
-  ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.userEmail = localStorage.getItem('beautyUserEmail');
-    }
+  ngOnChanges(): void {
+    this.isAuthenticated = Boolean(this.data['is_authenticated']);
+    this.userEmail = (this.data['user_email'] as string) || null;
+    this.googleMapsKeyPresent = Boolean(this.data['google_maps_key_present']);
+    this.services = (this.data['services'] as ServiceCategory[]) || [];
   }
 
   ngAfterViewInit(): void {
-    if (isPlatformBrowser(this.platformId) && this.mapApiKey) {
+    if (isPlatformBrowser(this.platformId) && this.googleMapsKeyPresent) {
       this.loadGoogleMapsScript();
     }
   }
 
   ngOnDestroy(): void {
-    if (this.scriptEl && this.scriptEl.parentNode) {
+    if (this.scriptEl?.parentNode) {
       this.scriptEl.parentNode.removeChild(this.scriptEl);
     }
   }
 
-  goToLogin(): void {
-    this.router.navigate(['/pogoda/beauty/login']);
-  }
-
-  goToSignUp(): void {
-    this.router.navigate(['/pogoda/beauty/signup']);
-  }
-
   private loadGoogleMapsScript(): void {
-    const existingScript = this.document.querySelector('#google-maps-script') as HTMLScriptElement | null;
-    if (existingScript) {
+    const existing = this.document.querySelector('#google-maps-script') as HTMLScriptElement | null;
+    if (existing) {
       if (typeof google !== 'undefined') {
         this.initMap();
       } else {
-        existingScript.addEventListener('load', () => this.initMap(), { once: true });
+        existing.addEventListener('load', () => this.initMap(), { once: true });
       }
       return;
     }
 
+    const mapsKey = (this.data['google_maps_key'] as string) || '';
     const script = this.document.createElement('script');
     script.id = 'google-maps-script';
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${this.mapApiKey}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${mapsKey}`;
     script.async = true;
     script.defer = true;
     script.onload = () => this.initMap();
@@ -139,9 +142,7 @@ export class BeautyMainComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private initMap(): void {
-    if (typeof google === 'undefined' || !this.mapContainer?.nativeElement) {
-      return;
-    }
+    if (typeof google === 'undefined' || !this.mapContainer?.nativeElement) return;
     this.map = new google.maps.Map(this.mapContainer.nativeElement, {
       center: { lat: 40.7128, lng: -74.006 },
       zoom: 13,
