@@ -1,6 +1,12 @@
-import { Component, Inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { Router, RouterLink } from '@angular/router';
+/**
+ * BeautySignupComponent (Presentational)
+ * ----------------------------------------
+ * Renders the sign-up form using data from [data] @Input().
+ * On successful account creation emits (signupSuccess) — the shell
+ * re-resolves via BFF.  No routing or localStorage here.
+ */
+
+import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { environment } from '../../../environments/environment';
@@ -8,13 +14,13 @@ import { environment } from '../../../environments/environment';
 @Component({
   selector: 'app-beauty-signup',
   standalone: true,
-  imports: [FormsModule, RouterLink],
+  imports: [FormsModule],
   template: `
     <div class="signup-page">
       <header class="signup-header">
         <div class="header-brand">
           <span class="brand-icon">✨</span>
-          <a class="brand-name" routerLink="/pogoda/beauty">Beauty</a>
+          <button class="brand-name-btn" (click)="navigate.emit('beauty_home')">Beauty</button>
         </div>
       </header>
 
@@ -64,11 +70,9 @@ import { environment } from '../../../environments/environment';
               <button
                 type="button"
                 class="password-toggle"
-                (click)="togglePassword()"
+                (click)="showPassword = !showPassword"
                 aria-label="Toggle password visibility"
-              >
-                {{ showPassword ? 'Hide' : 'Show' }}
-              </button>
+              >{{ showPassword ? 'Hide' : 'Show' }}</button>
             </div>
             @if (passwordInput.touched && passwordInput.errors?.['required']) {
               <span class="field-error">Password is required.</span>
@@ -87,72 +91,62 @@ import { environment } from '../../../environments/environment';
             class="btn-continue"
             [disabled]="signupForm.invalid || isLoading"
           >
-            @if (isLoading) {
-              <span class="spinner"></span>
-            } @else {
-              Continue
-            }
+            @if (isLoading) { <span class="spinner"></span> } @else { Continue }
           </button>
         </form>
+
+        <div class="signup-footer">
+          <span>Already have an account?</span>
+          <button class="link-btn" (click)="navigate.emit('beauty_login')">Sign in</button>
+        </div>
       </main>
     </div>
   `,
   styleUrls: ['./beauty-signup.component.scss'],
 })
 export class BeautySignupComponent {
+  @Input() data: Record<string, unknown> = {};
+  @Output() signupSuccess = new EventEmitter<void>();
+  @Output() navigate = new EventEmitter<string>();
+
   email = '';
   password = '';
   showPassword = false;
   isLoading = false;
   serverError = '';
 
-  constructor(
-    private router: Router,
-    private http: HttpClient,
-    @Inject(PLATFORM_ID) private platformId: object
-  ) {}
-
-  togglePassword(): void {
-    this.showPassword = !this.showPassword;
-  }
+  constructor(private http: HttpClient) {}
 
   onSubmit(): void {
     if (this.isLoading) return;
     this.serverError = '';
     this.isLoading = true;
 
-    const apiUrl = `${environment.apiBaseUrl}/api/beauty/signup/`;
-
-    this.http.post<{ message: string; email: string }>(apiUrl, {
-      email: this.email,
-      password: this.password,
-    }).subscribe({
-      next: (response) => {
-        this.isLoading = false;
-        if (isPlatformBrowser(this.platformId)) {
-          localStorage.setItem('beautyUserEmail', response.email);
-        }
-        this.router.navigate(['/pogoda/beauty']);
-      },
-      error: (err) => {
-        this.isLoading = false;
-        if (err.status === 400 && err.error) {
-          const errors = err.error;
-          if (errors.email) {
-            this.serverError = Array.isArray(errors.email)
-              ? errors.email[0]
-              : errors.email;
-          } else if (errors.password) {
-            this.serverError = Array.isArray(errors.password)
-              ? errors.password[0]
-              : errors.password;
+    this.http
+      .post<{ message: string; email: string }>(
+        `${environment.apiBaseUrl}/api/beauty/signup/`,
+        { email: this.email, password: this.password },
+      )
+      .subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.signupSuccess.emit();
+        },
+        error: (err) => {
+          this.isLoading = false;
+          if (err.status === 400 && err.error) {
+            const errors = err.error;
+            if (errors.email) {
+              this.serverError = Array.isArray(errors.email) ? errors.email[0] : errors.email;
+            } else if (errors.password) {
+              this.serverError = Array.isArray(errors.password) ? errors.password[0] : errors.password;
+            } else {
+              this.serverError = 'Please check your details and try again.';
+            }
           } else {
-            this.serverError = 'Please check your details and try again.';
+            this.serverError = 'Something went wrong. Please try again.';
           }
-        } else {
-          this.serverError = 'Something went wrong. Please try again.';
-        }
-      },
-    });
+        },
+      });
   }
 }
