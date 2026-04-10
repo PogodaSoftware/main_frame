@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beauty Pages Wireframe</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        .mermaid {
+            background: transparent;
+        }
+        .diagram-container {
+            margin-bottom: 40px;
+        }
+        .diagram-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 15px;
+        }
+        .component-details {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .component-details h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .component-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .component-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        .component-item h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+        .component-item p {
+            color: #666;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        .code-snippet {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Beauty Pages Wireframe - Angular Architecture</h1>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Component Architecture</div>
+            <div class="mermaid">
+                graph TD
+                    A[BeautyShellComponent] --> B[BeautyMainComponent]
+                    A --> C[BeautyLoginComponent]
+                    A --> D[BeautySignupComponent]
+                    A --> E[BeautyBusinessLoginComponent]
+
+                    B --> F[Service Categories]
+                    B --> G[Google Maps]
+                    B --> H[Header Actions]
+
+                    C --> I[Email/Password Form]
+                    C --> J[Form Validation]
+                    C --> K[Navigation]
+
+                    D --> L[Signup Form]
+                    D --> M[Form Validation]
+                    D --> N[Navigation]
+
+                    E --> O[Business Login Form]
+                    E --> P[Form Validation]
+                    E --> Q[Navigation]
+
+                    subgraph "Services"
+                        F --> F1[Facial Treatments]
+                        F --> F2[Massage Therapy]
+                        F --> F3[Nail Services]
+                        F --> F4[Hair Styling]
+                    end
+
+                    subgraph "Authentication"
+                        I --> I1[Email Input]
+                        I --> I2[Password Input]
+                        I --> I3[Toggle Password]
+                    end
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">Data Flow</div>
+            <div class="mermaid">
+                sequenceDiagram
+                    participant User
+                    participant BeautyShell
+                    participant BFF Service
+                    participant Component
+
+                    User->>BeautyShell: Navigate to /beauty
+                    BeautyShell->>BFF Service: POST /resolve
+                    BFF Service->>BeautyShell: Response (render/redirect)
+                    BeautyShell->>Component: Render with @Input(data)
+                    Component->>User: Display UI
+                    User->>Component: Event (click/form submit)
+                    Component->>BeautyShell: @Output(event)
+                    BeautyShell->>BFF Service: POST /resolve
+                    BFF Service->>BeautyShell: New response
+                    BeautyShell->>Component: Update view
+            </div>
+        </div>
+
+        <div class="diagram-container">
+            <div class="diagram-title">State Management</div>
+            <div class="mermaid">
+                graph LR
+                    A[BFF Service] --> B[BeautyShell]
+                    B --> C[Component]
+                    C --> D[User Events]
+                    D --> E[Component Logic]
+                    E --> F[@Output Events]
+                    F --> B[State Update]
+
+                    subgraph "No LocalStorage"
+                        B --> G[No State Persistence]
+                        G --> H[Always Fresh Data]
+                        H --> I[Server-Side Driven]
+                    end
+            </div>
+        </div>
+
+        <div class="component-details">
+            <h3>Component Breakdown</h3>
+            <div class="component-list">
+                <div class="component-item">
+                    <h4>BeautyShellComponent</h4>
+                    <p>Master container that routes between different beauty screens based on BFF response. Handles loading states and errors.</p>
+                </div>
+                <div class="component-item">
+                    <h4>BeautyMainComponent</h4>
+                    <p>Home screen displaying service categories and Google Maps integration. Shows user authentication status.</p>
+                </div>
+                <div class="component-item">
+                    <h4>BeautyLoginComponent</h4>
+                    <p>Customer login form with email/password validation. Emits login success events.</p>
+                </div>
+                <div class="component-item">
+                    <h4>BeautySignupComponent</h4>
+                    <p>Customer registration form with similar validation to login.</p>
+                </div>
+                <div class="component-item">
+                    <h4>BeautyBusinessLoginComponent</h4>
+                    <p>Business account login form, separate from customer login.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="component-details">
+            <h3>Key Features</h3>
+            <div class="component-list">
+                <div class="component-item">
+                    <h4>SDUI Architecture</h4>
+                    <p>Server-Driven UI pattern where the BFF decides which components to render</p>
+                </div>
+                <div class="component-item">
+                    <h4>Mobile-First Design</h4>
+                    <p>Optimized for mobile devices with responsive breakpoints</p>
+                </div>
+                <div class="component-item">
+                    <h4>Google Maps Integration</h4>
+                    <p>Dynamic map loading with API key configuration</p>
+                </div>
+                <div class="component-item">
+                    <h4>Service Categories</h4>
+                    <p>Horizontal scrollable list of beauty services</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="component-details">
+            <h3>Sample Code Structure</h3>
+            <div class="code-snippet">
+// Shell Component Template
+@switch (bffResponse?.screen) {
+  @case ('beauty_home') {
+    <app-beauty-main
+      [data]="bffResponse!.data"
+      (navigate)="navigateTo($event)"
+    />
+  }
+  @case ('beauty_login') {
+    <app-beauty-login
+      [data]="bffResponse!.data"
+      (loginSuccess)="handleAuthSuccess()"
+    />
+  }
+}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
