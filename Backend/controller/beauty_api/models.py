@@ -52,8 +52,8 @@ class BeautySession(models.Model):
     class Meta:
         db_table = 'beauty_sessions'
         indexes = [
-            models.Index(fields=['token_hash']),
-            models.Index(fields=['user_id', 'user_type', 'device_id']),
+            models.Index(fields=['token_hash'], name='beauty_sess_token_h_idx'),
+            models.Index(fields=['user_id', 'user_type', 'device_id'], name='beauty_sess_user_dev_idx'),
         ]
 
     def __str__(self):
