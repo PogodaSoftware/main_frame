@@ -23,7 +23,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { of, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 import { BeautyBffService, BffResponse } from './beauty-bff.service';
@@ -32,12 +32,14 @@ import { BeautyMainComponent } from './beauty-main.component';
 import { BeautyLoginComponent } from './beauty-login.component';
 import { BeautySignupComponent } from './beauty-signup.component';
 import { BeautyBusinessLoginComponent } from './beauty-business-login.component';
+import { BeautyWireframeComponent } from './wireframe.component';
 
 const SCREEN_TO_ROUTE: Record<string, string[]> = {
   beauty_home: ['/pogoda/beauty'],
   beauty_login: ['/pogoda/beauty/login'],
   beauty_signup: ['/pogoda/beauty/signup'],
   beauty_business_login: ['/pogoda/beauty/business/login'],
+  beauty_wireframe: ['/pogoda/beauty/wireframe'],
 };
 
 @Component({
@@ -48,6 +50,7 @@ const SCREEN_TO_ROUTE: Record<string, string[]> = {
     BeautyLoginComponent,
     BeautySignupComponent,
     BeautyBusinessLoginComponent,
+    BeautyWireframeComponent,
   ],
   template: `
     @if (isLoading) {
@@ -88,6 +91,9 @@ const SCREEN_TO_ROUTE: Record<string, string[]> = {
             (loginSuccess)="handleAuthSuccess('beauty_home')"
             (navigate)="navigateTo($event)"
           />
+        }
+        @case ('beauty_wireframe') {
+          <app-beauty-wireframe />
         }
       }
     }
@@ -158,6 +164,12 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
           this.currentScreen = (data['screen'] as string) || 'beauty_home';
           this.isLoading = true;
           this.serverError = false;
+
+          // Wireframe is a dev-only page — bypass the BFF entirely.
+          if (this.currentScreen === 'beauty_wireframe') {
+            return of({ action: 'render' as const, screen: 'beauty_wireframe' });
+          }
+
           return this.bffService.resolve(this.currentScreen);
         }),
       )
