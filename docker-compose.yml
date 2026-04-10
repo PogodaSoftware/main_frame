@@ -37,7 +37,9 @@ services:
       - PGDATABASE=${PGDATABASE:-pogoda_db}
       - PGUSER=${PGUSER:-pogoda_user}
       - PGPASSWORD=${PGPASSWORD:-pogoda_pass}
-    command: ["python", "./manage.py", "runserver", "0.0.0.0:${BACKEND_PORT:-8000}"]
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:${BACKEND_PORT:-8000}"
     depends_on:
       db:
         condition: service_healthy
