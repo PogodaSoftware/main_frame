@@ -27,7 +27,7 @@ services:
       dockerfile: Dockerfile
     working_dir: /app
     ports:
-      - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
+      - "${BACKEND_PORT:-8501}:${BACKEND_PORT:-8501}"
     volumes:
       - ./Backend/controller:/app
     environment:
@@ -38,8 +38,7 @@ services:
       - PGUSER=${PGUSER:-pogoda_user}
       - PGPASSWORD=${PGPASSWORD:-pogoda_pass}
     command: >
-      sh -c "python manage.py migrate &&
-             python manage.py runserver 0.0.0.0:${BACKEND_PORT:-8000}"
+      sh -c "python manage.py migrate && python manage.py runserver 0.0.0.0:${BACKEND_PORT:-8501}"
     depends_on:
       db:
         condition: service_healthy
@@ -49,16 +48,12 @@ services:
       context: ./Frontend/portfolioResume
       dockerfile: Dockerfile
     ports:
-      - "${FRONTEND_PORT:-4200}:${FRONTEND_PORT:-4200}"
+      - "${FRONTEND_PORT:-80}:${FRONTEND_PORT:-80}"
     volumes:
       - ./Frontend/portfolioResume:/app
     stdin_open: true
     tty: true
 
-    develop:
-      watch:
-        - path: ../main_frame
-          action: rebuild
-
 volumes:
   postgres_data:
+    name: main_frame_postgres_data
