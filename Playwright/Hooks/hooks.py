@@ -8,6 +8,14 @@ def selecting_different_routes(page: Page, route: str):
         page.goto(f"http://localhost:{frontend_port}/kevin")
     elif route == 'pogoda':
         page.goto(f"http://localhost:{frontend_port}/pogoda")
+    elif route == 'beauty_home':
+        page.goto(f"http://localhost:{frontend_port}/pogoda/beauty")
+    elif route == 'beauty_login':
+        page.goto(f"http://localhost:{frontend_port}/pogoda/beauty/login")
+    elif route == 'beauty_signup':
+        page.goto(f"http://localhost:{frontend_port}/pogoda/beauty/signup")
+    elif route == 'beauty_business_login':
+        page.goto(f"http://localhost:{frontend_port}/pogoda/beauty/business/login")
     else:
         raise ValueError(f"Unknown route: {route}")
 

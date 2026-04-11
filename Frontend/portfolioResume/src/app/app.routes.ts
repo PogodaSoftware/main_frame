@@ -104,10 +104,4 @@ export const routes: Routes = [
     title: 'Beauty - Business Sign In',
     data: { screen: 'beauty_business_login' },
   },
-  {
-    path: 'pogoda/beauty/wireframe',
-    component: BeautyShellComponent,
-    title: 'Beauty - Wireframe',
-    data: { screen: 'beauty_wireframe' },
-  },
 ];

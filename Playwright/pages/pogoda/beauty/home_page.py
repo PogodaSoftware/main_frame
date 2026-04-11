@@ -1,0 +1,8 @@
+home_page_root = "css=div.beauty-app"
+brand_name_button = "css=div.beauty-app button.brand-name-btn"
+signin_button = "css=div.beauty-app button.btn-login"
+signup_button = "css=div.beauty-app button.btn-signup"
+signout_button = "css=div.beauty-app button.btn-logout"
+user_email_badge = "css=div.beauty-app div.user-email-badge"
+services_section = "css=div.beauty-app section.services-section"
+map_section = "css=div.beauty-app section.map-section"
