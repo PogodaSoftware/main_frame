@@ -5,6 +5,10 @@ __pycache__/
 
 # C extensions
 *.so
+.claude
+.agent
+.claude/
+.claude/worktrees
 
 # Distribution / packaging
 .Python
