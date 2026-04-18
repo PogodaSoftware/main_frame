@@ -146,6 +146,20 @@ export const routes: Routes = [
     data: { screen: 'beauty_bookings' },
   },
   {
+    path: 'pogoda/beauty/bookings/:bookingId/success',
+    component: BeautyShellComponent,
+    title: 'Beauty - Booking Confirmed',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_booking_success' },
+  },
+  {
+    path: 'pogoda/beauty/bookings/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Booking Details',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_booking_detail' },
+  },
+  {
     path: 'pogoda/beauty/profile',
     component: BeautyShellComponent,
     title: 'Beauty - Profile',

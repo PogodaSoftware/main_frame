@@ -129,7 +129,7 @@ export class BeautyBookingsComponent {
   }
 
   openDetails(b: BookingItem): void {
-    const link = b._links?.['provider'];
+    const link = b._links?.['detail'];
     if (link) this.followLink.emit(link);
   }
 

@@ -244,6 +244,8 @@ SCREEN_ROUTES = {
     'beauty_category': '/pogoda/beauty/category/:slug',
     'beauty_provider_detail': '/pogoda/beauty/providers/:id',
     'beauty_book': '/pogoda/beauty/book/:serviceId',
+    'beauty_booking_success': '/pogoda/beauty/bookings/:bookingId/success',
+    'beauty_booking_detail': '/pogoda/beauty/bookings/:id',
     'beauty_bookings': '/pogoda/beauty/bookings',
     'beauty_profile': '/pogoda/beauty/profile',
 }

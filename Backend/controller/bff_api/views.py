@@ -52,6 +52,8 @@ from rest_framework.views import APIView
 from .resolvers import (
     beauty_admin_flags,
     beauty_book,
+    beauty_booking_detail,
+    beauty_booking_success,
     beauty_bookings,
     beauty_business_login,
     beauty_business_providers,
@@ -84,6 +86,8 @@ SCREEN_RESOLVERS = {
     'beauty_category': beauty_category.resolve,
     'beauty_provider_detail': beauty_provider_detail.resolve,
     'beauty_book': beauty_book.resolve,
+    'beauty_booking_success': beauty_booking_success.resolve,
+    'beauty_booking_detail': beauty_booking_detail.resolve,
     'beauty_bookings': beauty_bookings.resolve,
     'beauty_profile': beauty_profile.resolve,
 }

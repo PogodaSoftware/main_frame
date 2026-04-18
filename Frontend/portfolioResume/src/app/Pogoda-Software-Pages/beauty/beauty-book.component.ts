@@ -33,6 +33,12 @@ interface BookForm {
   submit_method: string;
   submit_href: string;
   success_screen: string;
+  /**
+   * Route template the BFF supplies — `:bookingId` is substituted with
+   * the new booking's id from the POST response so we navigate
+   * deterministically to the success screen (no fallback retries).
+   */
+  success_route_template?: string;
   fields: BookField[];
   submit_label: string;
 }
@@ -176,16 +182,23 @@ export class BeautyBookComponent {
     };
 
     this.authService.follow(submitLink, body).subscribe({
-      next: () => {
+      next: (resp: unknown) => {
         this.isSubmitting = false;
-        // Navigate to wherever the BFF said to go after success.
-        const successScreen = this.form?.success_screen;
+        // Build a real success link with a substituted route, using the
+        // server-supplied template + the booking id from the POST response.
+        const bookingId =
+          (resp as { id?: number | string } | null)?.id ?? null;
+        const template = this.form?.success_route_template;
+        let route: string | null = null;
+        if (template && bookingId != null) {
+          route = template.replace(':bookingId', String(bookingId));
+        }
         const target: BffLink = {
           rel: 'success',
           href: null,
           method: 'NAV',
-          screen: successScreen || 'beauty_bookings',
-          route: null,
+          screen: this.form?.success_screen || 'beauty_bookings',
+          route,
           prompt: null,
         };
         this.followLink.emit(target);

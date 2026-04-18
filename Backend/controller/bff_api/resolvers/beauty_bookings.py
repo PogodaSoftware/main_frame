@@ -48,23 +48,23 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 'location_label': b.service.provider.location_label,
             },
         }
-        provider_link = h.screen_link(
-            'provider', 'beauty_provider_detail',
-            prompt='View provider', params={'id': b.service.provider.id},
+        detail_link = h.screen_link(
+            'detail', 'beauty_booking_detail',
+            prompt='View booking', params={'id': b.id},
         )
         if b.status == BeautyBooking.STATUS_BOOKED and b.slot_at > now:
             item['_links'] = {
+                'detail': detail_link,
                 'cancel': h.link(
                     'cancel',
                     method='POST',
                     href=f'/api/beauty/protected/bookings/{b.id}/cancel/',
                     prompt='Cancel',
                 ),
-                'provider': provider_link,
             }
             upcoming.append(item)
         else:
-            item['_links'] = {'provider': provider_link}
+            item['_links'] = {'detail': detail_link}
             past.append(item)
 
     return {

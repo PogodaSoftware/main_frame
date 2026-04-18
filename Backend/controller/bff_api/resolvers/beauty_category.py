@@ -4,7 +4,7 @@ Beauty Category Resolver
 Lists every provider that offers services in the requested category, with
 their services nested. Public — no auth required.
 
-`params` must contain `slug` (one of beauty/lashes/nails/makeup).
+`params` must contain `slug` (one of facial/massage/nails/hair).
 """
 
 from beauty_api.models import BeautyService
@@ -12,10 +12,10 @@ from ..services import hateoas_service as h
 
 
 CATEGORY_LABELS = {
-    'beauty': 'Beauty',
-    'lashes': 'Lashes',
+    'facial': 'Facial',
+    'massage': 'Massage',
     'nails': 'Nails',
-    'makeup': 'Makeup',
+    'hair': 'Hair',
 }
 
 

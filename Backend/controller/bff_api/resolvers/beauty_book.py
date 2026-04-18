@@ -78,7 +78,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'form': {
                 'submit_method': 'POST',
                 'submit_href': '/api/beauty/protected/bookings/',
-                'success_screen': 'beauty_bookings',
+                'success_screen': 'beauty_booking_success',
+                # Client substitutes :bookingId with the booking id
+                # returned in the POST response body.
+                'success_route_template': '/pogoda/beauty/bookings/:bookingId/success',
                 'fields': [
                     {
                         'name': 'service_id',

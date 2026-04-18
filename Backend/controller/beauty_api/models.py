@@ -111,15 +111,15 @@ class BeautyProvider(models.Model):
 class BeautyService(models.Model):
     """A service offered by a provider, in one of the home-page categories."""
 
-    CATEGORY_BEAUTY = 'beauty'
-    CATEGORY_LASHES = 'lashes'
+    CATEGORY_FACIAL = 'facial'
+    CATEGORY_MASSAGE = 'massage'
     CATEGORY_NAILS = 'nails'
-    CATEGORY_MAKEUP = 'makeup'
+    CATEGORY_HAIR = 'hair'
     CATEGORY_CHOICES = [
-        (CATEGORY_BEAUTY, 'Beauty'),
-        (CATEGORY_LASHES, 'Lashes'),
+        (CATEGORY_FACIAL, 'Facial'),
+        (CATEGORY_MASSAGE, 'Massage'),
         (CATEGORY_NAILS, 'Nails'),
-        (CATEGORY_MAKEUP, 'Makeup'),
+        (CATEGORY_HAIR, 'Hair'),
     ]
 
     provider = models.ForeignKey(

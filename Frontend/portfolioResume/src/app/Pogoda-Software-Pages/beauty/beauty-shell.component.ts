@@ -40,6 +40,8 @@ import { BeautyCategoryComponent } from './beauty-category.component';
 import { BeautyProviderDetailComponent } from './beauty-provider-detail.component';
 import { BeautyBookComponent } from './beauty-book.component';
 import { BeautyBookingsComponent } from './beauty-bookings.component';
+import { BeautyBookingSuccessComponent } from './beauty-booking-success.component';
+import { BeautyBookingDetailComponent } from './beauty-booking-detail.component';
 import { BeautyProfileComponent } from './beauty-profile.component';
 import {
   AdminFlag,
@@ -64,6 +66,8 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyProviderDetailComponent,
     BeautyBookComponent,
     BeautyBookingsComponent,
+    BeautyBookingSuccessComponent,
+    BeautyBookingDetailComponent,
     BeautyProfileComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Default,
@@ -132,6 +136,18 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-beauty-bookings
         *ngIf="bffResponse!.screen === 'beauty_bookings'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-booking-success
+        *ngIf="bffResponse!.screen === 'beauty_booking_success'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-booking-detail
+        *ngIf="bffResponse!.screen === 'beauty_booking_detail'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
