@@ -153,6 +153,13 @@ export const routes: Routes = [
     data: { screen: 'beauty_booking_success' },
   },
   {
+    path: 'pogoda/beauty/bookings/:bookingId/reschedule',
+    component: BeautyShellComponent,
+    title: 'Beauty - Reschedule Booking',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_reschedule' },
+  },
+  {
     path: 'pogoda/beauty/bookings/:id',
     component: BeautyShellComponent,
     title: 'Beauty - Booking Details',

@@ -1,5 +1,27 @@
 # Portfolio Resume Application
 
+## Recent Changes (April 18, 2026) — Customer Booking Reschedule (Task #13)
+
+Customers can now move an existing upcoming booking to a different time without cancelling and rebooking.
+
+### Backend
+- New `RescheduleBookingView` at `POST /api/beauty/protected/bookings/<id>/reschedule/` — validates owner, status (`booked`), and that the booking is still in the future, then runs `is_slot_available()` on the new `slot_at` (excluding this booking's own slot from busy intervals so it doesn't block its own move) and updates the row in place. Returns 400 with a clear `detail` for past slots, conflicts, out-of-hours requests, cancelled or past bookings.
+- `availability_service`: `compute_slots()`, `is_slot_available()`, and `_provider_busy_intervals()` all gained an optional `exclude_booking_id` parameter so the reschedule slot picker shows the booking's current slot among the options.
+
+### BFF
+- New `beauty_reschedule` resolver: customer-only, owner-scoped. Returns the slot picker form (`compute_slots(..., exclude_booking_id=b.id)`) plus `submit_method='POST'`, `submit_href='/api/beauty/protected/bookings/<id>/reschedule/'`, and a `success_route_template` that goes back to the booking-detail screen. Past or non-active bookings short-circuit to a redirect envelope back to `beauty_booking_detail` (with `params={id: b.id}` so the redirect lands on the right URL).
+- `beauty_booking_detail` now exposes a `reschedule` HATEOAS link alongside `cancel` for upcoming bookings.
+- `redirect_envelope()` now accepts an optional `params` kwarg so redirect targets with templated routes (like `/bookings/:id`) get rendered with concrete values.
+- Registered `beauty_reschedule` in `SCREEN_RESOLVERS` and mapped it to `/pogoda/beauty/bookings/:bookingId/reschedule` in `SCREEN_ROUTES`.
+
+### Frontend
+- New standalone `BeautyRescheduleComponent` mirrors the booking flow's slot-picker form, shows the current booked time on a card above the picker, posts the new slot via `BeautyAuthService.follow()`, and on success follows the `booking` link back to the booking-detail screen.
+- `BeautyBookingDetailComponent` now renders a primary "Reschedule" button (when the BFF supplies a `reschedule` link) above the existing Cancel/View Provider buttons.
+- `BeautyShellComponent` imports + templates the new component.
+- `app.routes.ts` registers `/pogoda/beauty/bookings/:bookingId/reschedule` (placed before the `:id` detail route so it matches first), guarded by the existing `beautyAuthGuard`.
+
+End-to-end verified via curl: reschedule link present on upcoming bookings, picker contains the current slot, POST succeeds (10:00 → 12:30), booking-detail shows the new time, the old slot becomes bookable again, past slots / conflicts are rejected with `That slot is no longer available.`, cancelled bookings can no longer be rescheduled and lose the `reschedule` link, and the resolver redirects cleanly back to `beauty_booking_detail` for ineligible bookings.
+
 ## Recent Changes (April 18, 2026) — Business Provider Portal + Real Availability (Tasks #14 & #15)
 
 Built the full business provider portal so a signed-in business can manage their storefront end-to-end, and replaced the fixed-slot booking generator with real provider availability.

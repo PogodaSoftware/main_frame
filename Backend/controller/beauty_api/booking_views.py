@@ -220,6 +220,81 @@ class MyBookingsView(APIView):
         )
 
 
+class RescheduleBookingView(APIView):
+    """POST /api/beauty/protected/bookings/<id>/reschedule/
+
+    Body: { "slot_at": "<iso-8601>" }
+
+    Owner-only. Booking must still be active and upcoming. The new slot
+    is validated against the same provider's weekly hours and existing
+    bookings (excluding this booking itself, so it doesn't block its
+    own move).
+    """
+
+    def post(self, request, booking_id):
+        customer_id = _require_customer(request)
+        if customer_id is None:
+            return Response({'detail': 'Customers only.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            booking = (
+                BeautyBooking.objects.select_related('service', 'service__provider')
+                .get(id=booking_id, customer_id=customer_id)
+            )
+        except BeautyBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        now = datetime.now(timezone.utc)
+        if booking.status != BeautyBooking.STATUS_BOOKED:
+            return Response(
+                {'detail': 'Only active bookings can be rescheduled.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if booking.slot_at <= now:
+            return Response(
+                {'detail': 'Past bookings cannot be rescheduled.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        slot_at_raw = (request.data.get('slot_at') or '').strip()
+        if not slot_at_raw:
+            return Response(
+                {'detail': 'slot_at is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            normalized = slot_at_raw.replace('Z', '+00:00')
+            slot_at = datetime.fromisoformat(normalized)
+            if slot_at.tzinfo is None:
+                slot_at = slot_at.replace(tzinfo=timezone.utc)
+        except ValueError:
+            return Response(
+                {'detail': 'slot_at must be ISO-8601.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ok, err = is_slot_available(
+            booking.service, slot_at, exclude_booking_id=booking.id,
+        )
+        if not ok:
+            return Response(
+                {'detail': err or 'Slot is not available.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        booking.slot_at = slot_at
+        booking.save(update_fields=['slot_at'])
+
+        return Response(
+            {
+                'id': booking.id,
+                'status': booking.status,
+                'slot_at': booking.slot_at.isoformat(),
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
 class CancelBookingView(APIView):
     """POST /api/beauty/protected/bookings/<id>/cancel/ — owner cancels."""
 

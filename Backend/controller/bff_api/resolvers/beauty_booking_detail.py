@@ -53,6 +53,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'home': h.screen_link('home', 'beauty_home', prompt='Home'),
     }
     if is_upcoming:
+        links['reschedule'] = h.screen_link(
+            'reschedule', 'beauty_reschedule',
+            prompt='Reschedule', params={'bookingId': b.id},
+        )
         links['cancel'] = h.link(
             'cancel',
             method='POST',

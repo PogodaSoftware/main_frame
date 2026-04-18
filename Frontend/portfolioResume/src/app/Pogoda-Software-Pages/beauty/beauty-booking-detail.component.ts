@@ -82,6 +82,11 @@ interface BookingDetail {
 
         <div class="cta-row">
           <button
+            *ngIf="links['reschedule']"
+            class="btn-reschedule"
+            (click)="emit(links['reschedule'])"
+          >{{ links['reschedule'].prompt || 'Reschedule' }}</button>
+          <button
             *ngIf="links['cancel']"
             class="btn-cancel"
             (click)="cancel()"
@@ -112,6 +117,7 @@ interface BookingDetail {
     .card p:last-child { margin: 0; }
     .muted { color: #777; }
     .cta-row { display: flex; flex-direction: column; gap: 10px; }
+    .btn-reschedule { background: #000; color: #fff; border: none; border-radius: 10px; padding: 12px; cursor: pointer; }
     .btn-cancel { background: #fff; color: #c62828; border: 1px solid #c62828; border-radius: 10px; padding: 12px; cursor: pointer; }
     .btn-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-link { background: none; border: 1px solid #ddd; border-radius: 10px; padding: 12px; cursor: pointer; }

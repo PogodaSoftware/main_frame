@@ -67,6 +67,7 @@ from .resolvers import (
     beauty_login,
     beauty_profile,
     beauty_provider_detail,
+    beauty_reschedule,
     beauty_sessions,
     beauty_signup,
     beauty_users,
@@ -93,6 +94,7 @@ SCREEN_RESOLVERS = {
     'beauty_book': beauty_book.resolve,
     'beauty_booking_success': beauty_booking_success.resolve,
     'beauty_booking_detail': beauty_booking_detail.resolve,
+    'beauty_reschedule': beauty_reschedule.resolve,
     'beauty_bookings': beauty_bookings.resolve,
     'beauty_profile': beauty_profile.resolve,
     # Business portal screens

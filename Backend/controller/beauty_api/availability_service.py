@@ -132,9 +132,19 @@ def replace_weekly_hours(provider: BeautyProvider, rows: list[dict]) -> list[str
     return []
 
 
-def _provider_busy_intervals(provider_id: int, day_start: datetime, day_end: datetime) -> list[tuple[datetime, datetime]]:
-    """All (start, end) intervals already booked on this provider within [day_start, day_end)."""
-    bookings = (
+def _provider_busy_intervals(
+    provider_id: int,
+    day_start: datetime,
+    day_end: datetime,
+    *,
+    exclude_booking_id: int | None = None,
+) -> list[tuple[datetime, datetime]]:
+    """All (start, end) intervals already booked on this provider within [day_start, day_end).
+
+    `exclude_booking_id` lets the reschedule flow skip its own current slot
+    so a booking doesn't block its own move into a different time.
+    """
+    qs = (
         BeautyBooking.objects.select_related('service')
         .filter(
             service__provider_id=provider_id,
@@ -143,9 +153,11 @@ def _provider_busy_intervals(provider_id: int, day_start: datetime, day_end: dat
             slot_at__lt=day_end + timedelta(hours=6),
         )
     )
+    if exclude_booking_id is not None:
+        qs = qs.exclude(id=exclude_booking_id)
     return [
         (b.slot_at, b.slot_at + timedelta(minutes=b.service.duration_minutes))
-        for b in bookings
+        for b in qs
     ]
 
 
@@ -161,6 +173,7 @@ def compute_slots(
     *,
     days_ahead: int = 14,
     slot_step_minutes: int = DEFAULT_SLOT_STEP_MINUTES,
+    exclude_booking_id: int | None = None,
 ) -> list[dict]:
     """
     Build an ordered list of bookable slots for a service over the next
@@ -180,6 +193,7 @@ def compute_slots(
         provider.id,
         datetime.combine(today, time.min, tzinfo=timezone.utc),
         datetime.combine(end_date, time.min, tzinfo=timezone.utc),
+        exclude_booking_id=exclude_booking_id,
     )
 
     results: list[dict] = []
@@ -204,8 +218,17 @@ def compute_slots(
     return results
 
 
-def is_slot_available(service: BeautyService, slot_at: datetime) -> tuple[bool, str | None]:
-    """Server-side check used by the booking POST. Returns (ok, error_msg)."""
+def is_slot_available(
+    service: BeautyService,
+    slot_at: datetime,
+    *,
+    exclude_booking_id: int | None = None,
+) -> tuple[bool, str | None]:
+    """Server-side check used by the booking POST + reschedule. Returns (ok, error_msg).
+
+    `exclude_booking_id` lets the reschedule flow ignore its own current
+    slot when checking for conflicts.
+    """
     if slot_at.tzinfo is None:
         slot_at = slot_at.replace(tzinfo=timezone.utc)
     now = datetime.now(timezone.utc)
@@ -230,6 +253,7 @@ def is_slot_available(service: BeautyService, slot_at: datetime) -> tuple[bool, 
         provider.id,
         datetime.combine(slot_at.date(), time.min, tzinfo=timezone.utc),
         datetime.combine(slot_at.date() + timedelta(days=1), time.min, tzinfo=timezone.utc),
+        exclude_booking_id=exclude_booking_id,
     )
     if _overlaps(slot_at, end_at, busy):
         return False, 'That slot is no longer available.'

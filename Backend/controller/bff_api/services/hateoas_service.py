@@ -246,6 +246,7 @@ SCREEN_ROUTES = {
     'beauty_book': '/pogoda/beauty/book/:serviceId',
     'beauty_booking_success': '/pogoda/beauty/bookings/:bookingId/success',
     'beauty_booking_detail': '/pogoda/beauty/bookings/:id',
+    'beauty_reschedule': '/pogoda/beauty/bookings/:bookingId/reschedule',
     'beauty_bookings': '/pogoda/beauty/bookings',
     'beauty_profile': '/pogoda/beauty/profile',
     # Business portal screens.
@@ -279,19 +280,27 @@ def self_link(screen: str, params: dict | None = None) -> dict:
     return screen_link('self', screen, params=params)
 
 
-def redirect_envelope(target_screen: str, reason: str) -> dict:
+def redirect_envelope(
+    target_screen: str,
+    reason: str,
+    *,
+    params: dict | None = None,
+) -> dict:
     """
     Standard redirect envelope. Includes both the new HATEOAS `_links.target`
     and the legacy `redirect_to` string for backward compatibility with the
     older client / Playwright suite.
+
+    `params` is forwarded to the target/self screen links so route templates
+    like `/bookings/:id` are rendered with concrete values.
     """
-    target = screen_link('target', target_screen)
+    target = screen_link('target', target_screen, params=params)
     return {
         'action': 'redirect',
         'redirect_to': target_screen,
         'reason': reason,
         '_links': {
-            'self': screen_link('self', target_screen),
+            'self': screen_link('self', target_screen, params=params),
             'target': target,
         },
     }

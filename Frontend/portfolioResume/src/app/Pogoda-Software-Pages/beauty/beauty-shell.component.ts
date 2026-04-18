@@ -42,6 +42,7 @@ import { BeautyBookComponent } from './beauty-book.component';
 import { BeautyBookingsComponent } from './beauty-bookings.component';
 import { BeautyBookingSuccessComponent } from './beauty-booking-success.component';
 import { BeautyBookingDetailComponent } from './beauty-booking-detail.component';
+import { BeautyRescheduleComponent } from './beauty-reschedule.component';
 import { BeautyProfileComponent } from './beauty-profile.component';
 import { BeautyBusinessDashboardComponent } from './beauty-business-dashboard.component';
 import { BeautyBusinessServicesComponent } from './beauty-business-services.component';
@@ -73,6 +74,7 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBookingsComponent,
     BeautyBookingSuccessComponent,
     BeautyBookingDetailComponent,
+    BeautyRescheduleComponent,
     BeautyProfileComponent,
     BeautyBusinessDashboardComponent,
     BeautyBusinessServicesComponent,
@@ -158,6 +160,12 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-beauty-booking-detail
         *ngIf="bffResponse!.screen === 'beauty_booking_detail'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-reschedule
+        *ngIf="bffResponse!.screen === 'beauty_reschedule'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
@@ -339,6 +347,8 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_admin_flags: '/pogoda/beauty/admin/flags',
     beauty_bookings: '/pogoda/beauty/bookings',
     beauty_profile: '/pogoda/beauty/profile',
+    // beauty_reschedule and beauty_booking_detail are param routes — the
+    // BFF always supplies a substituted `route`, so no fallback entry.
     beauty_business_home: '/pogoda/beauty/business',
     beauty_business_services: '/pogoda/beauty/business/services',
     beauty_business_availability: '/pogoda/beauty/business/availability',
