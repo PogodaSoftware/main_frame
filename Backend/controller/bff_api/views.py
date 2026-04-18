@@ -7,32 +7,40 @@ Request contract
 ----------------
 POST /api/bff/beauty/resolve/
 {
-    "version":   "1.0.0",          // client app version
+    "version":   "2.0.0",          // client app version
     "screen":    "beauty_home",    // which screen the shell wants to render
     "device_id": "dev_abc123"      // browser fingerprint (same as in auth cookie)
 }
 
-Response contract
------------------
+Response contract (HATEOAS envelope)
+------------------------------------
 Render response:
 {
     "action":         "render",
     "screen":         "beauty_home",
     "data":           { ... screen-specific payload ... },
     "meta":           { "title": "..." },
-    "app_version":    "1.0.0",
+    "_links":         { rel: <link object>, ... },
+    "form":           { ... dynamic schema, optional ... },
+    "app_version":    "2.0.0",
     "needs_update":   false
 }
 
 Redirect response:
 {
-    "action":       "redirect",
-    "redirect_to":  "beauty_login",
-    "reason":       "auth_required"
+    "action":         "redirect",
+    "redirect_to":    "beauty_login",   // legacy bare-string field
+    "reason":         "auth_required",
+    "_links":         { "target": <link object>, ... },
+    "app_version":    "2.0.0",
+    "needs_update":   false
 }
 
-The shell stores nothing from this response — it renders once and discards.
-On every navigation or page refresh the shell re-calls this endpoint.
+The shell stores nothing from this response — it renders once and
+discards. On every navigation or page refresh the shell re-calls this
+endpoint, follows the links the BFF emits, and renders the form schema
+the BFF provides. Adding fields, hiding actions, or rerouting flows
+happens entirely server-side ("over-the-air" UI updates).
 """
 
 import logging
@@ -54,7 +62,7 @@ from .resolvers import (
 
 logger = logging.getLogger(__name__)
 
-APP_VERSION = '1.0.0'
+APP_VERSION = '2.0.0'
 
 SCREEN_RESOLVERS = {
     'beauty_home': beauty_home.resolve,
@@ -63,6 +71,8 @@ SCREEN_RESOLVERS = {
     'beauty_business_login': beauty_business_login.resolve,
     'beauty_wireframe': beauty_wireframe.resolve,
     'beauty_users': beauty_users.resolve,
+    'beauty_business_providers': beauty_business_providers.resolve,
+    'beauty_sessions': beauty_sessions.resolve,
 }
 
 VALID_SCREENS = frozenset(SCREEN_RESOLVERS.keys())
@@ -71,7 +81,8 @@ VALID_SCREENS = frozenset(SCREEN_RESOLVERS.keys())
 class BffBeautyResolveView(APIView):
     """
     Orchestrates microservices and returns a single unified render or
-    redirect instruction to the Angular shell.
+    redirect instruction (with hypermedia links and dynamic form schema)
+    to the Angular shell.
     """
 
     def post(self, request):
@@ -102,6 +113,7 @@ class BffBeautyResolveView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+        result.setdefault('_links', {})
         result['app_version'] = APP_VERSION
         result['needs_update'] = client_version != APP_VERSION
 

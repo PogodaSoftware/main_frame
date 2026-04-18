@@ -1,5 +1,55 @@
 # Portfolio Resume Application
 
+## Recent Changes (April 18, 2026) — HATEOAS + Dynamic Form Schema for Beauty BFF (Task #6)
+
+### What changed — "over-the-air" UI updates
+
+The Beauty BFF was upgraded from a fixed render contract into a fully **hypermedia-driven** one. The Angular shell no longer hardcodes endpoint URLs, screen-to-route mappings, form field lists, or which footer links to show. The backend dictates all of it via a `_links` envelope and a `form` schema, so adding a field, hiding an action via a feature flag, or rerouting a flow ships **without an Angular release**.
+
+**Backend:**
+- `Backend/controller/bff_api/services/hateoas_service.py` — link builders (`link`, `screen_link`, `self_link`), the `SCREEN_ROUTES` map (server is sole source of truth for route paths), form schema builders (`login_form`, `signup_form`, `email_field`, `password_field`, `footer_link`), and feature-flag helpers (`is_business_login_enabled`, `is_signup_enabled`) driven by env vars `BEAUTY_BUSINESS_LOGIN_ENABLED` and `BEAUTY_SIGNUP_ENABLED`.
+- All 8 resolvers refactored to emit a HATEOAS envelope: every render carries `_links: {rel: link_obj}`, every redirect carries `_links.target`. Login/signup/business-login resolvers also emit a full `form` schema (fields, validators, submit href + method, success link, footer links, presentation classes, error messages).
+- Legacy fields (`redirect_to` string, `data.links` screen-name dict) are kept alongside the new envelope so existing tests pass.
+- `bff_api/views.py` bumped `APP_VERSION` to `2.0.0`; registered all 8 resolvers including `beauty_business_providers` and `beauty_sessions`.
+
+**Frontend:**
+- `beauty-bff.types.ts` — shared `BffLink`, `BffFieldSchema`, `BffFormSchema`, `BffResponse` types.
+- `BeautyAuthService` no longer hardcodes login/signup/business/logout URLs. Generic `follow(link, body, includeDeviceId)` posts to whatever URL the BFF supplies, on whatever HTTP method the link declares.
+- `BeautyDynamicFormComponent` — schema-driven form renderer. Iterates the schema's fields, validators, and footer links; preserves all existing CSS classes via the schema's `presentation` block so Playwright selectors remain stable.
+- `BeautyShellComponent` — dropped the local `SCREEN_TO_ROUTE` table. Navigation comes from `link.route`. Handles render and redirect responses; on `(followLink)` events fires the link's HTTP method (or just navigates for `method=NAV`) and re-resolves.
+- `BeautyLoginComponent`, `BeautySignupComponent`, `BeautyBusinessLoginComponent` reduced to thin wrappers around the dynamic form.
+- `BeautyMainComponent` builds its header buttons from the `_links` map (rels `login`, `signup`, `business_login`, `logout`); every CTA emits `(followLink)` with the original `BffLink`.
+
+### Envelope contract (v2.0.0)
+```jsonc
+{
+  "action": "render" | "redirect",
+  "screen": "beauty_login",
+  "data":   { ... },
+  "meta":   { "title": "..." },
+  "_links": {
+    "self":   { "rel": "...", "href": "...", "method": "NAV|GET|POST|...", "screen": "...", "route": "/...", "prompt": "..." },
+    "logout": { ... },
+    "target": { ... }   // only on action=redirect
+  },
+  "form": {              // only on screens that render a form
+    "title": "...",
+    "fields": [{ "name", "type", "label", "placeholder", "required", "min_length", "secret_toggle", "error_messages" }],
+    "submit": <link>,
+    "success": <link>,
+    "presentation": { "page_class", "form_class", "submit_class", ... },
+    "footer_links": [{ "rel", "cta_class", "group_class", "label_prefix" }],
+    "error_status_map": { "401": "..." },
+    "error_default": "..."
+  },
+  "redirect_to": "beauty_login",   // legacy, only on action=redirect
+  "app_version": "2.0.0",
+  "needs_update": false
+}
+```
+
+---
+
 ## Recent Changes (April 1, 2026) — BFF SDUI Architecture for Beauty App (PR #43)
 
 ### What changed

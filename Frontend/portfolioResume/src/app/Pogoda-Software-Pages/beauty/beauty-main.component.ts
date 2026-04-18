@@ -1,9 +1,14 @@
 /**
  * BeautyMainComponent (Presentational)
  * -------------------------------------
- * Renders the Beauty home screen using data passed from the shell.
- * Owns no state — everything comes from [data] @Input().
- * Emits (navigate) and (logout) events; the shell handles routing.
+ * Renders the Beauty home screen using data + links passed from the
+ * shell. Owns no auth or routing state — header buttons are generated
+ * from the BFF-supplied `_links` map, so adding/removing actions like
+ * "business sign in" or "logout" is purely a backend change.
+ *
+ * Click handlers emit (followLink) carrying the original BffLink object;
+ * the shell decides whether it is a NAV (navigate) or HTTP action (POST
+ * logout, etc.).
  */
 
 import {
@@ -19,7 +24,9 @@ import {
   ViewChild,
   AfterViewInit,
 } from '@angular/core';
-import { isPlatformBrowser, DOCUMENT } from '@angular/common';
+import { isPlatformBrowser, DOCUMENT, CommonModule } from '@angular/common';
+
+import { BffLink } from './beauty-bff.types';
 
 declare const google: any;
 
@@ -28,52 +35,52 @@ interface ServiceCategory {
   label: string;
 }
 
+const HEADER_ACTION_RELS = ['login', 'signup', 'business_login', 'logout'];
+
 @Component({
   selector: 'app-beauty-main',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   template: `
     <div class="beauty-app">
-      <!-- Header -->
       <header class="beauty-header">
         <div class="header-brand">
           <span class="brand-icon">✨</span>
-          <button class="brand-name-btn" (click)="navigate.emit('beauty_home')">Beauty</button>
+          <button
+            class="brand-name-btn"
+            (click)="emitFollow(homeLink())"
+          >Beauty</button>
         </div>
         <div class="header-actions">
-          @if (!isAuthenticated) {
-            <button class="btn-login" (click)="navigate.emit('beauty_login')">Sign in</button>
-            <button class="btn-signup" (click)="navigate.emit('beauty_signup')">Sign up</button>
-          } @else {
-            <div class="user-email-badge">{{ userEmail }}</div>
-            <button class="btn-logout" (click)="logout.emit()">Sign out</button>
-          }
+          <ng-container *ngIf="isAuthenticated">
+            <div *ngIf="userEmail" class="user-email-badge">{{ userEmail }}</div>
+          </ng-container>
+          <ng-container *ngFor="let action of headerActions">
+            <button
+              [class]="ctaClassFor(action.rel)"
+              (click)="emitFollow(action)"
+            >{{ action.prompt }}</button>
+          </ng-container>
         </div>
       </header>
 
-      <!-- Service Categories -->
       <section class="services-section">
         <div class="services-scroll">
-          @for (service of services; track service.label) {
-            <div class="service-item">
-              <div class="service-icon">{{ service.icon }}</div>
-              <span class="service-label">{{ service.label }}</span>
-            </div>
-          }
+          <div *ngFor="let service of services" class="service-item">
+            <div class="service-icon">{{ service.icon }}</div>
+            <span class="service-label">{{ service.label }}</span>
+          </div>
         </div>
       </section>
 
-      <!-- Google Maps -->
       <section class="map-section">
-        @if (!googleMapsKeyPresent) {
-          <div class="map-placeholder">
-            <div class="map-placeholder-content">
-              <span class="map-placeholder-icon">🗺️</span>
-              <p>Map coming soon</p>
-              <small>Add GOOGLE_MAPS_API_KEY to enable the map</small>
-            </div>
+        <div *ngIf="!googleMapsKeyPresent" class="map-placeholder">
+          <div class="map-placeholder-content">
+            <span class="map-placeholder-icon">🗺️</span>
+            <p>Map coming soon</p>
+            <small>Add GOOGLE_MAPS_API_KEY to enable the map</small>
           </div>
-        }
+        </div>
         <div #mapContainer class="map-container" [class.hidden]="!googleMapsKeyPresent"></div>
       </section>
     </div>
@@ -84,13 +91,14 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
   @ViewChild('mapContainer') mapContainer!: ElementRef;
 
   @Input() data: Record<string, unknown> = {};
-  @Output() navigate = new EventEmitter<string>();
-  @Output() logout = new EventEmitter<void>();
+  @Input() links: Record<string, BffLink> = {};
+  @Output() followLink = new EventEmitter<BffLink>();
 
   isAuthenticated = false;
   userEmail: string | null = null;
   googleMapsKeyPresent = false;
   services: ServiceCategory[] = [];
+  headerActions: BffLink[] = [];
 
   private map: any = null;
   private scriptEl: HTMLScriptElement | null = null;
@@ -105,6 +113,44 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
     this.userEmail = (this.data['user_email'] as string) || null;
     this.googleMapsKeyPresent = Boolean(this.data['google_maps_key_present']);
     this.services = (this.data['services'] as ServiceCategory[]) || [];
+
+    this.headerActions = HEADER_ACTION_RELS
+      .map((rel) => this.links?.[rel])
+      .filter((l): l is BffLink => Boolean(l));
+  }
+
+  homeLink(): BffLink {
+    return (
+      this.links['self'] ||
+      this.links['home'] || {
+        rel: 'home',
+        href: null,
+        method: 'NAV',
+        screen: 'beauty_home',
+        route: '/pogoda/beauty',
+        prompt: 'Beauty',
+      }
+    );
+  }
+
+  ctaClassFor(rel: string): string {
+    switch (rel) {
+      case 'login':
+        return 'btn-login';
+      case 'signup':
+        return 'btn-signup';
+      case 'business_login':
+        return 'btn-business-login';
+      case 'logout':
+        return 'btn-logout';
+      default:
+        return 'btn-link';
+    }
+  }
+
+  emitFollow(link: BffLink | null | undefined): void {
+    if (!link) return;
+    this.followLink.emit(link);
   }
 
   ngAfterViewInit(): void {
