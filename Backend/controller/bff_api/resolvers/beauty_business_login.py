@@ -34,7 +34,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     user = get_authenticated_user(cookie, device_id)
 
     if user is not None:
-        return h.redirect_envelope('beauty_home', 'already_authenticated')
+        # Already-signed-in business users go straight to their portal.
+        target = (
+            'beauty_business_home'
+            if user.get('user_type') == 'business'
+            else 'beauty_home'
+        )
+        return h.redirect_envelope(target, 'already_authenticated')
 
     links = {
         'self': h.self_link('beauty_business_login'),
@@ -49,7 +55,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         subtitle='Access your business provider account',
         submit_href='/api/beauty/business/login/',
         submit_prompt='Sign in',
-        success_screen='beauty_home',
+        success_screen='beauty_business_home',
         presentation=_PRESENTATION,
         footer_links=[
             h.footer_link(

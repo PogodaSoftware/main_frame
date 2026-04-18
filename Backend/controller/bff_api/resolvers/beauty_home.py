@@ -30,13 +30,17 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             )
     else:
         # Authenticated users: customer-only profile / bookings entry points,
-        # then the logout action regardless of user type.
+        # business users get a portal entry point. Logout shown for both.
         if user['user_type'] == 'customer':
             links['bookings'] = h.screen_link(
                 'bookings', 'beauty_bookings', prompt='My Bookings',
             )
             links['profile'] = h.screen_link(
                 'profile', 'beauty_profile', prompt='Profile',
+            )
+        elif user['user_type'] == 'business':
+            links['business_home'] = h.screen_link(
+                'business_home', 'beauty_business_home', prompt='Business Portal',
             )
         logout_path = (
             '/api/beauty/business/logout/'

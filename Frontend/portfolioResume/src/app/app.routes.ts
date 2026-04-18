@@ -22,7 +22,7 @@ import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.componen
 import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
 import { BeautyShellComponent } from './Pogoda-Software-Pages/beauty/beauty-shell.component';
-import { beautyAuthGuard } from './Pogoda-Software-Pages/beauty/beauty-auth.guard';
+import { beautyAuthGuard, beautyBusinessAuthGuard } from './Pogoda-Software-Pages/beauty/beauty-auth.guard';
 
 
 export const routes: Routes = [
@@ -165,5 +165,49 @@ export const routes: Routes = [
     title: 'Beauty - Profile',
     canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_profile' },
+  },
+
+  /** Business provider portal screens (BFF-driven, business auth required). */
+  {
+    path: 'pogoda/beauty/business',
+    component: BeautyShellComponent,
+    title: 'Beauty - Business Portal',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_home' },
+  },
+  {
+    path: 'pogoda/beauty/business/services',
+    component: BeautyShellComponent,
+    title: 'Beauty - Manage Services',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_services' },
+  },
+  {
+    path: 'pogoda/beauty/business/services/new',
+    component: BeautyShellComponent,
+    title: 'Beauty - Add Service',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_service_form' },
+  },
+  {
+    path: 'pogoda/beauty/business/services/:serviceId/edit',
+    component: BeautyShellComponent,
+    title: 'Beauty - Edit Service',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_service_form' },
+  },
+  {
+    path: 'pogoda/beauty/business/availability',
+    component: BeautyShellComponent,
+    title: 'Beauty - Weekly Hours',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_availability' },
+  },
+  {
+    path: 'pogoda/beauty/business/bookings',
+    component: BeautyShellComponent,
+    title: 'Beauty - Incoming Bookings',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_bookings' },
   },
 ];

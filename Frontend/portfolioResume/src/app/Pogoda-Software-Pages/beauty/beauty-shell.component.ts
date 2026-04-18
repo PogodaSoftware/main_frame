@@ -43,6 +43,11 @@ import { BeautyBookingsComponent } from './beauty-bookings.component';
 import { BeautyBookingSuccessComponent } from './beauty-booking-success.component';
 import { BeautyBookingDetailComponent } from './beauty-booking-detail.component';
 import { BeautyProfileComponent } from './beauty-profile.component';
+import { BeautyBusinessDashboardComponent } from './beauty-business-dashboard.component';
+import { BeautyBusinessServicesComponent } from './beauty-business-services.component';
+import { BeautyBusinessServiceFormComponent } from './beauty-business-service-form.component';
+import { BeautyBusinessAvailabilityComponent } from './beauty-business-availability.component';
+import { BeautyBusinessBookingsComponent } from './beauty-business-bookings.component';
 import {
   AdminFlag,
   AdminFlagAuditEntry,
@@ -69,6 +74,11 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBookingSuccessComponent,
     BeautyBookingDetailComponent,
     BeautyProfileComponent,
+    BeautyBusinessDashboardComponent,
+    BeautyBusinessServicesComponent,
+    BeautyBusinessServiceFormComponent,
+    BeautyBusinessAvailabilityComponent,
+    BeautyBusinessBookingsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
@@ -154,6 +164,36 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-beauty-profile
         *ngIf="bffResponse!.screen === 'beauty_profile'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-dashboard
+        *ngIf="bffResponse!.screen === 'beauty_business_home'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-services
+        *ngIf="bffResponse!.screen === 'beauty_business_services'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-service-form
+        *ngIf="bffResponse!.screen === 'beauty_business_service_form'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-availability
+        *ngIf="bffResponse!.screen === 'beauty_business_availability'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-bookings
+        *ngIf="bffResponse!.screen === 'beauty_business_bookings'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
@@ -299,6 +339,10 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_admin_flags: '/pogoda/beauty/admin/flags',
     beauty_bookings: '/pogoda/beauty/bookings',
     beauty_profile: '/pogoda/beauty/profile',
+    beauty_business_home: '/pogoda/beauty/business',
+    beauty_business_services: '/pogoda/beauty/business/services',
+    beauty_business_availability: '/pogoda/beauty/business/availability',
+    beauty_business_bookings: '/pogoda/beauty/business/bookings',
   };
 
   private navigateToLink(link: BffLink): void {

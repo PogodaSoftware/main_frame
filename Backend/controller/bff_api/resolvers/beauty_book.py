@@ -10,33 +10,11 @@ Auth required — redirects unauthenticated visitors to `beauty_login`.
 `params` must contain `serviceId` (the service primary key).
 """
 
-from datetime import datetime, time, timedelta, timezone
-
+from beauty_api.availability_service import compute_slots
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyService, BeautySession
 from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
-
-
-SLOT_HOURS = (10, 13, 16)  # 10:00, 13:00, 16:00 local-ish UTC slots
-SLOT_DAYS = 5
-
-
-def _slot_options() -> list[dict]:
-    """Build a small grid of pickable upcoming slots."""
-    now = datetime.now(timezone.utc)
-    base = (now + timedelta(days=1)).date()
-    options = []
-    for day_offset in range(SLOT_DAYS):
-        day = base + timedelta(days=day_offset)
-        for hour in SLOT_HOURS:
-            slot = datetime.combine(day, time(hour=hour, tzinfo=timezone.utc))
-            iso = slot.isoformat()
-            options.append({
-                'value': iso,
-                'label': slot.strftime('%a %b %-d · %-I:%M %p'),
-            })
-    return options
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
@@ -93,7 +71,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                         'type': 'select',
                         'label': 'Pick a time',
                         'required': True,
-                        'options': _slot_options(),
+                        'options': compute_slots(svc, days_ahead=14),
                     },
                 ],
                 'submit_label': 'Confirm booking',

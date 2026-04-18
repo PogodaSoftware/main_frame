@@ -14,6 +14,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .availability_service import is_slot_available
 from .models import (
     BeautyBooking,
     BeautyProvider,
@@ -189,9 +190,10 @@ class MyBookingsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        if slot_at <= datetime.now(timezone.utc):
+        ok, err = is_slot_available(service, slot_at)
+        if not ok:
             return Response(
-                {'detail': 'Slot must be in the future.'},
+                {'detail': err or 'Slot is not available.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

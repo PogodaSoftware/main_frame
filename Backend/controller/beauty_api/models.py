@@ -178,6 +178,42 @@ class BeautyBooking(models.Model):
         return f"{self.customer.email} → {self.service.name} @ {self.slot_at:%Y-%m-%d %H:%M}"
 
 
+class BeautyProviderAvailability(models.Model):
+    """
+    Weekly business hours for a provider's storefront.
+
+    Exactly one row per (provider, day_of_week) — enforced by a unique
+    constraint. The slot-computation service (`availability_service`) uses
+    these rows to project bookable slots a few weeks into the future.
+    """
+
+    DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+
+    provider = models.ForeignKey(
+        BeautyProvider, on_delete=models.CASCADE, related_name='availability'
+    )
+    day_of_week = models.IntegerField(help_text='0=Mon, 6=Sun')
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_closed = models.BooleanField(default=False)
+
+    class Meta:
+        db_table = 'beauty_provider_availability'
+        ordering = ['provider__name', 'day_of_week']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['provider', 'day_of_week'],
+                name='beauty_avail_unique_dow',
+            ),
+        ]
+
+    def __str__(self):
+        label = self.DOW_LABELS[self.day_of_week] if 0 <= self.day_of_week < 7 else '?'
+        if self.is_closed:
+            return f"{self.provider.name} · {label} closed"
+        return f"{self.provider.name} · {label} {self.start_time}-{self.end_time}"
+
+
 class BeautyFlagAudit(models.Model):
     """Append-only audit trail for every feature-flag change."""
 

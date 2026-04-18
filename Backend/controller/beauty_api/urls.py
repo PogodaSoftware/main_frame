@@ -8,6 +8,13 @@ from .booking_views import (
     ProviderDetailView,
     ServiceDetailView,
 )
+from .business_views import (
+    BusinessAvailabilityView,
+    BusinessBookingsView,
+    BusinessDashboardView,
+    BusinessServiceDetailView,
+    BusinessServiceListView,
+)
 from .views import (
     BusinessLoginView,
     BusinessLogoutView,
@@ -36,4 +43,12 @@ urlpatterns = [
     # Bookings (customer auth required — sits behind BeautyAuthMiddleware)
     path('protected/bookings/', MyBookingsView.as_view(), name='beauty-bookings'),
     path('protected/bookings/<int:booking_id>/cancel/', CancelBookingView.as_view(), name='beauty-booking-cancel'),
+
+    # Business portal (business auth required — same middleware enforces session,
+    # the views additionally check user_type == 'business').
+    path('protected/business/dashboard/', BusinessDashboardView.as_view(), name='beauty-business-dashboard'),
+    path('protected/business/services/', BusinessServiceListView.as_view(), name='beauty-business-services'),
+    path('protected/business/services/<int:service_id>/', BusinessServiceDetailView.as_view(), name='beauty-business-service-detail'),
+    path('protected/business/availability/', BusinessAvailabilityView.as_view(), name='beauty-business-availability'),
+    path('protected/business/bookings/', BusinessBookingsView.as_view(), name='beauty-business-bookings'),
 ]

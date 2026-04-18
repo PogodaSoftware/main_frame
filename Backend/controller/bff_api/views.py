@@ -55,8 +55,13 @@ from .resolvers import (
     beauty_booking_detail,
     beauty_booking_success,
     beauty_bookings,
+    beauty_business_availability,
+    beauty_business_bookings,
+    beauty_business_home,
     beauty_business_login,
     beauty_business_providers,
+    beauty_business_service_form,
+    beauty_business_services,
     beauty_category,
     beauty_home,
     beauty_login,
@@ -90,6 +95,12 @@ SCREEN_RESOLVERS = {
     'beauty_booking_detail': beauty_booking_detail.resolve,
     'beauty_bookings': beauty_bookings.resolve,
     'beauty_profile': beauty_profile.resolve,
+    # Business portal screens
+    'beauty_business_home': beauty_business_home.resolve,
+    'beauty_business_services': beauty_business_services.resolve,
+    'beauty_business_service_form': beauty_business_service_form.resolve,
+    'beauty_business_availability': beauty_business_availability.resolve,
+    'beauty_business_bookings': beauty_business_bookings.resolve,
 }
 
 VALID_SCREENS = frozenset(SCREEN_RESOLVERS.keys())

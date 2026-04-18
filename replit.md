@@ -1,5 +1,28 @@
 # Portfolio Resume Application
 
+## Recent Changes (April 18, 2026) — Business Provider Portal + Real Availability (Tasks #14 & #15)
+
+Built the full business provider portal so a signed-in business can manage their storefront end-to-end, and replaced the fixed-slot booking generator with real provider availability.
+
+### Backend
+- New model `BeautyProviderAvailability` (`provider`, `day_of_week`, `start_time`, `end_time`, `is_closed`) with a unique `(provider, day_of_week)` constraint. Migration `0006_beauty_provider_availability` creates the table and seeds Mon-Sat 10-18 / Sunday closed for every existing `BeautyProvider`.
+- New `beauty_api/availability_service.py` exposes `get_weekly_hours(provider)` (always 7 rows, auto-creates defaults), `replace_weekly_hours(provider, rows)` (validates + bulk replaces), `compute_slots(service, days_ahead=14)` (steps every 30 min within open hours, skips closed days, skips slots that overlap any existing booking on the same provider, drops past slots), `is_slot_available(service, slot_at)` (server-side validation), and `ensure_storefront(business_provider)` (idempotent storefront bootstrap).
+- New `beauty_api/business_views.py` adds the protected REST surface under `/api/beauty/protected/business/`: `dashboard/` (stats), `services/` GET+POST, `services/<id>/` PUT+DELETE, `availability/` GET+PUT, `bookings/` GET. All handlers reject non-business cookies with 403; future bookings on a deleted service are auto-cancelled before delete.
+- `BusinessLoginView` calls `ensure_storefront()` on every login so a freshly signed-up business has a working storefront with default weekly hours.
+- `booking_views.py` POST now calls `is_slot_available()` so the customer flow respects business hours and overlapping bookings.
+
+### BFF
+- `beauty_book.py` slot list now comes from `compute_slots()` (the fixed `SLOT_HOURS` generator is gone).
+- `beauty_business_login.py` redirects already-signed-in business users to `beauty_business_home` and uses that as its post-login `success_screen`.
+- `beauty_home.py` shows a "Business Portal" link to authenticated business users.
+- 5 new resolvers: `beauty_business_home` (dashboard), `beauty_business_services` (list with edit/delete links), `beauty_business_service_form` (single screen for add+edit, `serviceId=='new'` ⇒ add), `beauty_business_availability` (7-row editor with PUT submit metadata), `beauty_business_bookings` (upcoming/past split).
+- `SCREEN_ROUTES` and `SCREEN_RESOLVERS` registered for all 5 new screens.
+
+### Frontend
+- 5 new standalone Angular components in `src/app/Pogoda-Software-Pages/beauty/`: `beauty-business-dashboard`, `beauty-business-services`, `beauty-business-service-form`, `beauty-business-availability`, `beauty-business-bookings`. All consume `data` + `_links` props and emit `followLink` events the shell handles.
+- `BeautyShellComponent` imports + templates the 5 components and adds them to its screen→route fallback map.
+- `app.routes.ts` adds 6 new routes (one per screen, plus a separate `services/new` route for the add-service form), all guarded by `beautyBusinessAuthGuard`.
+
 ## Recent Changes (April 18, 2026) — Runtime Beauty Feature-Flag Admin (Task #8)
 
 Added a small admin screen at `/pogoda/beauty/admin/flags` that lets an authenticated user toggle Beauty BFF feature flags at runtime. Toggles take effect on the very next BFF resolve — no Angular rebuild and no Django restart required.

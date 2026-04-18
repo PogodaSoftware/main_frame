@@ -248,6 +248,13 @@ SCREEN_ROUTES = {
     'beauty_booking_detail': '/pogoda/beauty/bookings/:id',
     'beauty_bookings': '/pogoda/beauty/bookings',
     'beauty_profile': '/pogoda/beauty/profile',
+    # Business portal screens.
+    'beauty_business_home': '/pogoda/beauty/business',
+    'beauty_business_services': '/pogoda/beauty/business/services',
+    'beauty_business_service_form': '/pogoda/beauty/business/services/:serviceId/edit',
+    'beauty_business_service_new': '/pogoda/beauty/business/services/new',
+    'beauty_business_availability': '/pogoda/beauty/business/availability',
+    'beauty_business_bookings': '/pogoda/beauty/business/bookings',
 }
 
 
