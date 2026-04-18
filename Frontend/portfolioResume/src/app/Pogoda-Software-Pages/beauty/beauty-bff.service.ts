@@ -32,13 +32,17 @@ export class BeautyBffService {
     private authService: BeautyAuthService,
   ) {}
 
-  resolve(screen: string): Observable<BffResponse> {
+  resolve(
+    screen: string,
+    params: Record<string, string | number> | null = null,
+  ): Observable<BffResponse> {
     return this.http.post<BffResponse>(
       this.resolveUrl,
       {
         version: APP_VERSION,
         screen,
         device_id: this.authService.getDeviceId(),
+        params: params || {},
       },
       { withCredentials: true },
     );

@@ -26,7 +26,7 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { of, Subscription } from 'rxjs';
+import { combineLatest, of, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 import { BeautyBffService } from './beauty-bff.service';
@@ -36,6 +36,11 @@ import { BeautyLoginComponent } from './beauty-login.component';
 import { BeautySignupComponent } from './beauty-signup.component';
 import { BeautyBusinessLoginComponent } from './beauty-business-login.component';
 import { BeautyWireframeComponent } from './wireframe.component';
+import { BeautyCategoryComponent } from './beauty-category.component';
+import { BeautyProviderDetailComponent } from './beauty-provider-detail.component';
+import { BeautyBookComponent } from './beauty-book.component';
+import { BeautyBookingsComponent } from './beauty-bookings.component';
+import { BeautyProfileComponent } from './beauty-profile.component';
 import {
   AdminFlag,
   AdminFlagAuditEntry,
@@ -55,6 +60,11 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBusinessLoginComponent,
     BeautyWireframeComponent,
     BeautyAdminFlagsComponent,
+    BeautyCategoryComponent,
+    BeautyProviderDetailComponent,
+    BeautyBookComponent,
+    BeautyBookingsComponent,
+    BeautyProfileComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
@@ -102,6 +112,36 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         (toggleFlag)="onFlagToggle($event)"
         (goHomeRequested)="goHome()"
       />
+      <app-beauty-category
+        *ngIf="bffResponse!.screen === 'beauty_category'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-provider-detail
+        *ngIf="bffResponse!.screen === 'beauty_provider_detail'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-book
+        *ngIf="bffResponse!.screen === 'beauty_book'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-bookings
+        *ngIf="bffResponse!.screen === 'beauty_bookings'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-profile
+        *ngIf="bffResponse!.screen === 'beauty_profile'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
     </ng-container>
   `,
   styles: [`
@@ -138,6 +178,7 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
   busyFlagKey: string | null = null;
 
   private currentScreen = 'beauty_home';
+  private currentParams: Record<string, string | number> = {};
   private routeSub?: Subscription;
 
   constructor(
@@ -154,10 +195,18 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.routeSub = this.route.data
+    // Re-resolve whenever the route data OR the path params change so that
+    // `/category/:slug`, `/providers/:id`, `/book/:serviceId` all work.
+    this.routeSub = combineLatest([this.route.data, this.route.paramMap])
       .pipe(
-        switchMap((data) => {
+        switchMap(([data, paramMap]) => {
           this.currentScreen = (data['screen'] as string) || 'beauty_home';
+          const params: Record<string, string | number> = {};
+          for (const key of paramMap.keys) {
+            const value = paramMap.get(key);
+            if (value != null) params[key] = value;
+          }
+          this.currentParams = params;
           this.isLoading = true;
           this.serverError = false;
 
@@ -170,7 +219,7 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
             } as BffResponse);
           }
 
-          return this.bffService.resolve(this.currentScreen);
+          return this.bffService.resolve(this.currentScreen, params);
         }),
       )
       .subscribe({
@@ -189,7 +238,7 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
   retry(): void {
     this.serverError = false;
     this.isLoading = true;
-    this.bffService.resolve(this.currentScreen).subscribe({
+    this.bffService.resolve(this.currentScreen, this.currentParams).subscribe({
       next: (r) => this.applyResponse(r),
       error: () => {
         this.isLoading = false;

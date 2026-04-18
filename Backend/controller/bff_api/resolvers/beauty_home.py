@@ -11,7 +11,7 @@ from ..services.beauty_config_service import get_beauty_config
 from ..services import hateoas_service as h
 
 
-def resolve(request, screen: str, device_id: str) -> dict:
+def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
     config = get_beauty_config()
@@ -29,7 +29,15 @@ def resolve(request, screen: str, device_id: str) -> dict:
                 prompt='Business sign in',
             )
     else:
-        # Authenticated users: include the logout action and a profile badge.
+        # Authenticated users: customer-only profile / bookings entry points,
+        # then the logout action regardless of user type.
+        if user['user_type'] == 'customer':
+            links['bookings'] = h.screen_link(
+                'bookings', 'beauty_bookings', prompt='My Bookings',
+            )
+            links['profile'] = h.screen_link(
+                'profile', 'beauty_profile', prompt='Profile',
+            )
         logout_path = (
             '/api/beauty/business/logout/'
             if user['user_type'] == 'business'
@@ -44,6 +52,20 @@ def resolve(request, screen: str, device_id: str) -> dict:
             prompt='Sign out',
         )
 
+    # Per-category navigation link for each tile on the home services row.
+    services = []
+    for entry in config['services']:
+        slug = entry.get('slug')
+        services.append({
+            **entry,
+            '_links': {
+                'category': h.screen_link(
+                    'category', 'beauty_category',
+                    prompt=entry['label'], params={'slug': slug},
+                ) if slug else None,
+            },
+        })
+
     return {
         'action': 'render',
         'screen': 'beauty_home',
@@ -52,7 +74,7 @@ def resolve(request, screen: str, device_id: str) -> dict:
             'user_email': user['email'] if user else None,
             'user_type': user['user_type'] if user else None,
             'business_name': user['business_name'] if user else None,
-            'services': config['services'],
+            'services': services,
             'google_maps_key_present': config['google_maps_key_present'],
         },
         'meta': {'title': 'Beauty - Home'},

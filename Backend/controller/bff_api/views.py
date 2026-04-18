@@ -51,10 +51,15 @@ from rest_framework.views import APIView
 
 from .resolvers import (
     beauty_admin_flags,
+    beauty_book,
+    beauty_bookings,
     beauty_business_login,
     beauty_business_providers,
+    beauty_category,
     beauty_home,
     beauty_login,
+    beauty_profile,
+    beauty_provider_detail,
     beauty_sessions,
     beauty_signup,
     beauty_users,
@@ -75,6 +80,12 @@ SCREEN_RESOLVERS = {
     'beauty_business_providers': beauty_business_providers.resolve,
     'beauty_sessions': beauty_sessions.resolve,
     'beauty_admin_flags': beauty_admin_flags.resolve,
+    # Customer marketplace screens
+    'beauty_category': beauty_category.resolve,
+    'beauty_provider_detail': beauty_provider_detail.resolve,
+    'beauty_book': beauty_book.resolve,
+    'beauty_bookings': beauty_bookings.resolve,
+    'beauty_profile': beauty_profile.resolve,
 }
 
 VALID_SCREENS = frozenset(SCREEN_RESOLVERS.keys())
@@ -91,6 +102,9 @@ class BffBeautyResolveView(APIView):
         screen = request.data.get('screen', 'beauty_home')
         device_id = (request.data.get('device_id') or '').strip()
         client_version = (request.data.get('version') or APP_VERSION).strip()
+        params = request.data.get('params') or {}
+        if not isinstance(params, dict):
+            params = {}
 
         if screen not in VALID_SCREENS:
             logger.warning('BFF resolve requested unknown screen: %s', screen)
@@ -107,7 +121,7 @@ class BffBeautyResolveView(APIView):
 
         try:
             resolver = SCREEN_RESOLVERS[screen]
-            result = resolver(request, screen, device_id)
+            result = resolver(request, screen, device_id, params)
         except Exception:
             logger.exception('BFF resolver failed for screen: %s', screen)
             return Response(

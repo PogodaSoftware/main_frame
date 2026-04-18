@@ -24,7 +24,7 @@ def _current_value(key: str, default: bool) -> bool:
     return h._flag(key, default=default)
 
 
-def resolve(request, screen: str, device_id: str) -> dict:
+def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
 

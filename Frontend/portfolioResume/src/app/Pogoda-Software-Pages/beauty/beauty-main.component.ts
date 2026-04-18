@@ -33,9 +33,11 @@ declare const google: any;
 interface ServiceCategory {
   icon: string;
   label: string;
+  slug?: string;
+  _links?: { category?: BffLink | null };
 }
 
-const HEADER_ACTION_RELS = ['login', 'signup', 'business_login', 'logout'];
+const HEADER_ACTION_RELS = ['bookings', 'profile', 'login', 'signup', 'business_login', 'logout'];
 
 @Component({
   selector: 'app-beauty-main',
@@ -66,10 +68,15 @@ const HEADER_ACTION_RELS = ['login', 'signup', 'business_login', 'logout'];
 
       <section class="services-section">
         <div class="services-scroll">
-          <div *ngFor="let service of services" class="service-item">
+          <button
+            *ngFor="let service of services"
+            type="button"
+            class="service-item"
+            (click)="onServiceTap(service)"
+          >
             <div class="service-icon">{{ service.icon }}</div>
             <span class="service-label">{{ service.label }}</span>
-          </div>
+          </button>
         </div>
       </section>
 
@@ -151,6 +158,10 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
   emitFollow(link: BffLink | null | undefined): void {
     if (!link) return;
     this.followLink.emit(link);
+  }
+
+  onServiceTap(service: ServiceCategory): void {
+    this.emitFollow(service?._links?.category);
   }
 
   ngAfterViewInit(): void {

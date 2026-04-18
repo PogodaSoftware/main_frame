@@ -18,6 +18,8 @@ export interface BffLink {
   screen: string | null;
   route: string | null;
   prompt: string | null;
+  /** Route params used by the shell when re-resolving the target screen. */
+  params?: Record<string, string | number> | null;
 }
 
 export interface BffFieldSchema {

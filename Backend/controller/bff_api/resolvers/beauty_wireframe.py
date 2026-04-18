@@ -7,7 +7,7 @@ Returns the wireframe screen for development/debugging purposes.
 from ..services import hateoas_service as h
 
 
-def resolve(request, screen: str, device_id: str) -> dict:
+def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     return {
         'action': 'render',
         'screen': 'beauty_wireframe',

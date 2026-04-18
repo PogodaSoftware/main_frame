@@ -205,15 +205,26 @@ def link(
     screen: str | None = None,
     route: str | None = None,
     prompt: str | None = None,
+    params: dict | None = None,
 ) -> dict:
-    """Construct a single hypermedia link object."""
+    """Construct a single hypermedia link object.
+
+    `params` carries route parameters (e.g. `{'serviceId': 7}`). When `route`
+    contains `:name` placeholders, they are substituted here so the resulting
+    link is directly navigable by the shell.
+    """
+    resolved_route = route
+    if resolved_route and params:
+        for key, value in params.items():
+            resolved_route = resolved_route.replace(f':{key}', str(value))
     return {
         'rel': rel,
         'href': href,
         'method': method,
         'screen': screen,
-        'route': route,
+        'route': resolved_route,
         'prompt': prompt,
+        'params': params or None,
     }
 
 
@@ -228,10 +239,22 @@ SCREEN_ROUTES = {
     'beauty_business_providers': '/pogoda/beauty/admin/business-providers',
     'beauty_sessions': '/pogoda/beauty/admin/sessions',
     'beauty_admin_flags': '/pogoda/beauty/admin/flags',
+    # Customer marketplace screens. `:slug` / `:id` are substituted by the
+    # Angular shell from BFF link `params`.
+    'beauty_category': '/pogoda/beauty/category/:slug',
+    'beauty_provider_detail': '/pogoda/beauty/providers/:id',
+    'beauty_book': '/pogoda/beauty/book/:serviceId',
+    'beauty_bookings': '/pogoda/beauty/bookings',
+    'beauty_profile': '/pogoda/beauty/profile',
 }
 
 
-def screen_link(rel: str, screen: str, prompt: str | None = None) -> dict:
+def screen_link(
+    rel: str,
+    screen: str,
+    prompt: str | None = None,
+    params: dict | None = None,
+) -> dict:
     """Convenience: a navigation-only link to another BFF screen."""
     return link(
         rel=rel,
@@ -239,11 +262,12 @@ def screen_link(rel: str, screen: str, prompt: str | None = None) -> dict:
         screen=screen,
         route=SCREEN_ROUTES.get(screen),
         prompt=prompt,
+        params=params,
     )
 
 
-def self_link(screen: str) -> dict:
-    return screen_link('self', screen)
+def self_link(screen: str, params: dict | None = None) -> dict:
+    return screen_link('self', screen, params=params)
 
 
 def redirect_envelope(target_screen: str, reason: str) -> dict:

@@ -83,6 +83,101 @@ class BeautyFeatureFlag(models.Model):
         return f"{self.key}={'on' if self.enabled else 'off'}"
 
 
+class BeautyProvider(models.Model):
+    """
+    A beauty provider/storefront that customers browse and book against.
+
+    A provider is conceptually independent of `BusinessProvider` (the auth
+    account) so the customer-facing catalog can exist before any business
+    portal work is done. When the business portal is built, a provider row
+    can be linked to a `BusinessProvider` via `business_provider_id`.
+    """
+
+    name = models.CharField(max_length=255)
+    short_description = models.CharField(max_length=255, blank=True, default='')
+    long_description = models.TextField(blank=True, default='')
+    location_label = models.CharField(max_length=255, blank=True, default='')
+    business_provider_id = models.IntegerField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_providers'
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class BeautyService(models.Model):
+    """A service offered by a provider, in one of the home-page categories."""
+
+    CATEGORY_BEAUTY = 'beauty'
+    CATEGORY_LASHES = 'lashes'
+    CATEGORY_NAILS = 'nails'
+    CATEGORY_MAKEUP = 'makeup'
+    CATEGORY_CHOICES = [
+        (CATEGORY_BEAUTY, 'Beauty'),
+        (CATEGORY_LASHES, 'Lashes'),
+        (CATEGORY_NAILS, 'Nails'),
+        (CATEGORY_MAKEUP, 'Makeup'),
+    ]
+
+    provider = models.ForeignKey(
+        BeautyProvider, on_delete=models.CASCADE, related_name='services'
+    )
+    category = models.CharField(max_length=32, choices=CATEGORY_CHOICES)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=255, blank=True, default='')
+    price_cents = models.IntegerField(default=0)
+    duration_minutes = models.IntegerField(default=60)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_services'
+        ordering = ['provider__name', 'name']
+        indexes = [
+            models.Index(fields=['category'], name='beauty_svc_cat_idx'),
+            models.Index(fields=['provider', 'category'], name='beauty_svc_prov_cat_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.name} @ {self.provider.name}"
+
+
+class BeautyBooking(models.Model):
+    """A reservation made by a customer (`BeautyUser`) for a `BeautyService`."""
+
+    STATUS_BOOKED = 'booked'
+    STATUS_CANCELLED = 'cancelled'
+    STATUS_COMPLETED = 'completed'
+    STATUS_CHOICES = [
+        (STATUS_BOOKED, 'Booked'),
+        (STATUS_CANCELLED, 'Cancelled'),
+        (STATUS_COMPLETED, 'Completed'),
+    ]
+
+    customer = models.ForeignKey(
+        BeautyUser, on_delete=models.CASCADE, related_name='bookings'
+    )
+    service = models.ForeignKey(
+        BeautyService, on_delete=models.PROTECT, related_name='bookings'
+    )
+    slot_at = models.DateTimeField()
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_BOOKED)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_bookings'
+        ordering = ['-slot_at']
+        indexes = [
+            models.Index(fields=['customer', '-slot_at'], name='beauty_bk_cust_slot_idx'),
+            models.Index(fields=['service', 'slot_at'], name='beauty_bk_svc_slot_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.customer.email} → {self.service.name} @ {self.slot_at:%Y-%m-%d %H:%M}"
+
+
 class BeautyFlagAudit(models.Model):
     """Append-only audit trail for every feature-flag change."""
 

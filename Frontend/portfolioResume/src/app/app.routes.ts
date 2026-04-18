@@ -22,6 +22,7 @@ import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.componen
 import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
 import { BeautyShellComponent } from './Pogoda-Software-Pages/beauty/beauty-shell.component';
+import { beautyAuthGuard } from './Pogoda-Software-Pages/beauty/beauty-auth.guard';
 
 
 export const routes: Routes = [
@@ -115,5 +116,40 @@ export const routes: Routes = [
     component: BeautyShellComponent,
     title: 'Beauty - Feature Flags',
     data: { screen: 'beauty_admin_flags' },
+  },
+
+  /** Customer marketplace screens (BFF-driven). */
+  {
+    path: 'pogoda/beauty/category/:slug',
+    component: BeautyShellComponent,
+    title: 'Beauty - Category',
+    data: { screen: 'beauty_category' },
+  },
+  {
+    path: 'pogoda/beauty/providers/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Provider',
+    data: { screen: 'beauty_provider_detail' },
+  },
+  {
+    path: 'pogoda/beauty/book/:serviceId',
+    component: BeautyShellComponent,
+    title: 'Beauty - Book',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_book' },
+  },
+  {
+    path: 'pogoda/beauty/bookings',
+    component: BeautyShellComponent,
+    title: 'Beauty - My Bookings',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_bookings' },
+  },
+  {
+    path: 'pogoda/beauty/profile',
+    component: BeautyShellComponent,
+    title: 'Beauty - Profile',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_profile' },
   },
 ];

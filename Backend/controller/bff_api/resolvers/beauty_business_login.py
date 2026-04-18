@@ -26,7 +26,7 @@ _PRESENTATION = {
 }
 
 
-def resolve(request, screen: str, device_id: str) -> dict:
+def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     if not h.is_business_login_enabled():
         return h.redirect_envelope('beauty_login', 'feature_disabled')
 
