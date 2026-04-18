@@ -110,4 +110,10 @@ export const routes: Routes = [
     title: 'Beauty - Wireframe',
     data: { screen: 'beauty_wireframe' },
   },
+  {
+    path: 'pogoda/beauty/admin/flags',
+    component: BeautyShellComponent,
+    title: 'Beauty - Feature Flags',
+    data: { screen: 'beauty_admin_flags' },
+  },
 ];

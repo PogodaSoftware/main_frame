@@ -58,3 +58,48 @@ class BeautySession(models.Model):
 
     def __str__(self):
         return f"{self.user_type}:{self.user_id} @ {self.device_id}"
+
+
+class BeautyFeatureFlag(models.Model):
+    """
+    Runtime feature flag for the Beauty BFF.
+
+    The HateoasService consults this table on every resolve so toggling
+    a flag takes effect on the next BFF call — no redeploy required.
+    If a key is missing here, the env-var default is used as a fallback.
+    """
+
+    key = models.CharField(max_length=64, unique=True)
+    enabled = models.BooleanField(default=True)
+    description = models.CharField(max_length=255, blank=True, default='')
+    updated_at = models.DateTimeField(auto_now=True)
+    updated_by_user_id = models.IntegerField(null=True, blank=True)
+    updated_by_email = models.CharField(max_length=255, blank=True, default='')
+
+    class Meta:
+        db_table = 'beauty_feature_flags'
+
+    def __str__(self):
+        return f"{self.key}={'on' if self.enabled else 'off'}"
+
+
+class BeautyFlagAudit(models.Model):
+    """Append-only audit trail for every feature-flag change."""
+
+    flag_key = models.CharField(max_length=64)
+    old_value = models.BooleanField()
+    new_value = models.BooleanField()
+    changed_by_user_id = models.IntegerField(null=True, blank=True)
+    changed_by_user_type = models.CharField(max_length=20, blank=True, default='')
+    changed_by_email = models.CharField(max_length=255, blank=True, default='')
+    changed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_flag_audit'
+        indexes = [
+            models.Index(fields=['flag_key', '-changed_at'], name='beauty_flag_aud_key_idx'),
+        ]
+        ordering = ['-changed_at']
+
+    def __str__(self):
+        return f"{self.flag_key}: {self.old_value}->{self.new_value} @ {self.changed_at:%Y-%m-%d %H:%M}"

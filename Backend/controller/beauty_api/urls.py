@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .admin_views import FlagToggleView
 from .views import (
     BusinessLoginView,
     BusinessLogoutView,
@@ -18,4 +19,5 @@ urlpatterns = [
     path('business/login/', BusinessLoginView.as_view(), name='beauty-business-login'),
     path('business/logout/', BusinessLogoutView.as_view(), name='beauty-business-logout'),
     path('protected/me/', MeView.as_view(), name='beauty-me'),
+    path('admin/flags/toggle/', FlagToggleView.as_view(), name='beauty-admin-flag-toggle'),
 ]

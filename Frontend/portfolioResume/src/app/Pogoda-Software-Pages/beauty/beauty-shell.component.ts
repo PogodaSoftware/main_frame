@@ -36,6 +36,12 @@ import { BeautyLoginComponent } from './beauty-login.component';
 import { BeautySignupComponent } from './beauty-signup.component';
 import { BeautyBusinessLoginComponent } from './beauty-business-login.component';
 import { BeautyWireframeComponent } from './wireframe.component';
+import {
+  AdminFlag,
+  AdminFlagAuditEntry,
+  BeautyAdminFlagsComponent,
+  FlagToggleEvent,
+} from './beauty-admin-flags.component';
 import { BffLink, BffResponse } from './beauty-bff.types';
 
 @Component({
@@ -48,6 +54,7 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautySignupComponent,
     BeautyBusinessLoginComponent,
     BeautyWireframeComponent,
+    BeautyAdminFlagsComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
@@ -86,6 +93,15 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         (followLink)="followLink($event)"
       />
       <app-beauty-wireframe *ngIf="bffResponse!.screen === 'beauty_wireframe'" />
+      <app-beauty-admin-flags
+        *ngIf="bffResponse!.screen === 'beauty_admin_flags'"
+        [flags]="adminFlags"
+        [audit]="adminAudit"
+        [adminEmail]="adminEmail"
+        [busyKey]="busyFlagKey"
+        (toggleFlag)="onFlagToggle($event)"
+        (goHomeRequested)="goHome()"
+      />
     </ng-container>
   `,
   styles: [`
@@ -114,6 +130,12 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
   bffResponse: BffResponse | null = null;
   isLoading = true;
   serverError = false;
+
+  // Admin-flags screen state — populated whenever the BFF returns it.
+  adminFlags: AdminFlag[] = [];
+  adminAudit: AdminFlagAuditEntry[] = [];
+  adminEmail: string | null = null;
+  busyFlagKey: string | null = null;
 
   private currentScreen = 'beauty_home';
   private routeSub?: Subscription;
@@ -209,6 +231,7 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_signup: '/pogoda/beauty/signup',
     beauty_business_login: '/pogoda/beauty/business/login',
     beauty_wireframe: '/pogoda/beauty/wireframe',
+    beauty_admin_flags: '/pogoda/beauty/admin/flags',
   };
 
   private navigateToLink(link: BffLink): void {
@@ -227,8 +250,36 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     this.retry();
   }
 
+  /** Called by the admin-flags child when the user clicks a toggle. */
+  onFlagToggle(event: FlagToggleEvent): void {
+    if (this.busyFlagKey) return;
+    this.busyFlagKey = event.body.key;
+
+    this.authService.follow(event.link, event.body).subscribe({
+      next: () => {
+        this.busyFlagKey = null;
+        // Re-resolve so we render the freshly-saved value AND a new audit row.
+        this.retry();
+      },
+      error: () => {
+        this.busyFlagKey = null;
+        this.serverError = true;
+      },
+    });
+  }
+
+  goHome(): void {
+    this.router.navigateByUrl('/pogoda/beauty');
+  }
+
   private applyResponse(response: BffResponse): void {
     this.isLoading = false;
+    if (response.action === 'render' && response.screen === 'beauty_admin_flags') {
+      const data = (response.data ?? {}) as Record<string, unknown>;
+      this.adminFlags = (data['flags'] as AdminFlag[]) ?? [];
+      this.adminAudit = (data['audit'] as AdminFlagAuditEntry[]) ?? [];
+      this.adminEmail = (data['admin_email'] as string) ?? null;
+    }
     if (response.action === 'redirect') {
       const target = response._links?.['target'];
       if (target) {

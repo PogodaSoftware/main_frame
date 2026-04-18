@@ -1,5 +1,30 @@
 # Portfolio Resume Application
 
+## Recent Changes (April 18, 2026) — Runtime Beauty Feature-Flag Admin (Task #8)
+
+Added a small admin screen at `/pogoda/beauty/admin/flags` that lets an authenticated user toggle Beauty BFF feature flags at runtime. Toggles take effect on the very next BFF resolve — no Angular rebuild and no Django restart required.
+
+**Backend:**
+- New models in `beauty_api/models.py`:
+  - `BeautyFeatureFlag` (`key`, `enabled`, `description`, `updated_at`, `updated_by_*`) — the runtime source of truth.
+  - `BeautyFlagAudit` (`flag_key`, `old_value`, `new_value`, `changed_by_*`, `changed_at`) — append-only audit trail.
+  - Migration `0003_beautyfeatureflag_beautyflagaudit.py` creates both tables and seeds default rows for existing flags.
+- `bff_api/services/hateoas_service.py` — `is_business_login_enabled()` / `is_signup_enabled()` now consult the `beauty_feature_flags` table first and fall back to the legacy env-var defaults if the row is missing or the DB is unavailable. New `FEATURE_FLAGS` registry declares every known flag (key, label, description, default) so the admin screen iterates one list. Added `beauty_admin_flags` to `SCREEN_ROUTES`.
+- New resolver `bff_api/resolvers/beauty_admin_flags.py` — auth-required, lists each registered flag with current value + a `toggle` link, plus the 25 most recent audit entries.
+- New endpoint `POST /api/beauty/admin/flags/toggle/` (`beauty_api/admin_views.py`, wired in `beauty_api/urls.py`) — validates the flag key against the registry, upserts the row inside a transaction, writes an audit row, returns the new value.
+- **Authorisation:** both the resolver and the toggle endpoint require the caller's `(user_type, user_id)` pair to appear in the `BEAUTY_ADMIN_PRINCIPALS` env var (comma-separated `<user_type>:<user_id>` pairs, e.g. `customer:1,business:7`). We bind to the stable PK identity rather than email because `BeautyUser` and `BusinessProvider` are independent tables with no cross-table email uniqueness — using email would let a duplicate-email registration in the other table escalate to admin. Authenticated non-admins get 403 from the endpoint and a redirect to `beauty_home` (`reason: forbidden`) from the resolver. The default (no admins) means the surface is locked down until an operator opts in. Helpers: `hateoas_service.is_beauty_admin(user)` and `_admin_principal_allowlist()`.
+
+**Frontend:**
+- New presentational component `beauty-admin-flags.component.ts` — renders the flag list with iOS-style toggle switches and a chronological audit log.
+- `BeautyShellComponent` registers the new screen, holds admin state (`adminFlags`, `adminAudit`, `adminEmail`, `busyFlagKey`), and forwards toggle clicks through `BeautyAuthService.follow(toggle_link, {key, enabled})`. After each successful toggle the shell re-resolves so the new value and the new audit entry appear immediately.
+- New Angular route `/pogoda/beauty/admin/flags` → `BeautyShellComponent` with `data: { screen: 'beauty_admin_flags' }`. Added matching entry to the shell's screen→route fallback map.
+
+**Verified end-to-end:**
+- Resolver returns the flag list with toggle links (200).
+- Toggling `BEAUTY_SIGNUP_ENABLED` off via the API immediately removes the `signup` link from `beauty_home`'s `_links` envelope on the very next resolve, with no restart.
+- Audit entry recorded with the actor's email and user type.
+- Bad flag key → 400; unauthenticated request → 401.
+
 ## Recent Changes (April 18, 2026) — HATEOAS + Dynamic Form Schema for Beauty BFF (Task #6)
 
 ### What changed — "over-the-air" UI updates
