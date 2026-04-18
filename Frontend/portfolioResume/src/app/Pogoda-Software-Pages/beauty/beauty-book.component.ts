@@ -19,6 +19,7 @@ import { FormsModule } from '@angular/forms';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { formatSlotLocal } from './beauty-time.util';
 
 interface BookField {
   name: string;
@@ -76,7 +77,7 @@ interface BookForm {
               [required]="f.required ?? false"
             >
               <option value="" disabled>Select…</option>
-              <option *ngFor="let o of f.options" [value]="o.value">{{ o.label }}</option>
+              <option *ngFor="let o of f.options" [value]="o.value">{{ slotLabel(o) }}</option>
             </select>
           </ng-container>
 
@@ -159,6 +160,17 @@ export class BeautyBookComponent {
   canSubmit(): boolean {
     if (!this.form) return false;
     return this.visibleFields.every((f) => !f.required || !!this.values[f.name]);
+  }
+
+  /**
+   * Render a slot option in the customer's browser-local timezone.
+   * The BFF's `value` is an ISO timestamp with a UTC offset, so
+   * `new Date(...)` parses it correctly; `Intl.DateTimeFormat` with
+   * no `timeZone` option uses the browser's local zone — exactly
+   * what an out-of-town customer needs to see.
+   */
+  slotLabel(o: { value: string; label: string }): string {
+    return formatSlotLocal(o.value) || o.label;
   }
 
   onSubmit(): void {

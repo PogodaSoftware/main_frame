@@ -17,6 +17,7 @@ import { CommonModule } from '@angular/common';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { formatSlotLocal } from './beauty-time.util';
 
 interface BookingItem {
   id: number;
@@ -60,7 +61,7 @@ interface BookingItem {
             >
               <strong>{{ b.service.name }}</strong>
               <span class="b-prov">{{ b.provider.name }} · {{ b.provider.location_label }}</span>
-              <span class="b-slot">{{ b.slot_label }}</span>
+              <span class="b-slot">{{ formatLocal(b.slot_at) || b.slot_label }}</span>
             </button>
             <button
               class="btn-cancel"
@@ -82,7 +83,7 @@ interface BookingItem {
             >
               <strong>{{ b.service.name }}</strong>
               <span class="b-prov">{{ b.provider.name }}</span>
-              <span class="b-slot">{{ b.slot_label }} · {{ b.status | titlecase }}</span>
+              <span class="b-slot">{{ formatLocal(b.slot_at) || b.slot_label }} · {{ b.status | titlecase }}</span>
             </button>
           </li>
           <li *ngIf="!past.length" class="empty">No past bookings.</li>
@@ -152,5 +153,10 @@ export class BeautyBookingsComponent {
 
   emit(link: BffLink | null | undefined): void {
     if (link) this.followLink.emit(link);
+  }
+
+  /** Render the booking time in the viewer's local timezone. */
+  formatLocal(iso: string | undefined | null): string {
+    return formatSlotLocal(iso);
   }
 }

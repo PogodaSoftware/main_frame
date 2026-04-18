@@ -48,6 +48,7 @@ def _row_to_dict(row: BeautyProviderAvailability) -> dict:
         'start_time': row.start_time.strftime('%H:%M'),
         'end_time': row.end_time.strftime('%H:%M'),
         'is_closed': row.is_closed,
+        'is_24h': row.is_24h,
     }
 
 
@@ -66,6 +67,7 @@ def get_weekly_hours(provider: BeautyProvider) -> list[dict]:
                 start_time=time(0, 0) if closed else DEFAULT_OPEN,
                 end_time=time(0, 0) if closed else DEFAULT_CLOSE,
                 is_closed=closed,
+                is_24h=False,
             )
         out.append(_row_to_dict(row))
     return out
@@ -100,9 +102,10 @@ def replace_weekly_hours(provider: BeautyProvider, rows: list[dict]) -> list[str
         if dow < 0 or dow > 6:
             continue
         is_closed = bool(raw.get('is_closed'))
+        is_24h = bool(raw.get('is_24h'))
         start = _parse_time(raw.get('start_time'))
         end = _parse_time(raw.get('end_time'))
-        if not is_closed:
+        if not is_closed and not is_24h:
             if start is None or end is None:
                 errors.append(f'{DOW_LABELS[dow]}: invalid times.')
                 continue
@@ -111,6 +114,7 @@ def replace_weekly_hours(provider: BeautyProvider, rows: list[dict]) -> list[str
                 continue
         by_dow[dow] = {
             'is_closed': is_closed,
+            'is_24h': is_24h and not is_closed,
             'start_time': start or time(0, 0),
             'end_time': end or time(0, 0),
         }
@@ -121,6 +125,7 @@ def replace_weekly_hours(provider: BeautyProvider, rows: list[dict]) -> list[str
     for dow in range(7):
         defaults = by_dow.get(dow) or {
             'is_closed': dow == 6,
+            'is_24h': False,
             'start_time': DEFAULT_OPEN,
             'end_time': DEFAULT_CLOSE,
         }
@@ -204,11 +209,21 @@ def compute_slots(
         if row is None or row.is_closed:
             cursor += timedelta(days=1)
             continue
-        open_at = datetime.combine(cursor, row.start_time, tzinfo=timezone.utc)
-        close_at = datetime.combine(cursor, row.end_time, tzinfo=timezone.utc)
+        if row.is_24h:
+            # Open the full UTC day. Using the next day's midnight as the
+            # close boundary lets a service consume the last minutes too.
+            open_at = datetime.combine(cursor, time(0, 0), tzinfo=timezone.utc)
+            close_at = datetime.combine(cursor + timedelta(days=1), time(0, 0), tzinfo=timezone.utc)
+        else:
+            open_at = datetime.combine(cursor, row.start_time, tzinfo=timezone.utc)
+            close_at = datetime.combine(cursor, row.end_time, tzinfo=timezone.utc)
         slot = open_at
         while slot + timedelta(minutes=duration) <= close_at:
             if slot > now and not _overlaps(slot, slot + timedelta(minutes=duration), busy):
+                # Label is intentionally a UTC fallback only — the
+                # client renders the canonical `value` (ISO with TZ
+                # offset) in the customer's local timezone so an
+                # out-of-town customer sees their own clock.
                 results.append({
                     'value': slot.isoformat(),
                     'label': slot.strftime('%a %b %-d · %-I:%M %p UTC'),
@@ -244,10 +259,11 @@ def is_slot_available(
     if row is None or row.is_closed:
         return False, 'The provider is closed on that day.'
 
-    open_at = datetime.combine(slot_at.date(), row.start_time, tzinfo=timezone.utc)
-    close_at = datetime.combine(slot_at.date(), row.end_time, tzinfo=timezone.utc)
-    if slot_at < open_at or end_at > close_at:
-        return False, 'Slot is outside business hours.'
+    if not row.is_24h:
+        open_at = datetime.combine(slot_at.date(), row.start_time, tzinfo=timezone.utc)
+        close_at = datetime.combine(slot_at.date(), row.end_time, tzinfo=timezone.utc)
+        if slot_at < open_at or end_at > close_at:
+            return False, 'Slot is outside business hours.'
 
     busy = _provider_busy_intervals(
         provider.id,

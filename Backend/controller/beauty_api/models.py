@@ -196,6 +196,10 @@ class BeautyProviderAvailability(models.Model):
     start_time = models.TimeField()
     end_time = models.TimeField()
     is_closed = models.BooleanField(default=False)
+    # When True, the provider is considered open the full 24 hours of
+    # that day. start_time/end_time are then ignored by the slot
+    # computation and the booking-time validation.
+    is_24h = models.BooleanField(default=False)
 
     class Meta:
         db_table = 'beauty_provider_availability'
@@ -211,6 +215,8 @@ class BeautyProviderAvailability(models.Model):
         label = self.DOW_LABELS[self.day_of_week] if 0 <= self.day_of_week < 7 else '?'
         if self.is_closed:
             return f"{self.provider.name} · {label} closed"
+        if self.is_24h:
+            return f"{self.provider.name} · {label} 24h"
         return f"{self.provider.name} · {label} {self.start_time}-{self.end_time}"
 
 

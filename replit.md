@@ -1,5 +1,25 @@
 # Portfolio Resume Application
 
+## Recent Changes (April 18, 2026) — 24-hour Availability + Local-Time Display
+
+Two related improvements so a 24-hour shop (e.g. an all-night hairdresser) and an out-of-town customer both work correctly:
+
+### Backend
+- New `is_24h` BooleanField on `BeautyProviderAvailability` (migration 0007). When true, that day's `start_time`/`end_time` are ignored and the provider is treated as open the full 24 hours.
+- `availability_service`:
+  - `compute_slots()`: 24h days now generate slots from 00:00 to 24:00 UTC (the next day's midnight is used as the close boundary so the last partial slot still fits).
+  - `is_slot_available()`: skips the business-hours window check when the day is marked 24h.
+  - `replace_weekly_hours()`/`get_weekly_hours()`/`_row_to_dict()`: accept and round-trip the new flag, treating closed and 24h as mutually exclusive.
+
+### Frontend
+- New `beauty-time.util.ts` exports `formatSlotLocal(iso)` which renders an ISO timestamp using `Intl.DateTimeFormat` with **no `timeZone`**, so each viewer sees the slot on their own browser clock — exactly what an out-of-town customer needs.
+- `BeautyBookComponent` and `BeautyRescheduleComponent` now show option labels via `slotLabel(o)` instead of the BFF's UTC string.
+- `BeautyBookingDetailComponent` and `BeautyBookingsComponent` now render `formatLocal(b.slot_at)` (with the BFF's `slot_label` as a graceful fallback).
+- `BeautyRescheduleComponent`'s "Currently booked for" card now formats `current_slot_at` locally too.
+- `BeautyBusinessAvailabilityComponent`: new "Open 24h" checkbox per day. Toggling it disables the start/end inputs; toggling Closed clears the 24h flag; the row is round-tripped through the existing PUT.
+
+Smoke-tested: marking a day as 24h yields ~44 bookable 30-min slots for a 60-min service across that UTC day (vs. 15 slots/day on a 10–18 day). Customer-side, all slot pickers and booking screens render in the browser's local timezone with the zone abbreviation appended (e.g. "Mon Apr 20 · 7:00 AM PDT").
+
 ## Recent Changes (April 18, 2026) — Customer Booking Reschedule (Task #13)
 
 Customers can now move an existing upcoming booking to a different time without cancelling and rebooking.

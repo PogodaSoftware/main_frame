@@ -23,6 +23,7 @@ import { FormsModule } from '@angular/forms';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { formatSlotLocal } from './beauty-time.util';
 
 interface ReField {
   name: string;
@@ -79,7 +80,7 @@ interface ReForm {
               [required]="f.required ?? false"
             >
               <option value="" disabled>Select a new time…</option>
-              <option *ngFor="let o of f.options" [value]="o.value">{{ o.label }}</option>
+              <option *ngFor="let o of f.options" [value]="o.value">{{ slotLabel(o) }}</option>
             </select>
           </ng-container>
 
@@ -151,8 +152,20 @@ export class BeautyRescheduleComponent {
   }
 
   get currentSlotLabel(): string {
-    const b = this.data['booking'] as { current_slot_label?: string } | undefined;
+    const b = this.data['booking'] as {
+      current_slot_at?: string;
+      current_slot_label?: string;
+    } | undefined;
+    if (b?.current_slot_at) {
+      const local = formatSlotLocal(b.current_slot_at);
+      if (local) return local;
+    }
     return b?.current_slot_label || '';
+  }
+
+  /** Format a slot option in the customer's local timezone. */
+  slotLabel(o: { value: string; label: string }): string {
+    return formatSlotLocal(o.value) || o.label;
   }
 
   canSubmit(): boolean {

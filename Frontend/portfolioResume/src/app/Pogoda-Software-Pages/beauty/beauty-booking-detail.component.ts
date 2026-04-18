@@ -16,11 +16,13 @@ import { CommonModule } from '@angular/common';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { formatSlotLocal } from './beauty-time.util';
 
 interface BookingDetail {
   id: number;
   status: string;
   is_upcoming: boolean;
+  slot_at: string;
   slot_label: string;
   service: {
     id: number;
@@ -66,7 +68,7 @@ interface BookingDetail {
         </p>
 
         <div class="card">
-          <p><strong>When</strong><br />{{ b.slot_label }}</p>
+          <p><strong>When</strong><br />{{ formatLocal(b.slot_at) || b.slot_label }}</p>
           <p>
             <strong>Provider</strong><br />
             {{ b.provider.name }}<br />
@@ -160,5 +162,10 @@ export class BeautyBookingDetailComponent {
 
   emit(link: BffLink | null | undefined): void {
     if (link) this.followLink.emit(link);
+  }
+
+  /** Render the booking time in the viewer's local timezone. */
+  formatLocal(iso: string | undefined | null): string {
+    return formatSlotLocal(iso);
   }
 }

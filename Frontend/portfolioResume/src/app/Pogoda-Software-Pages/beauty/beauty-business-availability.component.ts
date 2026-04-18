@@ -26,6 +26,7 @@ interface DayRow {
   start_time: string;
   end_time: string;
   is_closed: boolean;
+  is_24h: boolean;
 }
 
 @Component({
@@ -51,21 +52,34 @@ interface DayRow {
           <li *ngFor="let row of rows" class="day-row" [class.closed]="row.is_closed">
             <span class="day-name">{{ row.day_label }}</span>
             <label class="closed-toggle">
-              <input type="checkbox" [(ngModel)]="row.is_closed" />
+              <input
+                type="checkbox"
+                [(ngModel)]="row.is_closed"
+                (ngModelChange)="onClosedChange(row)"
+              />
               Closed
+            </label>
+            <label class="closed-toggle">
+              <input
+                type="checkbox"
+                [(ngModel)]="row.is_24h"
+                [disabled]="row.is_closed"
+                (ngModelChange)="onTwentyFourChange(row)"
+              />
+              Open 24h
             </label>
             <input
               type="time"
               class="time-input"
               [(ngModel)]="row.start_time"
-              [disabled]="row.is_closed"
+              [disabled]="row.is_closed || row.is_24h"
             />
             <span class="dash">–</span>
             <input
               type="time"
               class="time-input"
               [(ngModel)]="row.end_time"
-              [disabled]="row.is_closed"
+              [disabled]="row.is_closed || row.is_24h"
             />
           </li>
         </ul>
@@ -108,12 +122,21 @@ export class BeautyBusinessAvailabilityComponent implements OnChanges {
 
   ngOnChanges(_: SimpleChanges): void {
     const incoming = (this.data['weekly_hours'] as DayRow[]) || [];
-    // Clone so two-way binding doesn't mutate parent state.
-    this.rows = incoming.map((r) => ({ ...r }));
+    // Clone so two-way binding doesn't mutate parent state. Tolerate
+    // legacy rows that don't yet carry an is_24h field.
+    this.rows = incoming.map((r) => ({ ...r, is_24h: !!r.is_24h }));
   }
 
   emit(link: BffLink | null | undefined): void {
     if (link) this.followLink.emit(link);
+  }
+
+  onClosedChange(row: DayRow): void {
+    if (row.is_closed) row.is_24h = false;
+  }
+
+  onTwentyFourChange(row: DayRow): void {
+    if (row.is_24h) row.is_closed = false;
   }
 
   save(): void {
