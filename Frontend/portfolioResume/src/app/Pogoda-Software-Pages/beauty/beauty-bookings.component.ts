@@ -52,11 +52,16 @@ interface BookingItem {
         <h2 class="group-h">Upcoming</h2>
         <ul class="bookings-ul">
           <li *ngFor="let b of upcoming" class="booking-row">
-            <div class="b-info">
+            <button
+              type="button"
+              class="b-info b-info-btn"
+              (click)="openDetails(b)"
+              [attr.aria-label]="'View details for ' + b.service.name"
+            >
               <strong>{{ b.service.name }}</strong>
               <span class="b-prov">{{ b.provider.name }} · {{ b.provider.location_label }}</span>
               <span class="b-slot">{{ b.slot_label }}</span>
-            </div>
+            </button>
             <button
               class="btn-cancel"
               (click)="cancel(b)"
@@ -69,11 +74,16 @@ interface BookingItem {
         <h2 class="group-h">Past</h2>
         <ul class="bookings-ul">
           <li *ngFor="let b of past" class="booking-row past">
-            <div class="b-info">
+            <button
+              type="button"
+              class="b-info b-info-btn"
+              (click)="openDetails(b)"
+              [attr.aria-label]="'View details for ' + b.service.name"
+            >
               <strong>{{ b.service.name }}</strong>
               <span class="b-prov">{{ b.provider.name }}</span>
               <span class="b-slot">{{ b.slot_label }} · {{ b.status | titlecase }}</span>
-            </div>
+            </button>
           </li>
           <li *ngIf="!past.length" class="empty">No past bookings.</li>
         </ul>
@@ -93,6 +103,8 @@ interface BookingItem {
     .booking-row { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-top: 1px solid #f0f0f0; }
     .booking-row.past { opacity: 0.7; }
     .b-info { display: flex; flex-direction: column; gap: 2px; }
+    .b-info-btn { background: none; border: none; padding: 0; margin: 0; text-align: left; cursor: pointer; color: inherit; font: inherit; flex: 1; }
+    .b-info-btn:hover strong { text-decoration: underline; }
     .b-prov { font-size: 0.85rem; color: #666; }
     .b-slot { font-size: 0.85rem; color: #888; }
     .btn-cancel { background: #fff; color: #c62828; border: 1px solid #c62828; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
@@ -114,6 +126,11 @@ export class BeautyBookingsComponent {
   }
   get past(): BookingItem[] {
     return (this.data['past'] as BookingItem[]) || [];
+  }
+
+  openDetails(b: BookingItem): void {
+    const link = b._links?.['provider'];
+    if (link) this.followLink.emit(link);
   }
 
   cancel(b: BookingItem): void {

@@ -22,13 +22,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     user_id = user['user_id']
     booking_count = BeautyBooking.objects.filter(customer_id=user_id).count()
 
+    from beauty_api.models import BeautyUser
     member_since = None
     try:
-        from beauty_api.models import BeautyUser
         record = BeautyUser.objects.get(id=user_id)
         member_since = record.created_at.isoformat()
-    except Exception:
-        pass
+    except BeautyUser.DoesNotExist:
+        member_since = None
 
     return {
         'action': 'render',

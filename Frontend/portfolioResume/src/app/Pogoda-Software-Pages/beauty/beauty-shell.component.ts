@@ -281,6 +281,8 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_business_login: '/pogoda/beauty/business/login',
     beauty_wireframe: '/pogoda/beauty/wireframe',
     beauty_admin_flags: '/pogoda/beauty/admin/flags',
+    beauty_bookings: '/pogoda/beauty/bookings',
+    beauty_profile: '/pogoda/beauty/profile',
   };
 
   private navigateToLink(link: BffLink): void {

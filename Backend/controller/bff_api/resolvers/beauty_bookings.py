@@ -48,6 +48,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 'location_label': b.service.provider.location_label,
             },
         }
+        provider_link = h.screen_link(
+            'provider', 'beauty_provider_detail',
+            prompt='View provider', params={'id': b.service.provider.id},
+        )
         if b.status == BeautyBooking.STATUS_BOOKED and b.slot_at > now:
             item['_links'] = {
                 'cancel': h.link(
@@ -56,13 +60,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                     href=f'/api/beauty/protected/bookings/{b.id}/cancel/',
                     prompt='Cancel',
                 ),
-                'provider': h.screen_link(
-                    'provider', 'beauty_provider_detail',
-                    prompt='View provider', params={'id': b.service.provider.id},
-                ),
+                'provider': provider_link,
             }
             upcoming.append(item)
         else:
+            item['_links'] = {'provider': provider_link}
             past.append(item)
 
     return {
