@@ -198,12 +198,32 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Last-resort screen→route map. The BFF always supplies `link.route`,
+   * but if a future or older link arrives without one, we can still
+   * navigate by name instead of just retrying the current screen.
+   */
+  private static readonly SCREEN_FALLBACK_ROUTES: Record<string, string> = {
+    beauty_home: '/pogoda/beauty',
+    beauty_login: '/pogoda/beauty/login',
+    beauty_signup: '/pogoda/beauty/signup',
+    beauty_business_login: '/pogoda/beauty/business/login',
+    beauty_wireframe: '/pogoda/beauty/wireframe',
+  };
+
   private navigateToLink(link: BffLink): void {
     if (link.route) {
       this.router.navigateByUrl(link.route);
       return;
     }
-    // Fallback: re-resolve the current screen.
+    if (link.screen) {
+      const fallback = BeautyShellComponent.SCREEN_FALLBACK_ROUTES[link.screen];
+      if (fallback) {
+        this.router.navigateByUrl(fallback);
+        return;
+      }
+    }
+    // Last resort: re-resolve the current screen.
     this.retry();
   }
 

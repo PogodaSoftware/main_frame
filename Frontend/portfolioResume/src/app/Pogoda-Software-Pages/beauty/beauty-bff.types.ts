@@ -27,6 +27,7 @@ export interface BffFieldSchema {
   placeholder: string;
   required: boolean;
   min_length: number | null;
+  pattern: string | null;
   autocomplete: string | null;
   inputmode: string | null;
   autocapitalize: string | null;

@@ -213,6 +213,15 @@ export class BeautyDynamicFormComponent implements OnChanges {
     if (f.schema.min_length && v.length < f.schema.min_length) {
       return msgs.min_length || `Must be at least ${f.schema.min_length} characters.`;
     }
+    if (f.schema.pattern && v) {
+      try {
+        if (!new RegExp(f.schema.pattern).test(v)) {
+          return msgs.pattern || 'Please enter a valid value.';
+        }
+      } catch {
+        // Bad pattern from server — fail open rather than block the user.
+      }
+    }
     return null;
   }
 
