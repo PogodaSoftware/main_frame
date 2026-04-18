@@ -302,16 +302,22 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
   };
 
   private navigateToLink(link: BffLink): void {
-    if (link.route) {
-      this.router.navigateByUrl(link.route);
-      return;
-    }
-    if (link.screen) {
-      const fallback = BeautyShellComponent.SCREEN_FALLBACK_ROUTES[link.screen];
-      if (fallback) {
-        this.router.navigateByUrl(fallback);
-        return;
+    const targetRoute =
+      link.route ||
+      (link.screen
+        ? BeautyShellComponent.SCREEN_FALLBACK_ROUTES[link.screen] ?? null
+        : null);
+
+    if (targetRoute) {
+      // If we're already on this URL, Angular ignores the navigation by
+      // default — re-resolve in place so screens update after mutations
+      // like cancel-booking.
+      if (this.router.url === targetRoute) {
+        this.retry();
+      } else {
+        this.router.navigateByUrl(targetRoute);
       }
+      return;
     }
     // Last resort: re-resolve the current screen.
     this.retry();
