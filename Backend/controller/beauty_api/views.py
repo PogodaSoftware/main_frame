@@ -22,6 +22,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .availability_service import ensure_storefront
 from .middleware import SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS
 from .models import BeautySession, BeautyUser, BusinessProvider
 from .serializers import (
@@ -178,6 +179,10 @@ class BusinessLoginView(APIView):
         signed_token = signing.dumps(payload)
 
         _create_session(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id, signed_token)
+
+        # Auto-provision the public storefront on first login so the
+        # business portal works without any extra setup step.
+        ensure_storefront(provider)
 
         response = Response(
             {

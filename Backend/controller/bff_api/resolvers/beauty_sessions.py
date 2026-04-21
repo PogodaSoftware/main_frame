@@ -8,18 +8,15 @@ Auth-required — redirects to login if no valid session.
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautySession
 from ..services.auth_service import get_authenticated_user
+from ..services import hateoas_service as h
 
 
-def resolve(request, screen: str, device_id: str) -> dict:
+def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
 
     if not user:
-        return {
-            'action': 'redirect',
-            'redirect_to': 'beauty_login',
-            'reason': 'auth_required',
-        }
+        return h.redirect_envelope('beauty_login', 'auth_required')
 
     qs = (
         BeautySession.objects.all()
@@ -51,4 +48,8 @@ def resolve(request, screen: str, device_id: str) -> dict:
             'total': len(sessions),
         },
         'meta': {'title': 'Beauty — Sessions'},
+        '_links': {
+            'self': h.self_link('beauty_sessions'),
+            'home': h.screen_link('home', 'beauty_home', prompt='Home'),
+        },
     }

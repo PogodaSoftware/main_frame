@@ -1,146 +1,33 @@
 /**
- * BeautyBusinessLoginComponent (Presentational)
- * -----------------------------------------------
- * Renders the business provider login form using data from [data] @Input().
- * On successful login emits (loginSuccess) — the shell re-resolves via BFF.
- * No routing or localStorage here.
+ * BeautyBusinessLoginComponent (thin wrapper)
+ * --------------------------------------------
+ * Presents the business provider login screen using the BFF-supplied
+ * form schema. All fields, validators, submit URL, and footer links
+ * come from the server.
  */
 
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { BeautyAuthService } from './beauty-auth.service';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+import { BeautyDynamicFormComponent } from './beauty-dynamic-form.component';
+import { BffFormSchema, BffLink } from './beauty-bff.types';
 
 @Component({
   selector: 'app-beauty-business-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, BeautyDynamicFormComponent],
   template: `
-    <div class="login-page business-login-page">
-      <header class="login-header">
-        <div class="header-brand">
-          <span class="brand-icon">🏢</span>
-          <button class="brand-name-btn" (click)="navigate.emit('beauty_home')">Beauty</button>
-        </div>
-        <span class="business-badge">Business Portal</span>
-      </header>
-
-      <main class="login-main">
-        <h1 class="login-title">Business Sign In</h1>
-        <p class="login-subtitle">Access your business provider account</p>
-
-        <form class="login-form" (ngSubmit)="onSubmit()" #loginForm="ngForm">
-          <div class="field-group">
-            <label for="email" class="field-label">Business Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              [(ngModel)]="email"
-              required
-              email
-              #emailInput="ngModel"
-              placeholder="Enter your business email"
-              class="form-input"
-              [class.error]="emailInput.invalid && emailInput.touched"
-              autocomplete="email"
-              autocapitalize="none"
-              inputmode="email"
-            />
-            @if (emailInput.touched && emailInput.errors?.['required']) {
-              <span class="field-error">Email is required.</span>
-            }
-            @if (emailInput.touched && emailInput.errors?.['email']) {
-              <span class="field-error">Please enter a valid email address.</span>
-            }
-          </div>
-
-          <div class="field-group">
-            <label for="password" class="field-label">Password</label>
-            <div class="password-wrapper">
-              <input
-                [type]="showPassword ? 'text' : 'password'"
-                id="password"
-                name="password"
-                [(ngModel)]="password"
-                required
-                #passwordInput="ngModel"
-                placeholder="Enter your password"
-                class="form-input"
-                [class.error]="passwordInput.invalid && passwordInput.touched"
-                autocomplete="current-password"
-              />
-              <button
-                type="button"
-                class="password-toggle"
-                (click)="showPassword = !showPassword"
-                aria-label="Toggle password visibility"
-              >{{ showPassword ? 'Hide' : 'Show' }}</button>
-            </div>
-            @if (passwordInput.touched && passwordInput.errors?.['required']) {
-              <span class="field-error">Password is required.</span>
-            }
-          </div>
-
-          @if (serverError) {
-            <div class="server-error">{{ serverError }}</div>
-          }
-
-          <button
-            type="submit"
-            class="btn-login btn-business"
-            [disabled]="loginForm.invalid || isLoading"
-          >
-            @if (isLoading) { <span class="spinner"></span> } @else { Sign in }
-          </button>
-        </form>
-
-        <div class="login-footer">
-          <span>Not a business provider?</span>
-          <button class="link-btn link-signup" (click)="navigate.emit('beauty_login')">
-            Customer sign in
-          </button>
-        </div>
-      </main>
-    </div>
+    <app-beauty-dynamic-form
+      [form]="form"
+      [links]="links"
+      (followLink)="followLink.emit($event)"
+      (submitSuccess)="followLink.emit($event)"
+    />
   `,
   styleUrls: ['./beauty-login.component.scss'],
 })
 export class BeautyBusinessLoginComponent {
-  @Input() data: Record<string, unknown> = {};
-  @Output() loginSuccess = new EventEmitter<void>();
-  @Output() navigate = new EventEmitter<string>();
-
-  email = '';
-  password = '';
-  showPassword = false;
-  isLoading = false;
-  serverError = '';
-
-  constructor(private authService: BeautyAuthService) {}
-
-  onSubmit(): void {
-    if (this.isLoading) return;
-    this.serverError = '';
-    this.isLoading = true;
-
-    this.authService.businessLogin(this.email, this.password).subscribe({
-      next: () => {
-        this.isLoading = false;
-        this.loginSuccess.emit();
-      },
-      error: (err) => {
-        this.isLoading = false;
-        if (err.status === 401) {
-          this.serverError = 'Invalid email or password.';
-        } else if (err.status === 400 && err.error) {
-          const errors = err.error;
-          const firstKey = Object.keys(errors)[0];
-          const msg = errors[firstKey];
-          this.serverError = Array.isArray(msg) ? msg[0] : String(msg);
-        } else {
-          this.serverError = 'Something went wrong. Please try again.';
-        }
-      },
-    });
-  }
+  @Input() form: BffFormSchema | null = null;
+  @Input() links: Record<string, BffLink> = {};
+  @Output() followLink = new EventEmitter<BffLink>();
 }

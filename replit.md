@@ -1,5 +1,145 @@
 # Portfolio Resume Application
 
+## Recent Changes (April 18, 2026) — 24-hour Availability + Local-Time Display
+
+Two related improvements so a 24-hour shop (e.g. an all-night hairdresser) and an out-of-town customer both work correctly:
+
+### Backend
+- New `is_24h` BooleanField on `BeautyProviderAvailability` (migration 0007). When true, that day's `start_time`/`end_time` are ignored and the provider is treated as open the full 24 hours.
+- `availability_service`:
+  - `compute_slots()`: 24h days now generate slots from 00:00 to 24:00 UTC (the next day's midnight is used as the close boundary so the last partial slot still fits).
+  - `is_slot_available()`: skips the business-hours window check when the day is marked 24h.
+  - `replace_weekly_hours()`/`get_weekly_hours()`/`_row_to_dict()`: accept and round-trip the new flag, treating closed and 24h as mutually exclusive.
+
+### Frontend
+- New `beauty-time.util.ts` exports `formatSlotLocal(iso)` which renders an ISO timestamp using `Intl.DateTimeFormat` with **no `timeZone`**, so each viewer sees the slot on their own browser clock — exactly what an out-of-town customer needs.
+- `BeautyBookComponent` and `BeautyRescheduleComponent` now show option labels via `slotLabel(o)` instead of the BFF's UTC string.
+- `BeautyBookingDetailComponent` and `BeautyBookingsComponent` now render `formatLocal(b.slot_at)` (with the BFF's `slot_label` as a graceful fallback).
+- `BeautyRescheduleComponent`'s "Currently booked for" card now formats `current_slot_at` locally too.
+- `BeautyBusinessAvailabilityComponent`: new "Open 24h" checkbox per day. Toggling it disables the start/end inputs; toggling Closed clears the 24h flag; the row is round-tripped through the existing PUT.
+
+Smoke-tested: marking a day as 24h yields ~44 bookable 30-min slots for a 60-min service across that UTC day (vs. 15 slots/day on a 10–18 day). Customer-side, all slot pickers and booking screens render in the browser's local timezone with the zone abbreviation appended (e.g. "Mon Apr 20 · 7:00 AM PDT").
+
+## Recent Changes (April 18, 2026) — Customer Booking Reschedule (Task #13)
+
+Customers can now move an existing upcoming booking to a different time without cancelling and rebooking.
+
+### Backend
+- New `RescheduleBookingView` at `POST /api/beauty/protected/bookings/<id>/reschedule/` — validates owner, status (`booked`), and that the booking is still in the future, then runs `is_slot_available()` on the new `slot_at` (excluding this booking's own slot from busy intervals so it doesn't block its own move) and updates the row in place. Returns 400 with a clear `detail` for past slots, conflicts, out-of-hours requests, cancelled or past bookings.
+- `availability_service`: `compute_slots()`, `is_slot_available()`, and `_provider_busy_intervals()` all gained an optional `exclude_booking_id` parameter so the reschedule slot picker shows the booking's current slot among the options.
+
+### BFF
+- New `beauty_reschedule` resolver: customer-only, owner-scoped. Returns the slot picker form (`compute_slots(..., exclude_booking_id=b.id)`) plus `submit_method='POST'`, `submit_href='/api/beauty/protected/bookings/<id>/reschedule/'`, and a `success_route_template` that goes back to the booking-detail screen. Past or non-active bookings short-circuit to a redirect envelope back to `beauty_booking_detail` (with `params={id: b.id}` so the redirect lands on the right URL).
+- `beauty_booking_detail` now exposes a `reschedule` HATEOAS link alongside `cancel` for upcoming bookings.
+- `redirect_envelope()` now accepts an optional `params` kwarg so redirect targets with templated routes (like `/bookings/:id`) get rendered with concrete values.
+- Registered `beauty_reschedule` in `SCREEN_RESOLVERS` and mapped it to `/pogoda/beauty/bookings/:bookingId/reschedule` in `SCREEN_ROUTES`.
+
+### Frontend
+- New standalone `BeautyRescheduleComponent` mirrors the booking flow's slot-picker form, shows the current booked time on a card above the picker, posts the new slot via `BeautyAuthService.follow()`, and on success follows the `booking` link back to the booking-detail screen.
+- `BeautyBookingDetailComponent` now renders a primary "Reschedule" button (when the BFF supplies a `reschedule` link) above the existing Cancel/View Provider buttons.
+- `BeautyShellComponent` imports + templates the new component.
+- `app.routes.ts` registers `/pogoda/beauty/bookings/:bookingId/reschedule` (placed before the `:id` detail route so it matches first), guarded by the existing `beautyAuthGuard`.
+
+End-to-end verified via curl: reschedule link present on upcoming bookings, picker contains the current slot, POST succeeds (10:00 → 12:30), booking-detail shows the new time, the old slot becomes bookable again, past slots / conflicts are rejected with `That slot is no longer available.`, cancelled bookings can no longer be rescheduled and lose the `reschedule` link, and the resolver redirects cleanly back to `beauty_booking_detail` for ineligible bookings.
+
+## Recent Changes (April 18, 2026) — Business Provider Portal + Real Availability (Tasks #14 & #15)
+
+Built the full business provider portal so a signed-in business can manage their storefront end-to-end, and replaced the fixed-slot booking generator with real provider availability.
+
+### Backend
+- New model `BeautyProviderAvailability` (`provider`, `day_of_week`, `start_time`, `end_time`, `is_closed`) with a unique `(provider, day_of_week)` constraint. Migration `0006_beauty_provider_availability` creates the table and seeds Mon-Sat 10-18 / Sunday closed for every existing `BeautyProvider`.
+- New `beauty_api/availability_service.py` exposes `get_weekly_hours(provider)` (always 7 rows, auto-creates defaults), `replace_weekly_hours(provider, rows)` (validates + bulk replaces), `compute_slots(service, days_ahead=14)` (steps every 30 min within open hours, skips closed days, skips slots that overlap any existing booking on the same provider, drops past slots), `is_slot_available(service, slot_at)` (server-side validation), and `ensure_storefront(business_provider)` (idempotent storefront bootstrap).
+- New `beauty_api/business_views.py` adds the protected REST surface under `/api/beauty/protected/business/`: `dashboard/` (stats), `services/` GET+POST, `services/<id>/` PUT+DELETE, `availability/` GET+PUT, `bookings/` GET. All handlers reject non-business cookies with 403; future bookings on a deleted service are auto-cancelled before delete.
+- `BusinessLoginView` calls `ensure_storefront()` on every login so a freshly signed-up business has a working storefront with default weekly hours.
+- `booking_views.py` POST now calls `is_slot_available()` so the customer flow respects business hours and overlapping bookings.
+
+### BFF
+- `beauty_book.py` slot list now comes from `compute_slots()` (the fixed `SLOT_HOURS` generator is gone).
+- `beauty_business_login.py` redirects already-signed-in business users to `beauty_business_home` and uses that as its post-login `success_screen`.
+- `beauty_home.py` shows a "Business Portal" link to authenticated business users.
+- 5 new resolvers: `beauty_business_home` (dashboard), `beauty_business_services` (list with edit/delete links), `beauty_business_service_form` (single screen for add+edit, `serviceId=='new'` ⇒ add), `beauty_business_availability` (7-row editor with PUT submit metadata), `beauty_business_bookings` (upcoming/past split).
+- `SCREEN_ROUTES` and `SCREEN_RESOLVERS` registered for all 5 new screens.
+
+### Frontend
+- 5 new standalone Angular components in `src/app/Pogoda-Software-Pages/beauty/`: `beauty-business-dashboard`, `beauty-business-services`, `beauty-business-service-form`, `beauty-business-availability`, `beauty-business-bookings`. All consume `data` + `_links` props and emit `followLink` events the shell handles.
+- `BeautyShellComponent` imports + templates the 5 components and adds them to its screen→route fallback map.
+- `app.routes.ts` adds 6 new routes (one per screen, plus a separate `services/new` route for the add-service form), all guarded by `beautyBusinessAuthGuard`.
+
+## Recent Changes (April 18, 2026) — Runtime Beauty Feature-Flag Admin (Task #8)
+
+Added a small admin screen at `/pogoda/beauty/admin/flags` that lets an authenticated user toggle Beauty BFF feature flags at runtime. Toggles take effect on the very next BFF resolve — no Angular rebuild and no Django restart required.
+
+**Backend:**
+- New models in `beauty_api/models.py`:
+  - `BeautyFeatureFlag` (`key`, `enabled`, `description`, `updated_at`, `updated_by_*`) — the runtime source of truth.
+  - `BeautyFlagAudit` (`flag_key`, `old_value`, `new_value`, `changed_by_*`, `changed_at`) — append-only audit trail.
+  - Migration `0003_beautyfeatureflag_beautyflagaudit.py` creates both tables and seeds default rows for existing flags.
+- `bff_api/services/hateoas_service.py` — `is_business_login_enabled()` / `is_signup_enabled()` now consult the `beauty_feature_flags` table first and fall back to the legacy env-var defaults if the row is missing or the DB is unavailable. New `FEATURE_FLAGS` registry declares every known flag (key, label, description, default) so the admin screen iterates one list. Added `beauty_admin_flags` to `SCREEN_ROUTES`.
+- New resolver `bff_api/resolvers/beauty_admin_flags.py` — auth-required, lists each registered flag with current value + a `toggle` link, plus the 25 most recent audit entries.
+- New endpoint `POST /api/beauty/admin/flags/toggle/` (`beauty_api/admin_views.py`, wired in `beauty_api/urls.py`) — validates the flag key against the registry, upserts the row inside a transaction, writes an audit row, returns the new value.
+- **Authorisation:** both the resolver and the toggle endpoint require the caller's `(user_type, user_id)` pair to appear in the `BEAUTY_ADMIN_PRINCIPALS` env var (comma-separated `<user_type>:<user_id>` pairs, e.g. `customer:1,business:7`). We bind to the stable PK identity rather than email because `BeautyUser` and `BusinessProvider` are independent tables with no cross-table email uniqueness — using email would let a duplicate-email registration in the other table escalate to admin. Authenticated non-admins get 403 from the endpoint and a redirect to `beauty_home` (`reason: forbidden`) from the resolver. The default (no admins) means the surface is locked down until an operator opts in. Helpers: `hateoas_service.is_beauty_admin(user)` and `_admin_principal_allowlist()`.
+
+**Frontend:**
+- New presentational component `beauty-admin-flags.component.ts` — renders the flag list with iOS-style toggle switches and a chronological audit log.
+- `BeautyShellComponent` registers the new screen, holds admin state (`adminFlags`, `adminAudit`, `adminEmail`, `busyFlagKey`), and forwards toggle clicks through `BeautyAuthService.follow(toggle_link, {key, enabled})`. After each successful toggle the shell re-resolves so the new value and the new audit entry appear immediately.
+- New Angular route `/pogoda/beauty/admin/flags` → `BeautyShellComponent` with `data: { screen: 'beauty_admin_flags' }`. Added matching entry to the shell's screen→route fallback map.
+
+**Verified end-to-end:**
+- Resolver returns the flag list with toggle links (200).
+- Toggling `BEAUTY_SIGNUP_ENABLED` off via the API immediately removes the `signup` link from `beauty_home`'s `_links` envelope on the very next resolve, with no restart.
+- Audit entry recorded with the actor's email and user type.
+- Bad flag key → 400; unauthenticated request → 401.
+
+## Recent Changes (April 18, 2026) — HATEOAS + Dynamic Form Schema for Beauty BFF (Task #6)
+
+### What changed — "over-the-air" UI updates
+
+The Beauty BFF was upgraded from a fixed render contract into a fully **hypermedia-driven** one. The Angular shell no longer hardcodes endpoint URLs, screen-to-route mappings, form field lists, or which footer links to show. The backend dictates all of it via a `_links` envelope and a `form` schema, so adding a field, hiding an action via a feature flag, or rerouting a flow ships **without an Angular release**.
+
+**Backend:**
+- `Backend/controller/bff_api/services/hateoas_service.py` — link builders (`link`, `screen_link`, `self_link`), the `SCREEN_ROUTES` map (server is sole source of truth for route paths), form schema builders (`login_form`, `signup_form`, `email_field`, `password_field`, `footer_link`), and feature-flag helpers (`is_business_login_enabled`, `is_signup_enabled`) driven by env vars `BEAUTY_BUSINESS_LOGIN_ENABLED` and `BEAUTY_SIGNUP_ENABLED`.
+- All 8 resolvers refactored to emit a HATEOAS envelope: every render carries `_links: {rel: link_obj}`, every redirect carries `_links.target`. Login/signup/business-login resolvers also emit a full `form` schema (fields, validators, submit href + method, success link, footer links, presentation classes, error messages).
+- Legacy fields (`redirect_to` string, `data.links` screen-name dict) are kept alongside the new envelope so existing tests pass.
+- `bff_api/views.py` bumped `APP_VERSION` to `2.0.0`; registered all 8 resolvers including `beauty_business_providers` and `beauty_sessions`.
+
+**Frontend:**
+- `beauty-bff.types.ts` — shared `BffLink`, `BffFieldSchema`, `BffFormSchema`, `BffResponse` types.
+- `BeautyAuthService` no longer hardcodes login/signup/business/logout URLs. Generic `follow(link, body, includeDeviceId)` posts to whatever URL the BFF supplies, on whatever HTTP method the link declares.
+- `BeautyDynamicFormComponent` — schema-driven form renderer. Iterates the schema's fields, validators, and footer links; preserves all existing CSS classes via the schema's `presentation` block so Playwright selectors remain stable.
+- `BeautyShellComponent` — dropped the local `SCREEN_TO_ROUTE` table. Navigation comes from `link.route`. Handles render and redirect responses; on `(followLink)` events fires the link's HTTP method (or just navigates for `method=NAV`) and re-resolves.
+- `BeautyLoginComponent`, `BeautySignupComponent`, `BeautyBusinessLoginComponent` reduced to thin wrappers around the dynamic form.
+- `BeautyMainComponent` builds its header buttons from the `_links` map (rels `login`, `signup`, `business_login`, `logout`); every CTA emits `(followLink)` with the original `BffLink`.
+
+### Envelope contract (v2.0.0)
+```jsonc
+{
+  "action": "render" | "redirect",
+  "screen": "beauty_login",
+  "data":   { ... },
+  "meta":   { "title": "..." },
+  "_links": {
+    "self":   { "rel": "...", "href": "...", "method": "NAV|GET|POST|...", "screen": "...", "route": "/...", "prompt": "..." },
+    "logout": { ... },
+    "target": { ... }   // only on action=redirect
+  },
+  "form": {              // only on screens that render a form
+    "title": "...",
+    "fields": [{ "name", "type", "label", "placeholder", "required", "min_length", "secret_toggle", "error_messages" }],
+    "submit": <link>,
+    "success": <link>,
+    "presentation": { "page_class", "form_class", "submit_class", ... },
+    "footer_links": [{ "rel", "cta_class", "group_class", "label_prefix" }],
+    "error_status_map": { "401": "..." },
+    "error_default": "..."
+  },
+  "redirect_to": "beauty_login",   // legacy, only on action=redirect
+  "app_version": "2.0.0",
+  "needs_update": false
+}
+```
+
+---
+
 ## Recent Changes (April 1, 2026) — BFF SDUI Architecture for Beauty App (PR #43)
 
 ### What changed

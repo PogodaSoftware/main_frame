@@ -1,7 +1,13 @@
 /**
  * BeautyAuthService
  * -----------------
- * Manages authentication state for the Beauty app.
+ * Owns the device-fingerprint and exposes a generic `submit(link, body)`
+ * helper that follows whatever submit/logout link the BFF provides.
+ *
+ * The service no longer hard-codes endpoint URLs (login, signup,
+ * business-login, logout) — the BFF tells the shell where to POST via
+ * link objects in the HATEOAS envelope. This is what allows endpoint
+ * URLs and even auth flows to change without an Angular release.
  *
  * Device ID strategy:
  *   A lightweight fingerprint is generated from stable browser signals
@@ -9,12 +15,6 @@
  *   localStorage so it remains consistent across browser sessions on the
  *   same device. It is sent as the X-Device-ID header on every API call
  *   and is embedded in the signed HttpOnly cookie by the backend.
- *
- * Auth state detection:
- *   Because the auth cookie is HttpOnly the frontend cannot read it
- *   directly. Instead we call GET /api/beauty/me/ which the backend
- *   validates (middleware checks cookie + device ID) and returns the
- *   current user or 401.
  */
 
 import { HttpClient, HttpHeaders } from '@angular/common/http';
@@ -23,6 +23,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { BffLink } from './beauty-bff.types';
 
 const DEVICE_ID_KEY = 'beauty_device_id';
 
@@ -73,39 +74,39 @@ export class BeautyAuthService {
     return new HttpHeaders({ 'X-Device-ID': this.getDeviceId() });
   }
 
-  login(email: string, password: string): Observable<{ email: string }> {
-    return this.http.post<{ email: string }>(
-      `${this.apiBase}/api/beauty/login/`,
-      { email, password, device_id: this.getDeviceId() },
-      { withCredentials: true },
-    );
-  }
+  /**
+   * Generic link-follower. Posts/gets/deletes whatever the BFF told us
+   * to. Adds device id to the body when `includeDeviceId` is true and to
+   * the X-Device-ID header always.
+   */
+  follow<T = unknown>(
+    link: BffLink,
+    body: Record<string, unknown> = {},
+    includeDeviceId = false,
+  ): Observable<T> {
+    if (!link?.href) {
+      return of(null as unknown as T);
+    }
+    const url = link.href.startsWith('http') ? link.href : `${this.apiBase}${link.href}`;
+    const headers = this.getAuthHeaders();
+    const payload: Record<string, unknown> = includeDeviceId
+      ? { ...body, device_id: this.getDeviceId() }
+      : { ...body };
 
-  businessLogin(
-    email: string,
-    password: string,
-  ): Observable<{ email: string; business_name: string }> {
-    return this.http.post<{ email: string; business_name: string }>(
-      `${this.apiBase}/api/beauty/business/login/`,
-      { email, password, device_id: this.getDeviceId() },
-      { withCredentials: true },
-    );
-  }
-
-  logout(): Observable<unknown> {
-    return this.http.post(
-      `${this.apiBase}/api/beauty/logout/`,
-      {},
-      { withCredentials: true, headers: this.getAuthHeaders() },
-    );
-  }
-
-  businessLogout(): Observable<unknown> {
-    return this.http.post(
-      `${this.apiBase}/api/beauty/business/logout/`,
-      {},
-      { withCredentials: true, headers: this.getAuthHeaders() },
-    );
+    const method = (link.method || 'POST').toUpperCase();
+    switch (method) {
+      case 'GET':
+        return this.http.get<T>(url, { withCredentials: true, headers });
+      case 'DELETE':
+        return this.http.delete<T>(url, { withCredentials: true, headers });
+      case 'PUT':
+        return this.http.put<T>(url, payload, { withCredentials: true, headers });
+      case 'PATCH':
+        return this.http.patch<T>(url, payload, { withCredentials: true, headers });
+      case 'POST':
+      default:
+        return this.http.post<T>(url, payload, { withCredentials: true, headers });
+    }
   }
 
   isAuthenticated(): Observable<boolean> {

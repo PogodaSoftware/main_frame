@@ -13,10 +13,10 @@ the resolvers.
 import os
 
 BEAUTY_SERVICES = [
-    {'icon': '💄', 'label': 'Beauty'},
-    {'icon': '👁️', 'label': 'Lashes'},
-    {'icon': '💅', 'label': 'Nails'},
-    {'icon': '💋', 'label': 'Makeup'},
+    {'icon': '✨', 'label': 'Facial', 'slug': 'facial'},
+    {'icon': '💆', 'label': 'Massage', 'slug': 'massage'},
+    {'icon': '💅', 'label': 'Nails', 'slug': 'nails'},
+    {'icon': '💇', 'label': 'Hair', 'slug': 'hair'},
 ]
 
 
