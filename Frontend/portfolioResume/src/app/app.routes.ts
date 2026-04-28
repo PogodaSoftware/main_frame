@@ -22,6 +22,9 @@ import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.componen
 import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
 import { BeautyShellComponent } from './Pogoda-Software-Pages/beauty/beauty-shell.component';
+import { BeautyWelcomeComponent } from './Pogoda-Software-Pages/beauty/beauty-welcome.component';
+import { BeautyForgotComponent } from './Pogoda-Software-Pages/beauty/beauty-forgot.component';
+import { BeautyErrorComponent } from './Pogoda-Software-Pages/beauty/beauty-error.component';
 import { beautyAuthGuard, beautyBusinessAuthGuard } from './Pogoda-Software-Pages/beauty/beauty-auth.guard';
 
 
@@ -85,7 +88,36 @@ export const routes: Routes = [
     path: 'pogoda/beauty',
     component: BeautyShellComponent,
     title: 'Beauty - Home',
+    canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_home' },
+  },
+  {
+    path: 'pogoda/beauty/welcome',
+    component: BeautyWelcomeComponent,
+    title: 'Beauty - Welcome',
+  },
+  {
+    path: 'pogoda/beauty/forgot',
+    component: BeautyForgotComponent,
+    title: 'Beauty - Reset Password',
+  },
+  {
+    path: 'pogoda/beauty/error',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Error',
+    data: { variant: 'generic' },
+  },
+  {
+    path: 'pogoda/beauty/not-found',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Page Not Found',
+    data: { variant: 'notfound' },
+  },
+  {
+    path: 'pogoda/beauty/offline',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Offline',
+    data: { variant: 'offline' },
   },
   {
     path: 'pogoda/beauty/signup',
@@ -123,12 +155,14 @@ export const routes: Routes = [
     path: 'pogoda/beauty/category/:slug',
     component: BeautyShellComponent,
     title: 'Beauty - Category',
+    canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_category' },
   },
   {
     path: 'pogoda/beauty/providers/:id',
     component: BeautyShellComponent,
     title: 'Beauty - Provider',
+    canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_provider_detail' },
   },
   {
@@ -216,5 +250,13 @@ export const routes: Routes = [
     title: 'Beauty - Incoming Bookings',
     canActivate: [beautyBusinessAuthGuard],
     data: { screen: 'beauty_business_bookings' },
+  },
+
+  /** Global 404 — covers any unmatched route. */
+  {
+    path: '**',
+    component: BeautyErrorComponent,
+    title: 'Page Not Found',
+    data: { variant: 'notfound' },
   },
 ];

@@ -58,6 +58,15 @@ export interface BffFormPresentation {
   footer_label?: string;
   footer_class?: string;
   show_field_labels?: boolean;
+  // Design-system layout flags consumed by BeautyDynamicFormComponent.
+  hide_top_header?: boolean;
+  show_back_bar?: boolean;
+  show_brand_block?: boolean;
+  show_forgot_link?: boolean;
+  show_terms_checkbox?: boolean;
+  show_or_divider?: boolean;
+  show_social?: boolean;
+  social_button_label?: string;
 }
 
 export interface BffFormSchema {

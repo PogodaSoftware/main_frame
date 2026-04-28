@@ -181,6 +181,6 @@ REST_FRAMEWORK = {
         'main_frame_project.throttling.LocalhostExemptAnonRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'anon': '10/minute',
+        'anon': '120/minute',
     }
 }
