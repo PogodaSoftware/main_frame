@@ -49,7 +49,7 @@ interface FieldState {
   template: `
     <ng-container *ngIf="form && form.presentation as p">
       <div [class]="p.page_class">
-        <header class="login-header signup-header">
+        <header *ngIf="!p.hide_top_header" class="login-header signup-header">
           <div class="header-brand">
             <span class="brand-icon">{{ p.header_brand_icon }}</span>
             <button
@@ -64,7 +64,29 @@ interface FieldState {
           >{{ p.header_badge_text }}</span>
         </header>
 
+        <header *ngIf="p.show_back_bar" class="auth-back-bar">
+          <button
+            type="button"
+            class="auth-back-btn"
+            aria-label="Back"
+            (click)="emitFollow(backLink())"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+        </header>
+
         <main [class]="p.main_class">
+          <div *ngIf="p.show_brand_block" class="auth-brand-block">
+            <div class="auth-brand-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+                <path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z" />
+              </svg>
+            </div>
+            <div class="auth-brand-name">Beauty</div>
+          </div>
+
           <h1 *ngIf="form.title" [class]="p.title_class">{{ form.title }}</h1>
           <p *ngIf="form.subtitle" [class]="p.subtitle_class">{{ form.subtitle }}</p>
 
@@ -125,17 +147,54 @@ interface FieldState {
               <span *ngIf="f.touched && fieldError(f) as err" class="field-error">{{ err }}</span>
             </div>
 
+            <div *ngIf="p.show_forgot_link && links['forgot'] as forgotLink" class="forgot-row">
+              <button type="button" class="forgot-link" (click)="emitFollow(forgotLink)">
+                {{ forgotLink.prompt || 'Forgot password?' }}
+              </button>
+            </div>
+
+            <label *ngIf="p.show_terms_checkbox" class="terms-row">
+              <span class="terms-checkbox" [class.checked]="termsAgreed" (click)="termsAgreed = !termsAgreed">
+                <svg *ngIf="termsAgreed" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0F1115" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </span>
+              <span class="terms-text">
+                I agree to the <a href="#" class="terms-link">Terms</a> and
+                <a href="#" class="terms-link">Privacy Policy</a>.
+              </span>
+            </label>
+
             <div *ngIf="serverError" class="server-error">{{ serverError }}</div>
 
             <button
               type="submit"
               [class]="p.submit_class"
-              [disabled]="!isValid() || isLoading"
+              [disabled]="!isValid() || isLoading || (p.show_terms_checkbox && !termsAgreed)"
             >
               <span *ngIf="isLoading" class="spinner"></span>
               <ng-container *ngIf="!isLoading">{{ form.submit.prompt }}</ng-container>
             </button>
           </form>
+
+          <div *ngIf="p.show_or_divider" class="or-divider">
+            <span></span><em>or</em><span></span>
+          </div>
+
+          <button
+            *ngIf="p.show_social"
+            type="button"
+            class="btn-google"
+            (click)="emitGoogle()"
+          >
+            <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+              <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+              <path fill="#FBBC05" d="M11.69 28.18C11.25 26.86 11 25.45 11 24s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+              <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7C13.42 14.62 18.27 10.75 24 10.75z"/>
+            </svg>
+            <span>{{ p.social_button_label || 'Continue with Google' }}</span>
+          </button>
 
           <ng-container *ngFor="let fl of form.footer_links">
             <div *ngIf="resolveFooterLink(fl) as link" [class]="fl.group_class">
@@ -162,6 +221,7 @@ export class BeautyDynamicFormComponent implements OnChanges {
   fields: FieldState[] = [];
   isLoading = false;
   serverError = '';
+  termsAgreed = false;
 
   constructor(private authService: BeautyAuthService) {}
 
@@ -189,6 +249,32 @@ export class BeautyDynamicFormComponent implements OnChanges {
         prompt: 'Home',
       }
     );
+  }
+
+  backLink(): BffLink {
+    return (
+      this.links['back'] || {
+        rel: 'back',
+        href: null,
+        method: 'NAV',
+        screen: 'beauty_welcome',
+        route: '/pogoda/beauty/welcome',
+        prompt: 'Back',
+      }
+    );
+  }
+
+  emitGoogle(): void {
+    const link: BffLink = this.links['google'] || {
+      rel: 'google',
+      href: null,
+      method: 'NAV',
+      screen: 'beauty_login',
+      route: '/pogoda/beauty/login',
+      prompt: 'Continue with Google',
+      params: { provider: 'google' },
+    };
+    this.emitFollow(link);
   }
 
   resolveFooterLink(fl: BffFooterLink): BffLink | null {

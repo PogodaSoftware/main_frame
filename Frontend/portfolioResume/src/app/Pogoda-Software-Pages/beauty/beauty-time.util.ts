@@ -13,30 +13,22 @@ export function formatSlotLocal(iso: string | undefined | null): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '';
   try {
-    const fmt = new Intl.DateTimeFormat(undefined, {
+    // Format the date half ("Mon, Apr 20") and the time half
+    // ("2:30 PM EDT") with separate formatters so the middot
+    // separator stays predictable across locales — combining
+    // formatToParts pieces from a single formatter leaks the
+    // locale's comma between date and time into the time half.
+    const dateFmt = new Intl.DateTimeFormat(undefined, {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
+    });
+    const timeFmt = new Intl.DateTimeFormat(undefined, {
       hour: 'numeric',
       minute: '2-digit',
       timeZoneName: 'short',
     });
-    // Format produces e.g. "Mon, Apr 20, 2:30 PM PDT" — collapse the
-    // first comma to a middot for parity with the old UTC label.
-    const parts = fmt.formatToParts(d);
-    const date = parts
-      .filter((p) => ['weekday', 'month', 'day'].includes(p.type))
-      .map((p) => p.value)
-      .join(' ')
-      .replace(/\s+,/g, ',');
-    const time = parts
-      .filter((p) => ['hour', 'minute', 'dayPeriod', 'literal'].includes(p.type))
-      .map((p) => p.value)
-      .join('')
-      .trim()
-      .replace(/^,\s*/, '');
-    const tz = parts.find((p) => p.type === 'timeZoneName')?.value || '';
-    return `${date} · ${time}${tz ? ' ' + tz : ''}`;
+    return `${dateFmt.format(d)} · ${timeFmt.format(d)}`;
   } catch {
     return d.toLocaleString();
   }

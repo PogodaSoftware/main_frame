@@ -34,10 +34,20 @@ interface ServiceCategory {
   icon: string;
   label: string;
   slug?: string;
+  image?: string;
   _links?: { category?: BffLink | null };
 }
 
-const HEADER_ACTION_RELS = ['bookings', 'profile', 'login', 'signup', 'business_login', 'logout'];
+const CAROUSEL_START_DELAY_MS = 2000;
+
+// Auth-related links surface in the (now minimal) top header for signed-out users.
+const HEADER_ACTION_RELS = ['login', 'signup', 'business_login'];
+// Primary tabs sit in the bottom navigation pill.
+const NAV_TABS: { rel: 'bookings' | 'home' | 'profile'; label: string }[] = [
+  { rel: 'bookings', label: 'Bookings' },
+  { rel: 'home', label: 'Home' },
+  { rel: 'profile', label: 'Profile' },
+];
 
 @Component({
   selector: 'app-beauty-main',
@@ -45,38 +55,42 @@ const HEADER_ACTION_RELS = ['bookings', 'profile', 'login', 'signup', 'business_
   imports: [CommonModule],
   template: `
     <div class="beauty-app">
-      <header class="beauty-header">
-        <div class="header-brand">
-          <span class="brand-icon">✨</span>
-          <button
-            class="brand-name-btn"
-            (click)="emitFollow(homeLink())"
-          >Beauty</button>
-        </div>
+      <header class="beauty-header" *ngIf="headerActions.length">
         <div class="header-actions">
-          <ng-container *ngIf="isAuthenticated">
-            <div *ngIf="userEmail" class="user-email-badge">{{ userEmail }}</div>
-          </ng-container>
-          <ng-container *ngFor="let action of headerActions">
-            <button
-              [class]="ctaClassFor(action.rel)"
-              (click)="emitFollow(action)"
-            >{{ action.prompt }}</button>
-          </ng-container>
+          <button
+            *ngFor="let action of headerActions"
+            [class]="ctaClassFor(action.rel)"
+            (click)="emitFollow(action)"
+          >{{ action.prompt }}</button>
         </div>
       </header>
 
       <section class="services-section">
-        <div class="services-scroll">
-          <button
-            *ngFor="let service of services"
-            type="button"
-            class="service-item"
-            (click)="onServiceTap(service)"
-          >
-            <div class="service-icon">{{ service.icon }}</div>
-            <span class="service-label">{{ service.label }}</span>
-          </button>
+        <div
+          class="services-carousel"
+          [class.is-running]="carouselStarted"
+          [class.is-paused]="carouselPaused"
+          (mouseenter)="carouselPaused = true"
+          (mouseleave)="carouselPaused = false"
+        >
+          <div class="services-track">
+            <button
+              *ngFor="let service of carouselItems; let i = index"
+              type="button"
+              class="carousel-item"
+              [attr.aria-label]="service.label"
+              [attr.aria-hidden]="i >= services.length ? 'true' : null"
+              (click)="onServiceTap(service)"
+            >
+              <img
+                class="carousel-image"
+                [src]="service.image"
+                [alt]="service.label"
+                loading="lazy"
+              />
+              <span class="carousel-label">{{ service.label }}</span>
+            </button>
+          </div>
         </div>
       </section>
 
@@ -85,11 +99,41 @@ const HEADER_ACTION_RELS = ['bookings', 'profile', 'login', 'signup', 'business_
           <div class="map-placeholder-content">
             <span class="map-placeholder-icon">🗺️</span>
             <p>Map coming soon</p>
-            <small>Add GOOGLE_MAPS_API_KEY to enable the map</small>
+            <small>GOOGLE_MAPS_API_KEY</small>
           </div>
         </div>
         <div #mapContainer class="map-container" [class.hidden]="!googleMapsKeyPresent"></div>
       </section>
+
+      <nav class="bottom-nav" *ngIf="isAuthenticated">
+        <button
+          *ngFor="let tab of navTabs"
+          type="button"
+          class="nav-tab"
+          [class.is-active]="tab.rel === 'home'"
+          [disabled]="!navLink(tab.rel)"
+          (click)="emitFollow(navLink(tab.rel))"
+          [attr.aria-current]="tab.rel === 'home' ? 'page' : null"
+        >
+          <span class="nav-dot"></span>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <ng-container [ngSwitch]="tab.rel">
+              <ng-container *ngSwitchCase="'bookings'">
+                <rect x="3" y="5" width="18" height="16" rx="2.5"/>
+                <path d="M3 10h18M8 3v4M16 3v4"/>
+              </ng-container>
+              <ng-container *ngSwitchCase="'home'">
+                <path d="M3 11l9-7 9 7v9a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9z"/>
+              </ng-container>
+              <ng-container *ngSwitchCase="'profile'">
+                <circle cx="12" cy="8.5" r="3.8"/>
+                <path d="M4.5 21c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"/>
+              </ng-container>
+            </ng-container>
+          </svg>
+          <span class="nav-label">{{ tab.label }}</span>
+        </button>
+      </nav>
     </div>
   `,
   styleUrls: ['./beauty-main.component.scss'],
@@ -105,10 +149,15 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
   userEmail: string | null = null;
   googleMapsKeyPresent = false;
   services: ServiceCategory[] = [];
+  carouselItems: ServiceCategory[] = [];
+  carouselStarted = false;
+  carouselPaused = false;
   headerActions: BffLink[] = [];
+  readonly navTabs = NAV_TABS;
 
   private map: any = null;
   private scriptEl: HTMLScriptElement | null = null;
+  private carouselStartTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
@@ -120,10 +169,18 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
     this.userEmail = (this.data['user_email'] as string) || null;
     this.googleMapsKeyPresent = Boolean(this.data['google_maps_key_present']);
     this.services = (this.data['services'] as ServiceCategory[]) || [];
+    // Duplicate the list so the CSS keyframe can translate by -50% for a
+    // seamless infinite loop without items popping back in view.
+    this.carouselItems = [...this.services, ...this.services];
 
     this.headerActions = HEADER_ACTION_RELS
       .map((rel) => this.links?.[rel])
       .filter((l): l is BffLink => Boolean(l));
+  }
+
+  navLink(rel: 'bookings' | 'home' | 'profile'): BffLink | null {
+    if (rel === 'home') return this.homeLink();
+    return this.links[rel] || null;
   }
 
   homeLink(): BffLink {
@@ -165,14 +222,23 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
   }
 
   ngAfterViewInit(): void {
-    if (isPlatformBrowser(this.platformId) && this.googleMapsKeyPresent) {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.googleMapsKeyPresent) {
       this.loadGoogleMapsScript();
     }
+    // Carousel idles for 5s after the home screen mounts, then auto-scrolls.
+    this.carouselStartTimer = setTimeout(() => {
+      this.carouselStarted = true;
+    }, CAROUSEL_START_DELAY_MS);
   }
 
   ngOnDestroy(): void {
     if (this.scriptEl?.parentNode) {
       this.scriptEl.parentNode.removeChild(this.scriptEl);
+    }
+    if (this.carouselStartTimer) {
+      clearTimeout(this.carouselStartTimer);
+      this.carouselStartTimer = null;
     }
   }
 

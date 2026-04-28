@@ -22,10 +22,10 @@ export const beautyAuthGuard: CanActivateFn = () => {
       if (authenticated) {
         return true;
       }
-      return router.createUrlTree(['/pogoda/beauty/login']);
+      return router.createUrlTree(['/pogoda/beauty/welcome']);
     }),
     catchError(() => {
-      return of(router.createUrlTree(['/pogoda/beauty/login']));
+      return of(router.createUrlTree(['/pogoda/beauty/welcome']));
     }),
   );
 };

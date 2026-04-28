@@ -1,181 +1,237 @@
-/* Mobile-first: base styles target 393px (iPhone 16/17) */
+/* Beauty App Design System — home screen
+ * Tokens: surface #F2F2F2 (80%), surface-2 #E9E9EB, baby-blue #CFE3F5 (10%),
+ * baby-blue-deep #7DA8CF, ink #0A0A0B (10%), text #0F1115, muted #6B6F77.
+ * Typography: Inter body, Cormorant Garamond display.
+ */
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+:host {
+  --surface: #F2F2F2;
+  --surface-2: #E9E9EB;
+  --line: #DCDCDF;
+  --text: #0F1115;
+  --text-muted: #6B6F77;
+  --accent-blue: #CFE3F5;
+  --accent-blue-deep: #7DA8CF;
+  --ink: #0A0A0B;
+  --success: #2F7A47;
+  --danger: #C0392B;
+
+  --font-body: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+
+  --nav-h: 64px;
 }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
 
 .beauty-app {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  background: #ffffff;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif;
+  background: var(--surface);
+  font-family: var(--font-body);
+  color: var(--text);
   overflow-x: hidden;
 }
 
-/* ── Header ── */
+/* ── Header (light, minimal — page titles removed per design) ── */
 .beauty-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  background: #000000;
-  padding: 0 20px;
-  height: 56px;
+  justify-content: flex-end;
+  background: var(--surface);
+  padding: 0 16px;
+  height: 44px;
+  flex-shrink: 0;
   position: sticky;
   top: 0;
-  z-index: 100;
-  flex-shrink: 0;
+  z-index: 50;
 }
 
-.header-brand {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.brand-icon {
-  font-size: 1.25rem;
-}
-
-.brand-name {
-  color: #ffffff;
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  text-decoration: none;
-
-  &:hover {
-    opacity: 0.85;
-  }
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-}
+.header-brand { display: none; }
 
 .header-actions {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.btn-login {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1.5px solid rgba(255, 255, 255, 0.4);
-  color: #ffffff;
-  border-radius: 24px;
-  padding: 8px 16px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  min-height: 44px;
-  transition: background 0.2s ease;
-
-  &:active {
-    background: rgba(255, 255, 255, 0.25);
-  }
-}
-
-.btn-signup {
-  background: transparent;
-  border: 1.5px solid #ffffff;
-  color: #ffffff;
-  border-radius: 24px;
-  padding: 8px 18px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  min-height: 44px;
-  transition: background 0.2s ease, color 0.2s ease;
-
-  &:active {
-    background: rgba(255, 255, 255, 0.15);
-  }
 }
 
 .user-email-badge {
-  color: #ffffff;
-  font-size: 0.8rem;
-  font-weight: 500;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  color: var(--text-muted);
   max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: rgba(255, 255, 255, 0.1);
-  padding: 6px 12px;
-  border-radius: 20px;
 }
 
-/* ── Service Categories ── */
-.services-section {
-  background: #000000;
-  padding: 0 0 12px 0;
-  flex-shrink: 0;
-}
-
-.services-scroll {
-  display: flex;
-  flex-direction: row;
-  overflow-x: auto;
-  gap: 0;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
-  padding: 8px 16px 0;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
-.service-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px 12px 0;
-  cursor: pointer;
-  flex-shrink: 0;
-  min-height: 44px;
-  transition: opacity 0.15s ease;
-
-  &:active {
-    opacity: 0.7;
-  }
-}
-
-.service-icon {
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
-
-.service-label {
-  color: #9e9e9e;
-  font-size: 1.1rem;
+/* Header CTAs — filled green primary, outline ink neutral, outline danger destructive.
+ * Sized as pills (32px) so they fit the slim 44px header. */
+.btn-login,
+.btn-signup,
+.btn-business-login,
+.btn-logout,
+.btn-link {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
   font-weight: 600;
+  letter-spacing: 0.1px;
+  line-height: 1;
+  cursor: pointer;
   white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  transition: all 150ms ease;
 }
 
-.service-item:first-child .service-label {
-  color: #ffffff;
+.btn-login {
+  background: var(--success);
+  color: #FFFFFF;
+  border: 1px solid var(--success);
+
+  &:hover { background: #256238; border-color: #256238; box-shadow: 0 2px 8px rgba(47, 122, 71, 0.2); }
+  &:active { background: #1D4F2C; }
 }
 
-/* ── Map ── */
+.btn-signup {
+  background: transparent;
+  color: #1D4F2C;
+  border: 1.5px solid var(--success);
+
+  &:hover { background: rgba(47, 122, 71, 0.08); }
+  &:active { background: rgba(47, 122, 71, 0.16); }
+}
+
+.btn-business-login,
+.btn-link {
+  background: transparent;
+  color: var(--ink);
+  border: 1.5px solid var(--ink);
+
+  &:hover { background: rgba(10, 10, 11, 0.06); }
+  &:active { background: rgba(10, 10, 11, 0.12); }
+}
+
+.btn-logout {
+  background: transparent;
+  color: var(--danger);
+  border: 1.5px solid var(--danger);
+
+  &:hover { background: rgba(192, 57, 43, 0.06); }
+  &:active { background: rgba(192, 57, 43, 0.12); }
+}
+
+/* ── Service carousel (baby-blue panel, auto-rotating) ── */
+.services-section {
+  background: var(--accent-blue);
+  padding: 18px 0 22px;
+  flex-shrink: 0;
+}
+
+.services-section-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  color: var(--text);
+  padding: 0 20px;
+  margin-bottom: 12px;
+}
+
+.services-carousel {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.services-track {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px;
+  width: max-content;
+  will-change: transform;
+}
+
+.services-carousel.is-running .services-track {
+  animation: services-carousel-scroll 30s linear infinite;
+}
+
+.services-carousel.is-paused .services-track {
+  animation-play-state: paused;
+}
+
+@keyframes services-carousel-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .services-carousel.is-running .services-track { animation: none; }
+}
+
+.carousel-item {
+  position: relative;
+  flex-shrink: 0;
+  width: 220px;
+  height: 156px;
+  padding: 0;
+  border: none;
+  border-radius: 14px;
+  background: #1a1a1a;
+  cursor: pointer;
+  overflow: hidden;
+  font-family: inherit;
+  box-shadow: 0 4px 14px rgba(15, 35, 60, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 18px rgba(15, 35, 60, 0.18);
+  }
+  &:active { transform: scale(0.98); }
+}
+
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
+}
+
+.carousel-label {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 18px 14px 12px;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 8px rgba(0,0,0,0.35);
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 100%);
+  text-align: left;
+  pointer-events: none;
+}
+
+/* ── Map (surface-2, faux-grid placeholder) ── */
 .map-section {
   flex: 1;
   position: relative;
   min-height: 0;
+  background: var(--surface-2);
 }
 
 .map-container {
   width: 100%;
   height: 100%;
-  min-height: calc(100dvh - 56px - 68px);
+  min-height: calc(100dvh - 44px - var(--nav-h) - 22px - 200px);
 
-  &.hidden {
-    display: none;
-  }
+  &.hidden { display: none; }
 }
 
 .map-placeholder {
@@ -183,128 +239,114 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  min-height: calc(100dvh - 56px - 68px);
-  background: #f5f5f5;
+  height: 100%;
+  min-height: calc(100dvh - 44px - var(--nav-h) - 22px - 200px);
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 .map-placeholder-content {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px 24px;
   text-align: center;
-  color: #757575;
+  box-shadow: 0 4px 16px rgba(15,35,60,0.06);
 
   .map-placeholder-icon {
-    font-size: 3rem;
+    font-size: 2rem;
     display: block;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   p {
-    font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 4px;
-    color: #424242;
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
   }
 
   small {
-    font-size: 0.8rem;
-    color: #9e9e9e;
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    padding: 3px 7px;
+    border-radius: 4px;
   }
+}
+
+/* ── Bottom navigation (full-width white pill, dot above active) ── */
+.bottom-nav {
+  display: flex;
+  align-items: stretch;
+  background: #FFFFFF;
+  border-top: 1px solid var(--line);
+  box-shadow: 0 -2px 14px rgba(15, 35, 60, 0.08);
+  flex-shrink: 0;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-tab {
+  flex: 1;
+  height: var(--nav-h);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0;
+  position: relative;
+  font-family: var(--font-body);
+  color: var(--text);
+
+  &.is-active { color: var(--accent-blue-deep); }
+
+  .nav-dot {
+    position: absolute;
+    top: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: transparent;
+  }
+
+  &.is-active .nav-dot { background: var(--accent-blue-deep); }
+
+  .nav-icon { width: 24px; height: 24px; }
+
+  .nav-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.1px;
+    line-height: 1;
+  }
+
+  &.is-active .nav-label { font-weight: 600; }
 }
 
 /* ── Breakpoints ── */
-
-/* Samsung Galaxy S25 ~390px */
-@media screen and (min-width: 390px) {
-  .btn-signup {
-    padding: 8px 20px;
-  }
-}
-
-/* iPhone 17 ~393px – base */
-@media screen and (min-width: 393px) {
-  .brand-name {
-    font-size: 1.3rem;
-  }
-
-  .service-label {
-    font-size: 1.15rem;
-  }
-}
-
-/* Pixel 9 ~412px */
 @media screen and (min-width: 412px) {
-  .beauty-header {
-    padding: 0 24px;
-  }
-
-  .service-item {
-    padding: 12px 20px 12px 0;
-  }
-
-  .user-email-badge {
-    max-width: 210px;
-  }
+  .beauty-header { padding: 0 20px; }
+  .carousel-item { width: 240px; height: 168px; }
 }
 
-/* iPhone 17 Plus ~430px */
 @media screen and (min-width: 430px) {
-  .beauty-header {
-    height: 60px;
-  }
-
-  .brand-name {
-    font-size: 1.4rem;
-  }
-
-  .services-section {
-    padding-bottom: 16px;
-  }
-
-  .map-container {
-    min-height: calc(100dvh - 60px - 76px);
-  }
-
-  .map-placeholder {
-    min-height: calc(100dvh - 60px - 76px);
-  }
+  .carousel-item { width: 260px; height: 176px; }
 }
 
-/* Tablet / desktop fallback */
 @media screen and (min-width: 768px) {
   .beauty-app {
     max-width: 430px;
     margin: 0 auto;
-    box-shadow: 0 0 40px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 0 40px rgba(15, 35, 60, 0.15);
     min-height: 100dvh;
   }
-}
-
-/* ── SDUI presentational button helpers ─────────────────────────────────── */
-/* Brand name rendered as a button (replaces <a routerLink>) */
-.brand-name-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #ffffff;
-  font-size: 1.25rem;
-  font-weight: 700;
-  letter-spacing: -0.3px;
-  padding: 0;
-  font-family: inherit;
-
-  &:hover { opacity: 0.85; }
-}
-
-/* Sign-out button — matches existing header action button styles */
-.btn-logout {
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: #ffffff;
-  padding: 7px 16px;
-  border-radius: 8px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  font-family: inherit;
-
-  &:hover { background: rgba(255, 255, 255, 0.2); }
 }
