@@ -24,6 +24,48 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* a11y: shared focus ring (WCAG 2.4.7) */
+:host *:focus-visible {
+  outline: 2px solid #1a3a52;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute !important; width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+}
+
+.services-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  margin-bottom: 12px;
+}
+.carousel-pause-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #FFFFFF;
+  border: 1px solid rgba(125, 168, 207, 0.33);
+  color: #1a3a52;
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(15, 35, 60, 0.08);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+.carousel-pause-btn:hover { border-color: var(--accent-blue-deep); background: #F7FBFF; }
+
+.services-section { position: relative; }
+
 .beauty-app {
   display: flex;
   flex-direction: column;
@@ -138,8 +180,7 @@
   font-weight: 500;
   letter-spacing: 0.2px;
   color: var(--text);
-  padding: 0 20px;
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 .services-carousel {
@@ -307,7 +348,7 @@
   font-family: var(--font-body);
   color: var(--text);
 
-  &.is-active { color: var(--accent-blue-deep); }
+  &.is-active { color: #1a3a52; }
 
   .nav-dot {
     position: absolute;

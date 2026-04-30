@@ -63,7 +63,7 @@ const COPY: Record<ErrorVariant, VariantCopy> = {
         <span class="sub-header-spacer"></span>
       </header>
 
-      <main class="error-main">
+      <main id="main" class="error-main">
         <div class="err-sparkle">
           <div class="err-sparkle-ring"></div>
           <svg viewBox="0 0 24 24" fill="none" stroke="#1a3a52" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -88,7 +88,7 @@ const COPY: Record<ErrorVariant, VariantCopy> = {
           </svg>
         </div>
 
-        <div class="err-eyebrow">{{ copy.eyebrow }}</div>
+        <div class="err-eyebrow" role="alert">{{ copy.eyebrow }}</div>
         <h1 class="err-title">{{ copy.title }}</h1>
         <p class="err-body">{{ copy.body }}</p>
         <code class="err-code">{{ copy.code }}</code>
@@ -127,6 +127,7 @@ const COPY: Record<ErrorVariant, VariantCopy> = {
       font-family: var(--font-body);
     }
     * { box-sizing: border-box; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
 
     .error-page {
       display: flex; flex-direction: column;
@@ -147,7 +148,7 @@ const COPY: Record<ErrorVariant, VariantCopy> = {
     }
     .sub-header-spacer { width: 36px; height: 36px; flex-shrink: 0; }
     .back-btn {
-      width: 36px; height: 36px; border-radius: 8px;
+      min-width: 44px; min-height: 44px; width: 44px; height: 44px; border-radius: 8px;
       background: transparent; border: none; color: var(--text);
       display: grid; place-items: center; cursor: pointer; flex-shrink: 0;
     }
@@ -175,7 +176,7 @@ const COPY: Record<ErrorVariant, VariantCopy> = {
     .err-sparkle svg { width: 38px; height: 38px; position: relative; z-index: 1; }
 
     .err-eyebrow {
-      font-size: 11px; font-weight: 600; color: var(--baby-blue-deep);
+      font-size: 11px; font-weight: 600; color: #1a3a52;
       text-transform: uppercase; letter-spacing: 1.4px;
       margin-top: 22px; margin-bottom: 8px;
     }

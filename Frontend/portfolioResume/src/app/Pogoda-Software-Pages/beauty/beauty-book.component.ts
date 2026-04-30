@@ -2,15 +2,19 @@
  * BeautyBookComponent (Presentational)
  * ------------------------------------
  * Service detail / booking screen — invoked when a customer taps a
- * service from the home carousel. Matches the Beauty App Design System
- * BookingDetailPage artboard: hero stripe, day picker, time slot grid,
- * provider card, filled green confirm CTA.
+ * service from the home carousel.
  *
- * BFF integration: the resolver supplies a `form` block with a
- * `slot_at` select whose options are pre-computed ISO timestamps. We
- * group those slots by local date to render the day picker, then
- * filter to time-of-day chips for the selected day. POST body is
- * unchanged (`{ service_id, slot_at }`).
+ * Calendar picker
+ *   The day picker is a real month-grid calendar (rows of 7 days). The
+ *   BFF supplies a flat list of ISO timestamps; we group them by the
+ *   provider-local date to know which days have any slot, disable
+ *   everything else (and any day in the past), and show ‹ › chevrons
+ *   to switch months. Forward navigation is capped at the latest month
+ *   that still has at least one available slot. The selected day is
+ *   filled ink-black to match the legacy chip's `is-selected` look.
+ *
+ * Time chips beneath the grid keep their existing `.time-chip`
+ * styling. POST body is unchanged (`{ service_id, slot_at }`).
  */
 
 import {
@@ -46,10 +50,16 @@ interface BookForm {
   submit_label: string;
 }
 
-interface DayChip {
-  iso: string;          // YYYY-MM-DD (local)
-  weekday: string;      // MON, TUE, …
+interface CalendarCell {
+  /** YYYY-MM-DD in provider-local time, or '' for blank padding cells. */
+  iso: string;
   dayNum: number;
+  inMonth: boolean;
+  isToday: boolean;
+  isPast: boolean;
+  hasSlots: boolean;
+  isSelected: boolean;
+  weekday: string;
 }
 
 interface TimeChip {
@@ -74,11 +84,12 @@ interface TimeChip {
             <path d="M15 18l-6-6 6-6"/>
           </svg>
         </button>
-        <span class="sub-header-title">{{ categoryLabel || 'Service' }}</span>
+        <span class="sub-header-title"></span>
         <span class="sub-header-spacer"></span>
       </header>
 
-      <section class="hero-stripe" [attr.aria-label]="categoryLabel || 'Service hero'">
+      <main id="main">
+      <section class="hero-stripe" aria-hidden="true">
         <span class="hero-tag">img · {{ heroSlug }}</span>
       </section>
 
@@ -89,20 +100,63 @@ interface TimeChip {
         </div>
         <div class="meta">{{ metaLine }}</div>
 
-        <ng-container *ngIf="dayChips.length">
+        <ng-container *ngIf="hasAnySlots">
           <div class="section-label">Choose a day</div>
-          <div class="day-row">
+
+          <div class="cal-head">
             <button
-              *ngFor="let d of dayChips"
               type="button"
-              class="day-chip"
-              [class.is-selected]="d.iso === selectedDay"
-              (click)="selectDay(d.iso)"
-            >
-              <span class="day-wd">{{ d.weekday }}</span>
-              <span class="day-num">{{ d.dayNum }}</span>
-            </button>
+              class="cal-chev"
+              (click)="prevMonth()"
+              [disabled]="!canPrevMonth()"
+              aria-label="Previous month"
+            >‹</button>
+            <span class="cal-month-label">{{ monthLabel }}</span>
+            <button
+              type="button"
+              class="cal-chev"
+              (click)="nextMonth()"
+              [disabled]="!canNextMonth()"
+              aria-label="Next month"
+            >›</button>
           </div>
+
+          <table class="cal-grid-table" role="grid" [attr.aria-label]="'Calendar — ' + monthLabel">
+            <thead>
+              <tr role="row">
+                <th *ngFor="let w of weekdayHeaders" role="columnheader" scope="col" class="cal-weekday-th">{{ w }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of calendarRows; let rIdx = index" role="row" [attr.aria-rowindex]="rIdx + 1">
+                <td
+                  *ngFor="let c of row; let cIdx = index"
+                  role="gridcell"
+                  [attr.aria-colindex]="cIdx + 1"
+                  class="cal-cell-td"
+                  [attr.aria-disabled]="c.iso ? ((c.isPast || !c.hasSlots) ? 'true' : null) : 'true'"
+                >
+                  <button
+                    *ngIf="c.iso"
+                    type="button"
+                    class="day-chip cal-cell"
+                    [class.is-selected]="c.isSelected"
+                    [class.is-disabled]="c.isPast || !c.hasSlots"
+                    [class.out-of-month]="!c.inMonth"
+                    [disabled]="c.isPast || !c.hasSlots"
+                    [attr.aria-label]="cellAria(c)"
+                    (click)="selectDay(c.iso)"
+                  >
+                    <span class="day-wd">{{ c.weekday }}</span>
+                    <span class="day-num">{{ c.dayNum }}</span>
+                    <span class="day-dot" *ngIf="c.hasSlots && !c.isPast" aria-hidden="true"></span>
+                    <span class="day-disabled-mark" *ngIf="c.isPast || !c.hasSlots" aria-hidden="true"></span>
+                  </button>
+                  <span *ngIf="!c.iso" class="cal-cell cal-blank" aria-hidden="true"></span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
           <div class="section-label">Available times</div>
           <div *ngIf="timeChipsForSelectedDay.length; else noTimes" class="time-grid">
@@ -133,8 +187,9 @@ interface TimeChip {
           >Change</button>
         </div>
 
-        <p *ngIf="serverError" class="server-error">{{ serverError }}</p>
+        <p *ngIf="serverError" class="server-error" role="alert" aria-live="assertive">{{ serverError }}</p>
       </section>
+      </main>
 
       <div class="cta-row">
         <button
@@ -151,7 +206,7 @@ interface TimeChip {
         </button>
       </div>
 
-      <nav class="bottom-nav">
+      <nav class="bottom-nav" aria-label="Primary">
         <button type="button" class="nav-tab" (click)="emit(links['bookings'])" [disabled]="!links['bookings']">
           <span class="nav-dot"></span>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -188,12 +243,14 @@ interface TimeChip {
       --font-display: 'Cormorant Garamond', Georgia, serif;
     }
     * { box-sizing: border-box; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
+
     .beauty-app { display: flex; flex-direction: column; min-height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); }
 
     .sub-header { display: flex; align-items: center; height: 56px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
     .sub-header-title { flex: 1; text-align: center; font-size: 0.95rem; font-weight: 600; color: var(--text); letter-spacing: 0.2px; }
     .sub-header-spacer { width: 36px; height: 36px; flex-shrink: 0; }
-    .back-btn { width: 36px; height: 36px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+    .back-btn { min-width: 44px; min-height: 44px; width: 44px; height: 44px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
     .back-btn:hover { background: var(--surface-2); }
 
     .hero-stripe {
@@ -225,26 +282,62 @@ interface TimeChip {
 
     .section-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px; }
 
-    .day-row {
-      display: flex; gap: 5px; margin-bottom: 18px;
-      overflow-x: auto; scrollbar-width: none;
-      scroll-snap-type: x mandatory;
+    /* Calendar */
+    .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .cal-month-label { font-family: var(--font-display); font-size: 1.1rem; font-weight: 500; letter-spacing: 0.2px; }
+    .cal-chev {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: #FFFFFF; border: 1px solid var(--line); color: var(--text);
+      font-size: 18px; line-height: 1; cursor: pointer; padding: 0;
     }
-    .day-row::-webkit-scrollbar { display: none; }
-    .day-chip {
-      flex: 0 0 calc((100% - 30px) / 7);
-      min-width: 44px;
-      scroll-snap-align: start;
-      height: 52px; border-radius: 9px;
+    .cal-chev:hover:not(:disabled) { border-color: var(--text); }
+    .cal-chev:disabled { opacity: 0.35; cursor: not-allowed; }
+
+    .cal-weekdays {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;
+      margin-bottom: 5px;
+    }
+    .cal-weekdays span {
+      font-size: 9px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      text-align: center;
+    }
+
+    .cal-grid-table {
+      width: 100%; border-collapse: separate; border-spacing: 5px;
+      margin-bottom: 18px;
+      table-layout: fixed;
+    }
+    .cal-weekday-th {
+      font-size: 9px; font-weight: 600; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: 1.2px;
+      text-align: center; padding-bottom: 4px;
+    }
+    .cal-cell-td { padding: 0; min-width: 44px; }
+    .day-chip.cal-cell {
+      flex: initial; min-width: 44px; min-height: 44px;
+      width: 100%; height: 44px; border-radius: 9px;
       background: #FFFFFF; color: var(--text); border: 1px solid var(--line);
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-      font-family: var(--font-body); cursor: pointer;
+      font-family: var(--font-body); cursor: pointer; position: relative;
       transition: background-color .15s ease, border-color .15s ease, color .15s ease;
     }
-    .day-chip:hover { border-color: var(--text); }
-    .day-chip.is-selected { background: var(--text); color: #FFFFFF; border-color: var(--text); }
-    .day-wd { font-size: 9px; opacity: 0.7; letter-spacing: 1px; }
-    .day-num { font-family: var(--font-display); font-size: 17px; font-weight: 500; }
+    .day-chip.cal-cell:hover:not(.is-disabled) { border-color: var(--text); }
+    .day-chip.cal-cell.is-selected { background: var(--text); color: #FFFFFF; border-color: var(--text); }
+    .day-chip.cal-cell.is-disabled {
+      background: transparent; color: #6B6F77; border-color: transparent; cursor: not-allowed;
+      text-decoration: line-through;
+    }
+    .day-chip.cal-cell.out-of-month { opacity: 0.35; }
+    .day-disabled-mark { display: none; }
+    .cal-cell.cal-blank { display: block; height: 44px; min-width: 44px; }
+    .day-chip.cal-cell .day-wd { display: none; }
+    .day-chip.cal-cell .day-num { font-family: var(--font-display); font-size: 16px; font-weight: 500; }
+    .day-dot {
+      position: absolute; bottom: 5px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%; background: var(--success);
+    }
+    .day-chip.cal-cell.is-selected .day-dot { background: #FFFFFF; }
 
     .time-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 18px; }
     .time-chip {
@@ -309,7 +402,7 @@ interface TimeChip {
     .bottom-nav { display: flex; background: #FFFFFF; border-top: 1px solid var(--line); box-shadow: 0 -2px 14px rgba(15,35,60,0.08); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
     .nav-tab { flex: 1; height: 64px; background: transparent; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; color: var(--text); font-family: var(--font-body); }
     .nav-tab:disabled { opacity: 0.4; cursor: not-allowed; }
-    .nav-tab.is-active { color: var(--baby-blue-deep); }
+    .nav-tab.is-active { color: #1a3a52; }
     .nav-dot { position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
     .nav-tab.is-active .nav-dot { background: var(--baby-blue-deep); }
     .nav-icon { width: 24px; height: 24px; }
@@ -324,6 +417,7 @@ interface TimeChip {
       animation: spin .7s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 
     @media screen and (min-width: 768px) {
       .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
@@ -339,8 +433,18 @@ export class BeautyBookComponent implements OnChanges {
   isSubmitting = false;
   serverError = '';
 
-  dayChips: DayChip[] = [];
   selectedDay = '';
+
+  /** YYYY-MM-01 anchor for the displayed month. */
+  monthAnchor = '';
+  /** Set of YYYY-MM-DD strings (provider-local) that have at least one slot. */
+  private slotDays = new Set<string>();
+  /** ISO YYYY-MM of the latest month containing any available slot. */
+  private latestMonth = '';
+  /** ISO YYYY-MM of the earliest month containing any slot (or current month). */
+  private earliestMonth = '';
+
+  weekdayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
   constructor(private authService: BeautyAuthService) {}
 
@@ -348,12 +452,19 @@ export class BeautyBookComponent implements OnChanges {
     this.rebuildSlots();
   }
 
+  // ── Data accessors ────────────────────────────────────────
+
   get form(): BookForm | null {
     return (this.data['form'] as BookForm) || null;
   }
 
   get slotField(): BookField | null {
     return this.form?.fields.find((f) => f.name === 'slot_at') || null;
+  }
+
+  get providerTimezone(): string | undefined {
+    const p = this.data['provider'] as { timezone?: string } | undefined;
+    return p?.timezone;
   }
 
   get serviceName(): string {
@@ -401,9 +512,8 @@ export class BeautyBookComponent implements OnChanges {
     return p?.short_description || '';
   }
 
-  get timeChipsForSelectedDay(): TimeChip[] {
-    if (!this.selectedDay) return [];
-    return this.allTimeChips.filter((c) => this.toLocalDateIso(c.value) === this.selectedDay);
+  get hasAnySlots(): boolean {
+    return this.slotDays.size > 0;
   }
 
   get allTimeChips(): TimeChip[] {
@@ -414,9 +524,63 @@ export class BeautyBookComponent implements OnChanges {
     }));
   }
 
+  get timeChipsForSelectedDay(): TimeChip[] {
+    if (!this.selectedDay) return [];
+    return this.allTimeChips.filter((c) => this.toLocalDateIso(c.value) === this.selectedDay);
+  }
+
   get selectedSlot(): string {
     const v = this.values['slot_at'];
     return typeof v === 'string' ? v : '';
+  }
+
+  get monthLabel(): string {
+    if (!this.monthAnchor) return '';
+    const [y, m] = this.monthAnchor.split('-').map((n) => parseInt(n, 10));
+    if (isNaN(y) || isNaN(m)) return '';
+    const d = new Date(y, m - 1, 1);
+    return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+  }
+
+  /** Calendar cells grouped into 7-cell rows for table rendering. */
+  get calendarRows(): CalendarCell[][] {
+    const cells = this.calendarCells;
+    const rows: CalendarCell[][] = [];
+    for (let i = 0; i < cells.length; i += 7) {
+      rows.push(cells.slice(i, i + 7));
+    }
+    return rows;
+  }
+
+  get calendarCells(): CalendarCell[] {
+    if (!this.monthAnchor) return [];
+    const [y, m] = this.monthAnchor.split('-').map((n) => parseInt(n, 10));
+    const first = new Date(y, m - 1, 1);
+    const startWeekday = first.getDay(); // 0 = Sun
+    const daysInMonth = new Date(y, m, 0).getDate();
+    const today = this.toLocalDateIsoFromDate(new Date());
+
+    const cells: CalendarCell[] = [];
+    for (let i = 0; i < startWeekday; i++) {
+      cells.push(this.emptyCell());
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const iso = `${y}-${String(m).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const isPast = iso < today;
+      cells.push({
+        iso,
+        dayNum: day,
+        inMonth: true,
+        isToday: iso === today,
+        isPast,
+        hasSlots: this.slotDays.has(iso),
+        isSelected: iso === this.selectedDay,
+        weekday: '',
+      });
+    }
+    // Pad to multiple of 7 for visual alignment.
+    while (cells.length % 7 !== 0) cells.push(this.emptyCell());
+    return cells;
   }
 
   get confirmLabel(): string {
@@ -424,15 +588,42 @@ export class BeautyBookComponent implements OnChanges {
     const base = this.form?.submit_label || 'Confirm booking';
     const slot = this.selectedSlot;
     if (!slot) return base;
-    const day = this.dayChips.find((d) => d.iso === this.toLocalDateIso(slot));
     const time = this.formatTimeOnly(slot);
-    if (day && time) return `${base} · ${day.weekday[0]}${day.weekday.slice(1).toLowerCase()}, ${time}`;
+    if (time) return `${base} · ${time}`;
     return base;
+  }
+
+  // ── Interaction ────────────────────────────────────────
+
+  prevMonth(): void {
+    if (!this.canPrevMonth()) return;
+    this.monthAnchor = this.shiftMonth(this.monthAnchor, -1);
+  }
+
+  nextMonth(): void {
+    if (!this.canNextMonth()) return;
+    this.monthAnchor = this.shiftMonth(this.monthAnchor, 1);
+  }
+
+  canPrevMonth(): boolean {
+    if (!this.earliestMonth) return false;
+    return this.monthAnchor.slice(0, 7) > this.earliestMonth;
+  }
+
+  canNextMonth(): boolean {
+    if (!this.latestMonth) return false;
+    return this.monthAnchor.slice(0, 7) < this.latestMonth;
+  }
+
+  cellAria(c: CalendarCell): string {
+    if (!c.iso) return '';
+    if (c.isPast) return `${c.iso} (past)`;
+    if (!c.hasSlots) return `${c.iso} (no times)`;
+    return c.iso;
   }
 
   selectDay(iso: string): void {
     this.selectedDay = iso;
-    // Drop any selected time outside this day.
     if (this.toLocalDateIso(this.selectedSlot) !== iso) {
       this.values['slot_at'] = '';
     }
@@ -509,28 +700,61 @@ export class BeautyBookComponent implements OnChanges {
     }
     this.values = next;
 
-    // Build day chips from unique local dates, ordered chronologically.
-    const seen = new Set<string>();
-    const chips: DayChip[] = [];
+    // Group slot ISO timestamps by provider-local date.
+    this.slotDays = new Set<string>();
+    let earliest = '';
+    let latest = '';
     for (const o of this.slotField?.options || []) {
       const iso = this.toLocalDateIso(o.value);
-      if (!iso || seen.has(iso)) continue;
-      seen.add(iso);
-      const d = new Date(o.value);
-      chips.push({
-        iso,
-        weekday: d.toLocaleDateString(undefined, { weekday: 'short' }).toUpperCase(),
-        dayNum: d.getDate(),
-      });
+      if (!iso) continue;
+      this.slotDays.add(iso);
+      if (!earliest || iso < earliest) earliest = iso;
+      if (!latest || iso > latest) latest = iso;
     }
-    this.dayChips = chips;
-    this.selectedDay = chips[0]?.iso || '';
+
+    if (earliest) {
+      this.earliestMonth = earliest.slice(0, 7);
+      this.latestMonth = latest.slice(0, 7);
+      this.monthAnchor = `${this.earliestMonth}-01`;
+      this.selectedDay = earliest;
+    } else {
+      const todayIso = this.toLocalDateIsoFromDate(new Date());
+      this.earliestMonth = todayIso.slice(0, 7);
+      this.latestMonth = todayIso.slice(0, 7);
+      this.monthAnchor = `${this.earliestMonth}-01`;
+      this.selectedDay = '';
+    }
   }
 
+  /**
+   * Map an ISO timestamp to a YYYY-MM-DD in the BUSINESS provider's
+   * timezone. We render the calendar against the provider's calendar
+   * (the same timezone the slot times are shown in), so that grouping
+   * never splits a single business-day's slots across two cells.
+   */
   private toLocalDateIso(value: string): string {
     if (!value) return '';
     const d = new Date(value);
     if (isNaN(d.getTime())) return '';
+    const tz = this.providerTimezone;
+    if (tz) {
+      try {
+        const fmt = new Intl.DateTimeFormat('en-CA', {
+          timeZone: tz,
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+        });
+        // en-CA gives YYYY-MM-DD natively.
+        return fmt.format(d);
+      } catch {
+        // fall through
+      }
+    }
+    return this.toLocalDateIsoFromDate(d);
+  }
+
+  private toLocalDateIsoFromDate(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
@@ -541,10 +765,38 @@ export class BeautyBookComponent implements OnChanges {
     if (!value) return '';
     const d = new Date(value);
     if (isNaN(d.getTime())) return '';
-    return new Intl.DateTimeFormat(undefined, {
+    const tz = this.providerTimezone;
+    const opts: Intl.DateTimeFormatOptions = {
       hour: 'numeric',
       minute: '2-digit',
-    }).format(d);
+    };
+    if (tz) opts.timeZone = tz;
+    try {
+      return new Intl.DateTimeFormat(undefined, opts).format(d);
+    } catch {
+      return new Intl.DateTimeFormat(undefined, { hour: 'numeric', minute: '2-digit' }).format(d);
+    }
+  }
+
+  private shiftMonth(anchor: string, delta: number): string {
+    const [y, m] = anchor.split('-').map((n) => parseInt(n, 10));
+    const d = new Date(y, m - 1 + delta, 1);
+    const ny = d.getFullYear();
+    const nm = String(d.getMonth() + 1).padStart(2, '0');
+    return `${ny}-${nm}-01`;
+  }
+
+  private emptyCell(): CalendarCell {
+    return {
+      iso: '',
+      dayNum: 0,
+      inMonth: false,
+      isToday: false,
+      isPast: false,
+      hasSlots: false,
+      isSelected: false,
+      weekday: '',
+    };
   }
 
   private toTitle(s: string): string {

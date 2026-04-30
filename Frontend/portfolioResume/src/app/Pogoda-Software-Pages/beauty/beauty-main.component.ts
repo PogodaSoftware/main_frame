@@ -65,13 +65,36 @@ const NAV_TABS: { rel: 'bookings' | 'home' | 'profile'; label: string }[] = [
         </div>
       </header>
 
+      <h1 class="sr-only">Beauty</h1>
+      <main id="main">
       <section class="services-section">
+        <div class="services-section-header">
+          <h2 class="services-section-title">Services</h2>
+          <button
+            type="button"
+            class="carousel-pause-btn"
+            [attr.aria-pressed]="carouselPaused"
+            [attr.aria-label]="(carouselPaused ? 'Play' : 'Pause') + ' services carousel'"
+            (click)="carouselPaused = !carouselPaused"
+          >
+            <svg *ngIf="!carouselPaused" viewBox="0 0 24 24" width="10" height="10" aria-hidden="true" focusable="false">
+              <rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor"/>
+              <rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor"/>
+            </svg>
+            <svg *ngIf="carouselPaused" viewBox="0 0 24 24" width="10" height="10" aria-hidden="true" focusable="false">
+              <path d="M7 5l12 7-12 7V5z" fill="currentColor"/>
+            </svg>
+            <span>{{ carouselPaused ? 'Play' : 'Pause' }}</span>
+          </button>
+        </div>
         <div
           class="services-carousel"
           [class.is-running]="carouselStarted"
           [class.is-paused]="carouselPaused"
           (mouseenter)="carouselPaused = true"
           (mouseleave)="carouselPaused = false"
+          (focusin)="carouselPaused = true"
+          (focusout)="carouselPaused = false"
         >
           <div class="services-track">
             <button
@@ -80,6 +103,7 @@ const NAV_TABS: { rel: 'bookings' | 'home' | 'profile'; label: string }[] = [
               class="carousel-item"
               [attr.aria-label]="service.label"
               [attr.aria-hidden]="i >= services.length ? 'true' : null"
+              [attr.tabindex]="i >= services.length ? -1 : null"
               (click)="onServiceTap(service)"
             >
               <img
@@ -97,15 +121,16 @@ const NAV_TABS: { rel: 'bookings' | 'home' | 'profile'; label: string }[] = [
       <section class="map-section">
         <div *ngIf="!googleMapsKeyPresent" class="map-placeholder">
           <div class="map-placeholder-content">
-            <span class="map-placeholder-icon">🗺️</span>
+            <span class="map-placeholder-icon" aria-hidden="true">🗺️</span>
             <p>Map coming soon</p>
             <small>GOOGLE_MAPS_API_KEY</small>
           </div>
         </div>
         <div #mapContainer class="map-container" [class.hidden]="!googleMapsKeyPresent"></div>
       </section>
+      </main>
 
-      <nav class="bottom-nav" *ngIf="isAuthenticated">
+      <nav class="bottom-nav" *ngIf="isAuthenticated" aria-label="Primary">
         <button
           *ngFor="let tab of navTabs"
           type="button"

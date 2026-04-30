@@ -3,16 +3,23 @@ Beauty Provider Detail Resolver
 ===============================
 Returns a provider profile with the full list of services. Each service
 exposes a HATEOAS `book` link the shell uses to navigate into the booking
-flow. Public — no auth required.
+flow. Auth-gated — anonymous visitors are bounced to login.
 
 `params` must contain `id` (the provider primary key).
 """
 
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyProvider
+from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
+    cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
+    user = get_authenticated_user(cookie, device_id)
+    if not user:
+        return h.redirect_envelope('beauty_login', 'auth_required')
+
     params = params or {}
     raw_id = params.get('id')
     try:

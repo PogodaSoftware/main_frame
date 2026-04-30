@@ -145,16 +145,64 @@ class BeautyService(models.Model):
 
 
 class BeautyBooking(models.Model):
-    """A reservation made by a customer (`BeautyUser`) for a `BeautyService`."""
+    """A reservation made by a customer (`BeautyUser`) for a `BeautyService`.
+
+    Data immutability of service snapshot
+    -------------------------------------
+    Past bookings MUST keep showing the price/duration/name they had at the
+    moment the booking was created — even if the business edits or removes
+    the live `BeautyService` later. To preserve that history we snapshot the
+    relevant service fields onto the booking row at create time:
+
+    - ``service_name_at_booking``
+    - ``service_price_cents_at_booking``
+    - ``service_duration_minutes_at_booking``
+
+    All booking-render code (resolvers, REST views, serializers) MUST prefer
+    the snapshot fields over `self.service.*`, falling back to the FK only
+    if a snapshot is missing (legacy rows pre-migration). DO NOT remove the
+    snapshot columns or rewire the resolvers to read from `self.service.*`
+    "for simplicity" — that would silently mutate historical receipts when
+    a provider tweaks a service.
+
+    Cancellation states
+    -------------------
+    Three distinct cancellation flavours coexist:
+
+    - ``cancelled_by_customer`` — customer pulled out after the grace
+      period; no automatic refund.
+    - ``cancelled_by_business`` — business pulled out; refund is owed and
+      should be triggered (see TODOs in cancel handlers).
+    - ``cancelled_immediate``  — customer cancelled within the grace
+      period; refund + the booking is hidden from My Bookings (treated
+      as never-happened).
+    """
 
     STATUS_BOOKED = 'booked'
+    # Legacy literal `cancelled` is retained as a backward-compat alias
+    # so any pre-migration rows continue to render (treated like
+    # `cancelled_by_customer` everywhere downstream).
     STATUS_CANCELLED = 'cancelled'
+    STATUS_CANCELLED_BY_CUSTOMER = 'cancelled_by_customer'
+    STATUS_CANCELLED_BY_BUSINESS = 'cancelled_by_business'
+    STATUS_CANCELLED_IMMEDIATE = 'cancelled_immediate'
     STATUS_COMPLETED = 'completed'
     STATUS_CHOICES = [
         (STATUS_BOOKED, 'Booked'),
-        (STATUS_CANCELLED, 'Cancelled'),
+        (STATUS_CANCELLED, 'Cancelled (legacy)'),
+        (STATUS_CANCELLED_BY_CUSTOMER, 'Cancelled by customer'),
+        (STATUS_CANCELLED_BY_BUSINESS, 'Cancelled by business'),
+        (STATUS_CANCELLED_IMMEDIATE, 'Cancelled within grace period'),
         (STATUS_COMPLETED, 'Completed'),
     ]
+
+    # Any of these means the booking is no longer active.
+    CANCELLED_STATUSES = (
+        STATUS_CANCELLED,
+        STATUS_CANCELLED_BY_CUSTOMER,
+        STATUS_CANCELLED_BY_BUSINESS,
+        STATUS_CANCELLED_IMMEDIATE,
+    )
 
     customer = models.ForeignKey(
         BeautyUser, on_delete=models.CASCADE, related_name='bookings'
@@ -163,8 +211,19 @@ class BeautyBooking(models.Model):
         BeautyService, on_delete=models.PROTECT, related_name='bookings'
     )
     slot_at = models.DateTimeField()
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_BOOKED)
+    status = models.CharField(max_length=32, choices=STATUS_CHOICES, default=STATUS_BOOKED)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Snapshot of the BeautyService fields at booking time. See class docstring.
+    service_name_at_booking = models.CharField(max_length=255, blank=True, default='')
+    service_price_cents_at_booking = models.IntegerField(null=True, blank=True)
+    service_duration_minutes_at_booking = models.IntegerField(null=True, blank=True)
+
+    # When non-null and `now() < grace_period_ends_at`, the customer can
+    # cancel "immediately" with full refund and have the booking hidden
+    # from their past list. Set automatically on create from
+    # `BEAUTY_GRACE_PERIOD_MINUTES` (default 5).
+    grace_period_ends_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'beauty_bookings'
@@ -174,8 +233,25 @@ class BeautyBooking(models.Model):
             models.Index(fields=['service', 'slot_at'], name='beauty_bk_svc_slot_idx'),
         ]
 
+    # Snapshot accessors — always prefer the snapshot, fall back to FK.
+    @property
+    def display_service_name(self) -> str:
+        return self.service_name_at_booking or self.service.name
+
+    @property
+    def display_price_cents(self) -> int:
+        if self.service_price_cents_at_booking is not None:
+            return self.service_price_cents_at_booking
+        return self.service.price_cents
+
+    @property
+    def display_duration_minutes(self) -> int:
+        if self.service_duration_minutes_at_booking is not None:
+            return self.service_duration_minutes_at_booking
+        return self.service.duration_minutes
+
     def __str__(self):
-        return f"{self.customer.email} → {self.service.name} @ {self.slot_at:%Y-%m-%d %H:%M}"
+        return f"{self.customer.email} → {self.display_service_name} @ {self.slot_at:%Y-%m-%d %H:%M}"
 
 
 class BeautyProviderAvailability(models.Model):

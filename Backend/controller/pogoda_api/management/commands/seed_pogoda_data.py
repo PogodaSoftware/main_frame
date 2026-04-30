@@ -48,8 +48,8 @@ class Command(BaseCommand):
         # Professional work experience data sourced from LinkedIn
         experiences_data = [
             {
-                'company': 'Gesture',
-                'role': 'Full Stack Software Engineer - Level 1',
+                'company': 'GFTech',
+                'role': 'Software Engineer',
                 'period': '2022 - Present',
                 'location': 'New York, United States',
                 'description': [

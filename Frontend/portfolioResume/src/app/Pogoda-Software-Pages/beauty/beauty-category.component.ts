@@ -69,11 +69,13 @@ interface FlatService extends CategoryService {
         </button>
       </header>
 
-      <section class="hero-cover" [attr.data-category]="categorySlug">
+      <h1 class="sr-only">{{ categoryLabel }}</h1>
+      <main id="main">
+      <section class="hero-cover" [attr.data-category]="categorySlug" [attr.aria-label]="categoryLabel">
         <span class="hero-tag">img · {{ categorySlug }}</span>
         <div class="hero-overlay">
-          <div class="hero-categories">{{ categoryLabel }}</div>
-          <h1 class="hero-title">{{ categoryLabel }}</h1>
+          <div class="hero-categories">Category</div>
+          <h2 class="hero-title">{{ categoryLabel }}</h2>
         </div>
       </section>
 
@@ -137,7 +139,9 @@ interface FlatService extends CategoryService {
         </ng-template>
       </div>
 
-      <nav class="bottom-nav">
+      </main>
+
+      <nav class="bottom-nav" aria-label="Primary">
         <button type="button" class="nav-tab" (click)="emit(links['bookings'])" [disabled]="!links['bookings']">
           <span class="nav-dot"></span>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -175,11 +179,19 @@ interface FlatService extends CategoryService {
       --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
     }
     * { box-sizing: border-box; }
+
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
+
     .beauty-app { display: flex; flex-direction: column; min-height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); }
 
     .sub-header { display: flex; align-items: center; height: 56px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
     .back-btn, .save-btn {
-      width: 36px; height: 36px; border-radius: 8px;
+      min-width: 44px; min-height: 44px; width: 44px; height: 44px; border-radius: 8px;
       background: transparent; border: none; color: var(--text);
       display: grid; place-items: center; cursor: pointer; flex-shrink: 0;
     }
@@ -276,12 +288,12 @@ interface FlatService extends CategoryService {
     }
     .service-cat {
       background: none; border: none; padding: 0;
-      font-size: 10px; font-weight: 600; color: var(--baby-blue-deep);
+      font-size: 10px; font-weight: 600; color: #1a3a52;
       text-transform: uppercase; letter-spacing: 1.2px;
       margin-bottom: 4px; cursor: pointer;
       display: block; text-align: left;
     }
-    .service-cat:hover:not(:disabled) { color: #1a3a52; text-decoration: underline; text-underline-offset: 2px; }
+    .service-cat:hover:not(:disabled) { color: #0d2738; text-decoration: underline; text-underline-offset: 2px; }
     .service-cat:disabled { cursor: default; }
     .service-meta {
       font-family: var(--font-mono); font-size: 11px;
@@ -318,7 +330,7 @@ interface FlatService extends CategoryService {
     .bottom-nav { display: flex; background: #FFFFFF; border-top: 1px solid var(--line); box-shadow: 0 -2px 14px rgba(15,35,60,0.08); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
     .nav-tab { flex: 1; height: 64px; background: transparent; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; color: var(--text); font-family: var(--font-body); }
     .nav-tab:disabled { opacity: 0.4; cursor: not-allowed; }
-    .nav-tab.is-active { color: var(--baby-blue-deep); }
+    .nav-tab.is-active { color: #1a3a52; }
     .nav-dot { position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
     .nav-tab.is-active .nav-dot { background: var(--baby-blue-deep); }
     .nav-icon { width: 24px; height: 24px; }

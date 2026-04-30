@@ -2,6 +2,7 @@ from django.urls import path
 
 from .admin_views import FlagToggleView
 from .booking_views import (
+    CancelBookingGraceView,
     CancelBookingView,
     CategoryListView,
     MyBookingsView,
@@ -23,6 +24,7 @@ from .views import (
     LoginView,
     LogoutView,
     MeView,
+    SessionRefreshView,
     SignUpView,
 )
 
@@ -34,6 +36,11 @@ urlpatterns = [
     path('business/login/', BusinessLoginView.as_view(), name='beauty-business-login'),
     path('business/logout/', BusinessLogoutView.as_view(), name='beauty-business-logout'),
     path('protected/me/', MeView.as_view(), name='beauty-me'),
+    # Customer-only session rotation. Lives outside `/protected/` so the
+    # endpoint can read the existing cookie itself and decide whether to
+    # rotate it — putting it under `/protected/` would short-circuit on
+    # an expired-but-recoverable session at the middleware.
+    path('session/refresh/', SessionRefreshView.as_view(), name='beauty-session-refresh'),
     path('admin/flags/toggle/', FlagToggleView.as_view(), name='beauty-admin-flag-toggle'),
 
     # Customer marketplace (read-only, public)
@@ -44,6 +51,7 @@ urlpatterns = [
     # Bookings (customer auth required — sits behind BeautyAuthMiddleware)
     path('protected/bookings/', MyBookingsView.as_view(), name='beauty-bookings'),
     path('protected/bookings/<int:booking_id>/cancel/', CancelBookingView.as_view(), name='beauty-booking-cancel'),
+    path('protected/bookings/<int:booking_id>/cancel-grace/', CancelBookingGraceView.as_view(), name='beauty-booking-cancel-grace'),
     path('protected/bookings/<int:booking_id>/reschedule/', RescheduleBookingView.as_view(), name='beauty-booking-reschedule'),
 
     # Business portal (business auth required — same middleware enforces session,

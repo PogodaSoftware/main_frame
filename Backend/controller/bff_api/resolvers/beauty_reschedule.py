@@ -21,6 +21,7 @@ from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyBooking
 from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
+from ..services.beauty_timezone_service import provider_timezone as _provider_timezone
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
@@ -71,6 +72,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 'id': b.service.provider.id,
                 'name': b.service.provider.name,
                 'location_label': b.service.provider.location_label,
+                'timezone': _provider_timezone(b.service.provider),
             },
             'form': {
                 'submit_method': 'POST',

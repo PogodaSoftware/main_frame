@@ -172,6 +172,16 @@ CORS_ALLOW_HEADERS = [
 # --- Beauty Auth Cookie Configuration ---
 BEAUTY_SESSION_COOKIE_AGE = 86400  # 24 hours in seconds
 
+# Window (minutes) after a booking is created during which the customer
+# can cancel "immediately" — refund + booking is hidden from history.
+# After this window the regular `cancel` action sets the booking to
+# `cancelled_by_customer` with no automatic refund.
+BEAUTY_GRACE_PERIOD_MINUTES = 5
+
+# When True, refresh the auth cookie if it's within this many seconds of
+# expiry. Used by the /api/beauty/session/refresh/ endpoint.
+BEAUTY_SESSION_REFRESH_WINDOW_SECONDS = 3600  # 1 hour
+
 
 # --- REST Framework Configuration ---
 # Rate limiting: 10 requests/minute per anonymous IP address

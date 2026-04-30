@@ -45,12 +45,12 @@ interface DayRow {
         </button>
       </header>
 
-      <section class="biz-section">
+      <main id="main" class="biz-section">
         <p class="hint">Set when your storefront is open each day. Customers can only book during these hours.</p>
 
         <ul class="day-list">
           <li *ngFor="let row of rows" class="day-row" [class.closed]="row.is_closed">
-            <span class="day-name">{{ row.day_label }}</span>
+            <span class="day-name" [id]="rowLabelId(row)">{{ row.day_label }}</span>
             <label class="closed-toggle">
               <input
                 type="checkbox"
@@ -68,15 +68,21 @@ interface DayRow {
               />
               Open 24h
             </label>
+            <label class="sr-only" [attr.for]="row.day_label + '-start'">{{ row.day_label }} start time</label>
             <input
               type="time"
+              [id]="row.day_label + '-start'"
+              [name]="row.day_label + '-start'"
               class="time-input"
               [(ngModel)]="row.start_time"
               [disabled]="row.is_closed || row.is_24h"
             />
-            <span class="dash">–</span>
+            <span class="dash" aria-hidden="true">–</span>
+            <label class="sr-only" [attr.for]="row.day_label + '-end'">{{ row.day_label }} end time</label>
             <input
               type="time"
+              [id]="row.day_label + '-end'"
+              [name]="row.day_label + '-end'"
               class="time-input"
               [(ngModel)]="row.end_time"
               [disabled]="row.is_closed || row.is_24h"
@@ -84,8 +90,14 @@ interface DayRow {
           </li>
         </ul>
 
-        <p *ngIf="message" class="msg" [class.error]="isError">{{ message }}</p>
-      </section>
+        <p
+          *ngIf="message"
+          class="msg"
+          [class.error]="isError"
+          [attr.role]="isError ? 'alert' : 'status'"
+          aria-live="polite"
+        >{{ message }}</p>
+      </main>
     </div>
   `,
   styles: [`
@@ -106,6 +118,13 @@ interface DayRow {
     .dash { color: #999; }
     .msg { padding: 12px 0; color: #1d4ed8; }
     .msg.error { color: #c62828; }
+    .btn-primary, .time-input { min-height: 44px; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
   `],
 })
 export class BeautyBusinessAvailabilityComponent implements OnChanges {
@@ -129,6 +148,10 @@ export class BeautyBusinessAvailabilityComponent implements OnChanges {
 
   emit(link: BffLink | null | undefined): void {
     if (link) this.followLink.emit(link);
+  }
+
+  rowLabelId(row: DayRow): string {
+    return `day-label-${row.day_of_week}`;
   }
 
   onClosedChange(row: DayRow): void {

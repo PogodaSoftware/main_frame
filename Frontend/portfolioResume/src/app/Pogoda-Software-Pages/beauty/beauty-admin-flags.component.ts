@@ -63,7 +63,8 @@ export interface FlagToggleEvent {
         </div>
       </header>
 
-      <main class="flags-main">
+      <main id="main" class="flags-main">
+        <span class="sr-only" role="status" aria-live="polite">{{ flagAnnouncement }}</span>
         <section class="flags-intro">
           <h1>Runtime feature flags</h1>
           <p>
@@ -88,9 +89,10 @@ export interface FlagToggleEvent {
               <button
                 type="button"
                 class="flag-toggle"
+                role="switch"
                 [class.flag-toggle--on]="flag.enabled"
                 [disabled]="busyKey === flag.key"
-                [attr.aria-pressed]="flag.enabled"
+                [attr.aria-checked]="flag.enabled"
                 [attr.aria-label]="'Toggle ' + flag.label"
                 (click)="onToggle(flag)"
               >
@@ -150,7 +152,17 @@ export interface FlagToggleEvent {
     .flag-state--on { color: #0f7a3a; }
     .flag-state--off { color: #94343b; }
     .flag-toggle { position: relative; width: 52px; height: 30px; border-radius: 999px;
-      border: none; background: #c7c7cc; cursor: pointer; padding: 0; transition: background 0.18s ease; }
+      border: none; background: #8e8e93; cursor: pointer; padding: 0; transition: background 0.18s ease;
+      /* Keep visual track 30px but extend hit-target to 44px via padding-free margin block */
+    }
+    .flag-control { padding: 8px 0; min-height: 44px; }
+    .flag-toggle:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; }
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
     .flag-toggle:disabled { opacity: 0.55; cursor: progress; }
     .flag-toggle--on { background: #0f7a3a; }
     .flag-toggle__knob { position: absolute; top: 3px; left: 3px; width: 24px; height: 24px;
@@ -180,6 +192,9 @@ export class BeautyAdminFlagsComponent {
   @Output() followLink = new EventEmitter<BffLink>();
   @Output() goHomeRequested = new EventEmitter<void>();
 
+  /** AT-only message announcing the most recent flag flip. */
+  flagAnnouncement = '';
+
   trackByKey(_index: number, flag: AdminFlag): string {
     return flag.key;
   }
@@ -188,9 +203,11 @@ export class BeautyAdminFlagsComponent {
     if (!flag.toggle) {
       return;
     }
+    const nextEnabled = !flag.enabled;
+    this.flagAnnouncement = `${flag.label} turned ${nextEnabled ? 'on' : 'off'}.`;
     this.toggleFlag.emit({
       link: flag.toggle,
-      body: { key: flag.key, enabled: !flag.enabled },
+      body: { key: flag.key, enabled: nextEnabled },
     });
   }
 

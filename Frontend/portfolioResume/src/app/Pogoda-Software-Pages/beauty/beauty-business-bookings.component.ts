@@ -37,7 +37,7 @@ interface BookingRow {
         <h1 class="biz-h1">Incoming bookings</h1>
       </header>
 
-      <section class="biz-section">
+      <main id="main" class="biz-section">
         <h2 class="group-h">Upcoming</h2>
         <ul class="bk-list">
           <li *ngFor="let b of upcoming" class="bk-row">
@@ -63,7 +63,7 @@ interface BookingRow {
           </li>
           <li *ngIf="!past.length" class="empty">No past bookings.</li>
         </ul>
-      </section>
+      </main>
     </div>
   `,
   styles: [`
@@ -78,7 +78,9 @@ interface BookingRow {
     .bk-row.past { opacity: 0.7; }
     .bk-info { display: flex; flex-direction: column; gap: 2px; }
     .bk-meta { color: #666; font-size: 0.85rem; }
-    .bk-cust { color: #888; font-size: 0.85rem; }
+    .bk-cust { color: #5d5d5d; font-size: 0.85rem; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
+    .back-btn { min-height: 44px; padding: 0 8px; }
     .bk-price { font-weight: 600; }
     .empty { color: #888; padding: 12px 0; text-align: center; }
   `],

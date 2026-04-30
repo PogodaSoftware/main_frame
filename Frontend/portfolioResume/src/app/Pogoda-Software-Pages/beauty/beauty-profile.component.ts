@@ -15,11 +15,12 @@ import { CommonModule } from '@angular/common';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { BeautyConfirmModalComponent } from './beauty-confirm-modal.component';
 
 @Component({
   selector: 'app-beauty-profile',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BeautyConfirmModalComponent],
   template: `
     <div class="beauty-app">
       <header class="sub-header">
@@ -30,7 +31,7 @@ import { BffLink } from './beauty-bff.types';
         </button>
       </header>
 
-      <section class="profile-section">
+      <main id="main" class="profile-section">
         <div class="avatar-block">
           <div class="avatar">{{ initial }}</div>
           <h1 class="display-name">{{ displayName }}</h1>
@@ -77,9 +78,9 @@ import { BffLink } from './beauty-bff.types';
         </div>
 
         <div class="action-card">
-          <button type="button" class="action-row danger last" (click)="logout()" [disabled]="loggingOut">
+          <button type="button" class="action-row danger last" (click)="askSignOut()" [disabled]="loggingOut">
             <div class="action-text">
-              <div class="action-label">{{ loggingOut ? 'Signing out…' : 'Sign out' }}</div>
+              <div class="action-label" aria-live="polite">{{ loggingOut ? 'Signing out…' : 'Sign out' }}</div>
               <div class="action-sub">End your session</div>
             </div>
             <svg class="chev danger" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
@@ -87,9 +88,23 @@ import { BffLink } from './beauty-bff.types';
         </div>
 
         <div class="version-footer">Beauty · v0.1.0</div>
-      </section>
+      </main>
 
-      <nav class="bottom-nav">
+      <app-beauty-confirm-modal
+        *ngIf="showSignOutConfirm"
+        [open]="showSignOutConfirm"
+        [title]="'Sign out?'"
+        [body]="'You\\'ll need to sign in again to view your bookings.'"
+        [primaryLabel]="'Sign out'"
+        [secondaryLabel]="'Stay signed in'"
+        [primaryVariant]="'danger'"
+        [busy]="loggingOut"
+        [busyLabel]="'Signing out…'"
+        (confirmed)="logout()"
+        (dismissed)="showSignOutConfirm = false"
+      />
+
+      <nav class="bottom-nav" aria-label="Primary">
         <button type="button" class="nav-tab" (click)="emit(links['bookings'])" [disabled]="!links['bookings']">
           <span class="nav-dot"></span>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -126,9 +141,12 @@ import { BffLink } from './beauty-bff.types';
       --font-display: 'Cormorant Garamond', Georgia, serif;
     }
     * { box-sizing: border-box; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
+
     .beauty-app { display: flex; flex-direction: column; min-height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); }
     .sub-header { display: flex; align-items: center; height: 56px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
-    .back-btn { width: 36px; height: 36px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; }
+    .back-btn { min-width: 44px; min-height: 44px; width: 44px; height: 44px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; }
+    .action-row { min-height: 44px; }
     .back-btn:hover { background: var(--surface-2); }
 
     .profile-section { flex: 1; padding: 24px 20px; max-width: 480px; width: 100%; margin: 0 auto; overflow-y: auto; }
@@ -159,7 +177,7 @@ import { BffLink } from './beauty-bff.types';
     .bottom-nav { display: flex; background: #FFFFFF; border-top: 1px solid var(--line); box-shadow: 0 -2px 14px rgba(15,35,60,0.08); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
     .nav-tab { flex: 1; height: 64px; background: transparent; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; color: var(--text); font-family: var(--font-body); }
     .nav-tab:disabled { opacity: 0.4; cursor: not-allowed; }
-    .nav-tab.is-active { color: var(--accent-blue-deep); }
+    .nav-tab.is-active { color: #1a3a52; }
     .nav-dot { position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
     .nav-tab.is-active .nav-dot { background: var(--accent-blue-deep); }
     .nav-icon { width: 24px; height: 24px; }
@@ -177,8 +195,14 @@ export class BeautyProfileComponent {
   @Output() followLink = new EventEmitter<BffLink>();
 
   loggingOut = false;
+  showSignOutConfirm = false;
 
   constructor(private authService: BeautyAuthService) {}
+
+  askSignOut(): void {
+    if (this.loggingOut) return;
+    this.showSignOutConfirm = true;
+  }
 
   get user(): { email?: string; name?: string } | null {
     return (this.data['user'] as { email?: string; name?: string }) || null;
@@ -213,11 +237,13 @@ export class BeautyProfileComponent {
     this.authService.follow(link).subscribe({
       next: () => {
         this.loggingOut = false;
+        this.showSignOutConfirm = false;
         const home = this.links['home'];
         if (home) this.followLink.emit(home);
       },
       error: () => {
         this.loggingOut = false;
+        this.showSignOutConfirm = false;
         const home = this.links['home'];
         if (home) this.followLink.emit(home);
       },

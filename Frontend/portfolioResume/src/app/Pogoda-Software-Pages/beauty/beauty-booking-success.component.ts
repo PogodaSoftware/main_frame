@@ -10,19 +10,28 @@
 import {
   Component,
   EventEmitter,
+  Inject,
   Input,
+  OnChanges,
+  OnDestroy,
   Output,
+  PLATFORM_ID,
+  SimpleChanges,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
+import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
 import { formatSlotLocal } from './beauty-time.util';
+import { BeautyConfirmModalComponent } from './beauty-confirm-modal.component';
 
 interface SuccessBooking {
   id: number;
   status: string;
   slot_at: string;
   slot_label: string;
+  grace_period_ends_at?: string | null;
+  in_grace_window?: boolean;
   service: {
     id: number;
     name: string;
@@ -33,13 +42,14 @@ interface SuccessBooking {
     id: number;
     name: string;
     location_label: string;
+    timezone?: string;
   };
 }
 
 @Component({
   selector: 'app-beauty-booking-success',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BeautyConfirmModalComponent],
   template: `
     <div class="beauty-app" *ngIf="booking as b">
       <header class="sub-header">
@@ -57,7 +67,7 @@ interface SuccessBooking {
         </button>
       </header>
 
-      <main class="success-main">
+      <main id="main" class="success-main">
         <div class="hero">
           <div class="sparkle-disc">
             <div class="sparkle-ring"></div>
@@ -77,7 +87,7 @@ interface SuccessBooking {
         <section class="summary-card">
           <div class="row">
             <span class="row-label">When</span>
-            <span class="row-value">{{ formatLocal(b.slot_at) || b.slot_label }}</span>
+            <span class="row-value">{{ formatLocal(b.slot_at, b.provider?.timezone) || b.slot_label }}</span>
           </div>
           <div class="row">
             <span class="row-label">Where</span>
@@ -105,7 +115,7 @@ interface SuccessBooking {
               <rect x="9" y="9" width="13" height="13" rx="2"/>
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
             </svg>
-            {{ copied ? 'Copied' : 'Copy' }}
+            <span aria-live="polite">{{ copied ? 'Copied' : 'Copy' }}</span>
           </button>
         </div>
 
@@ -125,17 +135,58 @@ interface SuccessBooking {
             View my bookings
           </button>
           <div class="actions-row">
-            <button type="button" class="btn-secondary" (click)="emit(links['detail'])" [disabled]="!links['detail']">
-              {{ links['detail']?.prompt || 'View booking' }}
+            <button type="button" class="btn-secondary" (click)="addToCalendar()">
+              Add to calendar
             </button>
             <button type="button" class="btn-secondary" (click)="emit(links['home'])" [disabled]="!links['home']">
               Back to home
             </button>
           </div>
+
+          <button
+            *ngIf="links['cancel_grace'] && graceSecondsLeft > 0"
+            type="button"
+            class="btn-grace"
+            (click)="askGraceCancel()"
+            [disabled]="isCancelling"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="9"/>
+              <path d="M12 7v5l3 2"/>
+            </svg>
+            <span>Cancel free</span>
+            <span class="grace-pill" aria-live="off" aria-hidden="true">{{ graceCountdownLabel }}</span>
+            <span class="sr-only" aria-live="polite">{{ graceExpiredAnnouncement }}</span>
+          </button>
+          <button
+            *ngIf="!graceSecondsLeft && links['cancel_grace']"
+            type="button"
+            class="btn-cancel-text"
+            (click)="askGraceCancel()"
+            [disabled]="isCancelling"
+          >Cancel booking</button>
+          <p
+            *ngIf="links['cancel_grace']"
+            class="grace-caption"
+          >Cancel within 5 minutes of booking and you won't be charged.</p>
         </div>
       </main>
 
-      <nav class="bottom-nav">
+      <app-beauty-confirm-modal
+        *ngIf="confirmOpen"
+        [open]="confirmOpen"
+        [title]="'Cancel without charge?'"
+        [body]="'You\\'re still inside the 5-minute grace window — we won\\'t charge you.'"
+        [primaryLabel]="'Yes, cancel now'"
+        [primaryVariant]="'danger'"
+        [secondaryLabel]="'Keep booking'"
+        [busy]="isCancelling"
+        [busyLabel]="'Cancelling…'"
+        (confirmed)="runGraceCancel()"
+        (dismissed)="confirmOpen = false"
+      />
+
+      <nav class="bottom-nav" aria-label="Primary">
         <button type="button" class="nav-tab is-active" (click)="emit(links['bookings'])" [disabled]="!links['bookings']">
           <span class="nav-dot"></span>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -173,12 +224,14 @@ interface SuccessBooking {
       --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
     }
     * { box-sizing: border-box; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
+
     .beauty-app { display: flex; flex-direction: column; min-height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); }
 
     .sub-header { display: flex; align-items: center; height: 56px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
     .sub-header-title { flex: 1; }
     .sub-header-spacer { width: 36px; height: 36px; flex-shrink: 0; }
-    .share-btn { width: 36px; height: 36px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+    .share-btn { min-width: 44px; min-height: 44px; width: 44px; height: 44px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
     .share-btn:hover { background: var(--surface-2); }
 
     .success-main { flex: 1; padding: 8px 20px 16px; display: flex; flex-direction: column; }
@@ -195,7 +248,7 @@ interface SuccessBooking {
     .sparkle-check { width: 32px; height: 32px; position: relative; z-index: 1; }
 
     .eyebrow {
-      font-size: 11px; font-weight: 600; color: var(--baby-blue-deep);
+      font-size: 11px; font-weight: 600; color: #1a3a52;
       text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 6px;
     }
     .title {
@@ -272,6 +325,42 @@ interface SuccessBooking {
     .btn-secondary:hover:not(:disabled) { border-color: var(--baby-blue-deep); }
     .btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
 
+    .btn-grace {
+      width: 100%; height: 44px; border-radius: 12px;
+      background: var(--baby-blue);
+      color: #1a3a52;
+      border: 1px solid rgba(125,168,207,0.5);
+      font-family: var(--font-body);
+      font-size: 13px; font-weight: 600; letter-spacing: 0.2px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-grace:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-grace .grace-pill {
+      font-family: var(--font-mono); font-size: 12px; font-weight: 600;
+      color: #1a3a52; background: #FFFFFF;
+      border: 1px solid rgba(125,168,207,0.55);
+      padding: 2px 8px; border-radius: 999px;
+      min-width: 46px; text-align: center;
+    }
+    .btn-cancel-text {
+      width: 100%; height: 44px; border-radius: 12px;
+      background: #FFFFFF; color: #C0392B;
+      border: 1px solid var(--line);
+      font-family: var(--font-body);
+      font-size: 13px; font-weight: 600; letter-spacing: 0.2px; cursor: pointer;
+    }
+    .btn-cancel-text:hover:not(:disabled) { background: #FCE8E5; }
+    .btn-cancel-text:disabled { opacity: 0.55; cursor: not-allowed; }
+    .grace-caption {
+      font-size: 11px; line-height: 1.5; color: var(--text-muted);
+      text-align: center; margin: -2px 0 0; padding: 0 8px;
+    }
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
+
     .bottom-nav {
       display: flex; background: #FFFFFF; border-top: 1px solid var(--line);
       box-shadow: 0 -2px 14px rgba(15,35,60,0.08); flex-shrink: 0;
@@ -282,7 +371,7 @@ interface SuccessBooking {
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
       position: relative; color: var(--text); font-family: var(--font-body);
     }
-    .nav-tab.is-active { color: var(--baby-blue-deep); }
+    .nav-tab.is-active { color: #1a3a52; }
     .nav-tab.is-active .nav-dot { background: var(--baby-blue-deep); }
     .nav-tab:disabled { opacity: 0.4; cursor: not-allowed; }
     .nav-dot { position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
@@ -294,19 +383,48 @@ interface SuccessBooking {
     }
   `],
 })
-export class BeautyBookingSuccessComponent {
+export class BeautyBookingSuccessComponent implements OnChanges, OnDestroy {
   @Input() data: Record<string, unknown> = {};
   @Input() links: Record<string, BffLink> = {};
   @Output() followLink = new EventEmitter<BffLink>();
 
   copied = false;
+  isCancelling = false;
+  confirmOpen = false;
+  graceSecondsLeft = 0;
+  graceExpiredAnnouncement = '';
+  private graceTimer: ReturnType<typeof setInterval> | null = null;
+  private graceWasActive = false;
+  private isBrowser = false;
+
+  constructor(
+    private authService: BeautyAuthService,
+    @Inject(PLATFORM_ID) platformId: object,
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
+
+  ngOnChanges(_: SimpleChanges): void {
+    this.refreshGraceCountdown();
+  }
+
+  ngOnDestroy(): void {
+    this.stopGraceTimer();
+  }
 
   get booking(): SuccessBooking | null {
     return (this.data['booking'] as SuccessBooking) || null;
   }
 
-  formatLocal(iso: string | undefined | null): string {
-    return formatSlotLocal(iso);
+  get graceCountdownLabel(): string {
+    const total = Math.max(0, this.graceSecondsLeft);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  formatLocal(iso: string | undefined | null, tz?: string | null): string {
+    return formatSlotLocal(iso, tz);
   }
 
   confirmationCode(id: number): string {
@@ -333,7 +451,83 @@ export class BeautyBookingSuccessComponent {
     }
   }
 
+  addToCalendar(): void {
+    const b = this.booking;
+    if (!b || !this.isBrowser) return;
+    const start = new Date(b.slot_at);
+    const end = new Date(start.getTime() + (b.service.duration_minutes || 60) * 60 * 1000);
+    const fmt = (d: Date) => d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const ics = [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Beauty//EN', 'BEGIN:VEVENT',
+      `UID:beauty-booking-${b.id}@beauty.local`,
+      `DTSTAMP:${fmt(new Date())}`,
+      `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
+      `SUMMARY:${b.service.name} at ${b.provider.name}`,
+      `LOCATION:${b.provider.location_label}`,
+      'END:VEVENT', 'END:VCALENDAR',
+    ].join('\r\n');
+    const blob = new Blob([ics], { type: 'text/calendar' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `beauty-booking-${b.id}.ics`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  askGraceCancel(): void {
+    if (this.isCancelling) return;
+    this.confirmOpen = true;
+  }
+
+  runGraceCancel(): void {
+    const link = this.links['cancel_grace'];
+    if (!link || this.isCancelling) return;
+    this.isCancelling = true;
+    this.authService.follow(link).subscribe({
+      next: () => {
+        this.isCancelling = false;
+        this.confirmOpen = false;
+        const home = this.links['home'];
+        if (home) this.followLink.emit(home);
+      },
+      error: () => {
+        this.isCancelling = false;
+        this.confirmOpen = false;
+      },
+    });
+  }
+
   emit(link: BffLink | null | undefined): void {
     if (link) this.followLink.emit(link);
+  }
+
+  private refreshGraceCountdown(): void {
+    this.stopGraceTimer();
+    const ends = this.booking?.grace_period_ends_at;
+    if (!ends || !this.isBrowser) {
+      this.graceSecondsLeft = 0;
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((new Date(ends).getTime() - Date.now()) / 1000));
+      const previouslyActive = this.graceWasActive;
+      if (remaining > 0) this.graceWasActive = true;
+      this.graceSecondsLeft = remaining;
+      if (remaining <= 0 && previouslyActive) {
+        this.graceExpiredAnnouncement = 'Grace period expired';
+        this.graceWasActive = false;
+      }
+      if (remaining <= 0) this.stopGraceTimer();
+    };
+    tick();
+    this.graceTimer = setInterval(tick, 1000);
+  }
+
+  private stopGraceTimer(): void {
+    if (this.graceTimer != null) {
+      clearInterval(this.graceTimer);
+      this.graceTimer = null;
+    }
   }
 }

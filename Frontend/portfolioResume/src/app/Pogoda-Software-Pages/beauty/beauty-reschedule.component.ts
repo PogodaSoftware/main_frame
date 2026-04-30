@@ -54,15 +54,17 @@ interface ReForm {
         <button class="brand-name-btn" (click)="emit(links['home'])">Beauty</button>
       </header>
 
-      <section class="re-section">
+      <main id="main" class="re-section">
         <button
           class="back-btn"
+          [attr.aria-label]="(links['booking']?.prompt || 'Back to booking')"
           (click)="emit(links['booking'])"
           *ngIf="links['booking']"
         >← {{ links['booking'].prompt || 'Back to booking' }}</button>
 
         <h1 class="title">Reschedule {{ serviceName }}</h1>
         <p class="meta" *ngIf="providerName">at {{ providerName }} · {{ providerLoc }}</p>
+        <p class="tz-note" *ngIf="providerTimezone">Times shown in {{ providerTimezone }}.</p>
 
         <div class="current-card">
           <p class="current-label">Currently booked for</p>
@@ -78,13 +80,14 @@ interface ReForm {
               class="form-input"
               [(ngModel)]="values[f.name]"
               [required]="f.required ?? false"
+              autocomplete="off"
             >
               <option value="" disabled>Select a new time…</option>
               <option *ngFor="let o of f.options" [value]="o.value">{{ slotLabel(o) }}</option>
             </select>
           </ng-container>
 
-          <p *ngIf="serverError" class="server-error">{{ serverError }}</p>
+          <p *ngIf="serverError" class="server-error" role="alert" aria-live="assertive">{{ serverError }}</p>
 
           <button
             type="submit"
@@ -94,7 +97,7 @@ interface ReForm {
             {{ isSubmitting ? 'Rescheduling…' : (form?.submit_label || 'Confirm new time') }}
           </button>
         </form>
-      </section>
+      </main>
     </div>
   `,
   styles: [`
@@ -115,6 +118,11 @@ interface ReForm {
     .btn-confirm { background: #000; color: #fff; border: none; border-radius: 10px; padding: 14px; font-size: 1rem; cursor: pointer; margin-top: 12px; }
     .btn-confirm:disabled { background: #aaa; cursor: not-allowed; }
     .server-error { color: #c62828; font-size: 0.9rem; }
+    .tz-note { color: #666; font-size: 0.8rem; margin: 0 0 12px; }
+    .btn-confirm { min-height: 44px; }
+    .back-btn { min-height: 44px; padding: 0 8px; }
+
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
   `],
 })
 export class BeautyRescheduleComponent {
@@ -151,21 +159,26 @@ export class BeautyRescheduleComponent {
     return p?.location_label || '';
   }
 
+  get providerTimezone(): string | undefined {
+    const p = this.data['provider'] as { timezone?: string } | undefined;
+    return p?.timezone;
+  }
+
   get currentSlotLabel(): string {
     const b = this.data['booking'] as {
       current_slot_at?: string;
       current_slot_label?: string;
     } | undefined;
     if (b?.current_slot_at) {
-      const local = formatSlotLocal(b.current_slot_at);
+      const local = formatSlotLocal(b.current_slot_at, this.providerTimezone);
       if (local) return local;
     }
     return b?.current_slot_label || '';
   }
 
-  /** Format a slot option in the customer's local timezone. */
+  /** Format a slot option in the BUSINESS provider's local timezone. */
   slotLabel(o: { value: string; label: string }): string {
-    return formatSlotLocal(o.value) || o.label;
+    return formatSlotLocal(o.value, this.providerTimezone) || o.label;
   }
 
   canSubmit(): boolean {

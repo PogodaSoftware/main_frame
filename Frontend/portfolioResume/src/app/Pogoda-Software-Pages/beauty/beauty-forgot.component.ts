@@ -29,7 +29,7 @@ import { BeautyAuthService } from './beauty-auth.service';
         </button>
       </header>
 
-      <main class="forgot-main">
+      <main id="main" class="forgot-main">
         <div class="brand">
           <div class="brand-icon">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
@@ -57,15 +57,17 @@ import { BeautyAuthService } from './beauty-auth.service';
               [(ngModel)]="email"
               (blur)="touched = true"
               autocomplete="email"
+              [attr.aria-invalid]="touched && !valid() ? 'true' : null"
+              [attr.aria-describedby]="touched && !valid() ? 'forgot-email-err' : null"
               required
             />
-            <span *ngIf="touched && !valid()" class="field-error">
+            <span *ngIf="touched && !valid()" id="forgot-email-err" class="field-error">
               Please enter a valid email address.
             </span>
           </div>
 
-          <div *ngIf="serverError" class="server-error">{{ serverError }}</div>
-          <div *ngIf="sent" class="success-msg">
+          <div *ngIf="serverError" class="server-error" role="alert" aria-live="assertive">{{ serverError }}</div>
+          <div *ngIf="sent" class="success-msg" role="status" aria-live="polite">
             Check your inbox — we sent a reset link to <strong>{{ email }}</strong>.
           </div>
 
@@ -113,6 +115,18 @@ import { BeautyAuthService } from './beauty-auth.service';
       font-family: var(--font-body);
     }
     * { box-sizing: border-box; }
+
+    :host *:focus-visible {
+      outline: 2px solid #1a3a52;
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
+    @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
 
     .forgot-page {
       display: flex; flex-direction: column;

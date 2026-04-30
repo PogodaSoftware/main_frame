@@ -93,9 +93,8 @@ interface FieldState {
           <form [class]="p.form_class" (ngSubmit)="onSubmit()" novalidate>
             <div class="field-group" *ngFor="let f of fields; trackBy: trackByName">
               <label
-                *ngIf="p.show_field_labels !== false"
                 [attr.for]="f.schema.name"
-                class="field-label"
+                [class]="p.show_field_labels !== false ? 'field-label' : 'field-label sr-only'"
               >{{ f.schema.label }}</label>
 
               <ng-container *ngIf="!f.schema.secret_toggle">
@@ -113,6 +112,8 @@ interface FieldState {
                   [attr.autocomplete]="f.schema.autocomplete || null"
                   [attr.inputmode]="f.schema.inputmode || null"
                   [attr.autocapitalize]="f.schema.autocapitalize || null"
+                  [attr.aria-invalid]="hasError(f) && f.touched ? 'true' : null"
+                  [attr.aria-describedby]="hasError(f) && f.touched ? f.schema.name + '-err' : null"
                   class="form-input"
                   [class.error]="hasError(f) && f.touched"
                 />
@@ -132,6 +133,8 @@ interface FieldState {
                     [attr.required]="f.schema.required ? '' : null"
                     [attr.minlength]="f.schema.min_length || null"
                     [attr.autocomplete]="f.schema.autocomplete || null"
+                    [attr.aria-invalid]="hasError(f) && f.touched ? 'true' : null"
+                    [attr.aria-describedby]="hasError(f) && f.touched ? f.schema.name + '-err' : null"
                     class="form-input"
                     [class.error]="hasError(f) && f.touched"
                   />
@@ -140,11 +143,16 @@ interface FieldState {
                     class="password-toggle"
                     (click)="f.showSecret = !f.showSecret"
                     aria-label="Toggle password visibility"
+                    [attr.aria-pressed]="f.showSecret"
                   >{{ f.showSecret ? 'Hide' : 'Show' }}</button>
                 </div>
               </ng-container>
 
-              <span *ngIf="f.touched && fieldError(f) as err" class="field-error">{{ err }}</span>
+              <span
+                *ngIf="f.touched && fieldError(f) as err"
+                class="field-error"
+                [id]="f.schema.name + '-err'"
+              >{{ err }}</span>
             </div>
 
             <div *ngIf="p.show_forgot_link && links['forgot'] as forgotLink" class="forgot-row">
@@ -154,18 +162,25 @@ interface FieldState {
             </div>
 
             <label *ngIf="p.show_terms_checkbox" class="terms-row">
-              <span class="terms-checkbox" [class.checked]="termsAgreed" (click)="termsAgreed = !termsAgreed">
+              <input
+                type="checkbox"
+                class="terms-input"
+                [(ngModel)]="termsAgreed"
+                [name]="'terms-agreed'"
+                [ngModelOptions]="{ standalone: true }"
+              />
+              <span class="terms-checkbox" [class.checked]="termsAgreed" aria-hidden="true">
                 <svg *ngIf="termsAgreed" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#0F1115" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M20 6L9 17l-5-5"/>
                 </svg>
               </span>
               <span class="terms-text">
-                I agree to the <a href="#" class="terms-link">Terms</a> and
-                <a href="#" class="terms-link">Privacy Policy</a>.
+                I agree to the <button type="button" class="terms-link" (click)="$event.preventDefault()">Terms</button> and
+                <button type="button" class="terms-link" (click)="$event.preventDefault()">Privacy Policy</button>.
               </span>
             </label>
 
-            <div *ngIf="serverError" class="server-error">{{ serverError }}</div>
+            <div *ngIf="serverError" class="server-error" role="alert" aria-live="assertive">{{ serverError }}</div>
 
             <button
               type="submit"

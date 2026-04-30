@@ -18,6 +18,8 @@ import { Router, RouterModule } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="welcome-page">
+      <h1 class="sr-only">Welcome to Beauty</h1>
+      <main id="main" class="welcome-main">
       <div class="hero">
         <span class="dot dot-a"></span>
         <span class="dot dot-b"></span>
@@ -57,10 +59,11 @@ import { Router, RouterModule } from '@angular/router';
 
         <div class="legal">
           By continuing you agree to the
-          <a href="#" class="legal-link">Terms</a> and
-          <a href="#" class="legal-link">Privacy Policy</a>.
+          <button type="button" class="legal-link" (click)="openLegal('terms')">Terms</button> and
+          <button type="button" class="legal-link" (click)="openLegal('privacy')">Privacy Policy</button>.
         </div>
       </div>
+      </main>
     </div>
   `,
   styles: [`
@@ -151,6 +154,10 @@ import { Router, RouterModule } from '@angular/router';
     }
     .btn-ghost:hover { border-color: var(--baby-blue-deep); }
 
+    @media (prefers-reduced-motion: reduce) {
+      .btn-primary, .btn-secondary, .btn-ghost { transition: none; }
+    }
+
     .divider {
       display: flex; align-items: center; gap: 12px; margin: 10px 0;
     }
@@ -167,9 +174,27 @@ import { Router, RouterModule } from '@angular/router';
       text-align: center; line-height: 1.5;
     }
     .legal-link {
-      color: var(--baby-blue-deep); font-weight: 600; text-decoration: none;
+      color: #1a3a52; font-weight: 600; text-decoration: none;
+      background: none; border: none; padding: 0; cursor: pointer;
+      font: inherit;
     }
     .legal-link:hover { text-decoration: underline; }
+
+    /* a11y: shared focus ring (WCAG 2.4.7) */
+    :host *:focus-visible {
+      outline: 2px solid #1a3a52;
+      outline-offset: 2px;
+      border-radius: 6px;
+    }
+
+    /* a11y: visually-hidden helper */
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
+
+    .welcome-main { display: contents; }
   `],
 })
 export class BeautyWelcomeComponent {
@@ -187,5 +212,10 @@ export class BeautyWelcomeComponent {
     // Google OAuth entrypoint — backend returns redirect.
     // Falls back to login if endpoint not configured.
     this.router.navigate(['/pogoda/beauty/login'], { queryParams: { provider: 'google' } });
+  }
+
+  // TODO: route to /legal/terms or /legal/privacy when those pages exist.
+  openLegal(_kind: 'terms' | 'privacy'): void {
+    // No-op for now — placeholder so screen readers don't announce a broken link.
   }
 }

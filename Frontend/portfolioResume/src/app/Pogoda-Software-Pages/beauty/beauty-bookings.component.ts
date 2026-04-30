@@ -10,10 +10,14 @@
 import {
   Component,
   EventEmitter,
+  Inject,
   Input,
+  OnDestroy,
+  OnInit,
   Output,
+  PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
@@ -24,8 +28,10 @@ interface BookingItem {
   status: string;
   slot_at: string;
   slot_label: string;
+  grace_period_ends_at?: string | null;
+  in_grace_window?: boolean;
   service: { id: number; name: string; price_cents: number; duration_minutes: number };
-  provider: { id: number; name: string; location_label: string };
+  provider: { id: number; name: string; location_label: string; timezone?: string };
   _links?: Record<string, BffLink>;
 }
 
@@ -41,34 +47,47 @@ interface BookingItem {
             <path d="M15 18l-6-6 6-6"/>
           </svg>
         </button>
-        <span class="sub-header-title">My Bookings</span>
+        <span class="sub-header-title"></span>
         <span class="sub-header-spacer"></span>
       </header>
 
-      <section class="bookings-section">
+      <main id="main" class="bookings-section">
         <h1 class="page-title">Bookings</h1>
         <div class="page-sub">Manage your appointments</div>
 
-        <div class="segmented" role="tablist">
+        <div class="segmented" role="tablist" aria-label="Booking lists">
           <button
             type="button"
             role="tab"
+            id="bookings-tab-upcoming"
             class="seg-tab"
             [class.is-active]="activeTab === 'upcoming'"
             [attr.aria-selected]="activeTab === 'upcoming'"
+            [attr.aria-controls]="'bookings-panel-upcoming'"
+            [attr.tabindex]="activeTab === 'upcoming' ? 0 : -1"
             (click)="activeTab = 'upcoming'"
           >Upcoming · {{ upcoming.length }}</button>
           <button
             type="button"
             role="tab"
+            id="bookings-tab-past"
             class="seg-tab"
             [class.is-active]="activeTab === 'past'"
             [attr.aria-selected]="activeTab === 'past'"
+            [attr.aria-controls]="'bookings-panel-past'"
+            [attr.tabindex]="activeTab === 'past' ? 0 : -1"
             (click)="activeTab = 'past'"
           >Past · {{ past.length }}</button>
         </div>
 
-        <ng-container *ngIf="activeTab === 'upcoming'">
+        <section
+          *ngIf="activeTab === 'upcoming'"
+          role="tabpanel"
+          id="bookings-panel-upcoming"
+          tabindex="0"
+          aria-labelledby="bookings-tab-upcoming"
+        >
+          <div class="section-label" *ngIf="upcoming.length">Upcoming</div>
           <div *ngIf="!upcoming.length" class="empty-card">
             <div class="empty-title">No upcoming bookings</div>
             <div class="empty-sub">Pick a service from the home screen to schedule.</div>
@@ -93,7 +112,30 @@ interface BookingItem {
               <span class="b-status is-upcoming">Upcoming</span>
             </div>
             <div class="b-place">{{ b.provider.name }} · {{ b.provider.location_label }}</div>
-            <div class="b-when">{{ formatLocal(b.slot_at) || b.slot_label }}</div>
+            <div class="b-when">{{ formatLocal(b.slot_at, b.provider?.timezone) || b.slot_label }}</div>
+            <div class="row-actions">
+              <button
+                *ngIf="b._links?.['cancel_grace'] && graceRemaining(b) > 0"
+                type="button"
+                class="row-grace"
+                (click)="cancelGrace(b)"
+                [disabled]="busyId === b.id"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9"/>
+                  <path d="M12 7v5l3 2"/>
+                </svg>
+                <span>Cancel free</span>
+                <span class="row-grace-time">· {{ graceLabel(b) }}</span>
+              </button>
+              <button
+                *ngIf="(!b._links?.['cancel_grace'] || graceRemaining(b) <= 0) && b._links?.['cancel']"
+                type="button"
+                class="row-cancel"
+                (click)="cancel(b)"
+                [disabled]="busyId === b.id"
+              >Cancel</button>
+            </div>
           </div>
 
           <ng-container *ngIf="past.length">
@@ -106,18 +148,24 @@ interface BookingItem {
                   (click)="openDetails(b)"
                   [attr.aria-label]="'View details for ' + b.service.name"
                 >
-                  <span class="b-dot" [class.is-cancelled]="b.status === 'cancelled'" aria-hidden="true"></span>
+                  <span class="b-dot" [class.is-cancelled]="isCancelled(b.status)" [class.is-biz-cancelled]="b.status === 'cancelled_by_business'" aria-hidden="true"></span>
                   <span class="b-title">{{ b.service.name }}</span>
                 </button>
-                <span class="b-status" [class.is-cancelled]="b.status === 'cancelled'">{{ b.status | titlecase }}</span>
+                <span class="b-status" [class.is-cancelled]="isCancelled(b.status)" [class.is-biz-cancelled]="b.status === 'cancelled_by_business'">{{ statusLabel(b.status) }}</span>
               </div>
               <div class="b-place">{{ b.provider.name }}</div>
-              <div class="b-when">{{ formatLocal(b.slot_at) || b.slot_label }}</div>
+              <div class="b-when">{{ formatLocal(b.slot_at, b.provider?.timezone) || b.slot_label }}</div>
             </div>
           </ng-container>
-        </ng-container>
+        </section>
 
-        <ng-container *ngIf="activeTab === 'past'">
+        <section
+          *ngIf="activeTab === 'past'"
+          role="tabpanel"
+          id="bookings-panel-past"
+          tabindex="0"
+          aria-labelledby="bookings-tab-past"
+        >
           <div *ngIf="!past.length" class="empty-card past">
             <div class="empty-title">No past bookings</div>
           </div>
@@ -131,19 +179,19 @@ interface BookingItem {
                   (click)="openDetails(b)"
                   [attr.aria-label]="'View details for ' + b.service.name"
                 >
-                  <span class="b-dot" [class.is-cancelled]="b.status === 'cancelled'" aria-hidden="true"></span>
+                  <span class="b-dot" [class.is-cancelled]="isCancelled(b.status)" [class.is-biz-cancelled]="b.status === 'cancelled_by_business'" aria-hidden="true"></span>
                   <span class="b-title">{{ b.service.name }}</span>
                 </button>
-                <span class="b-status" [class.is-cancelled]="b.status === 'cancelled'">{{ b.status | titlecase }}</span>
+                <span class="b-status" [class.is-cancelled]="isCancelled(b.status)" [class.is-biz-cancelled]="b.status === 'cancelled_by_business'">{{ statusLabel(b.status) }}</span>
               </div>
               <div class="b-place">{{ b.provider.name }}</div>
-              <div class="b-when">{{ formatLocal(b.slot_at) || b.slot_label }}</div>
+              <div class="b-when">{{ formatLocal(b.slot_at, b.provider?.timezone) || b.slot_label }}</div>
             </div>
           </ng-container>
-        </ng-container>
-      </section>
+        </section>
+      </main>
 
-      <nav class="bottom-nav">
+      <nav class="bottom-nav" aria-label="Primary">
         <button type="button" class="nav-tab is-active" (click)="emit(links['self'])">
           <span class="nav-dot"></span>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -180,19 +228,22 @@ interface BookingItem {
       --font-display: 'Cormorant Garamond', Georgia, serif;
     }
     * { box-sizing: border-box; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
+
     .beauty-app { display: flex; flex-direction: column; min-height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); }
     .sub-header { display: flex; align-items: center; height: 56px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
     .sub-header-title { flex: 1; text-align: center; font-family: var(--font-body); font-size: 0.95rem; font-weight: 600; color: var(--text); letter-spacing: 0.2px; }
     .sub-header-spacer { width: 36px; height: 36px; flex-shrink: 0; }
-    .back-btn { width: 36px; height: 36px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+    .back-btn { min-width: 44px; min-height: 44px; width: 44px; height: 44px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
     .back-btn:hover { background: var(--surface-2); }
     .section-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin: 18px 0 10px; }
     .bookings-section { flex: 1; padding: 20px 20px 16px; max-width: 720px; width: 100%; margin: 0 auto; overflow-y: auto; }
     .page-title { font-family: var(--font-display); font-size: 2rem; font-weight: 500; margin: 0 0 4px; color: var(--text); letter-spacing: 0.2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .page-sub { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 18px; }
 
     .segmented { display: flex; background: var(--surface-2); padding: 3px; border-radius: 10px; margin-bottom: 18px; }
-    .seg-tab { flex: 1; height: 32px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--text-muted); font-family: var(--font-body); font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: all 150ms ease; }
+    .seg-tab { flex: 1; min-height: 44px; height: 44px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--text-muted); font-family: var(--font-body); font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: all 150ms ease; }
     .seg-tab.is-active { background: #FFFFFF; border-color: var(--line); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(15,35,60,0.06); }
 
     .empty-card { background: var(--accent-blue); border: 1px solid rgba(125, 168, 207, 0.2); border-radius: 12px; padding: 20px 16px; text-align: center; margin-bottom: 16px; }
@@ -215,6 +266,8 @@ interface BookingItem {
     .b-status { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; padding: 3px 8px; border-radius: 999px; background: #EDEDEF; color: #555; flex-shrink: 0; white-space: nowrap; }
     .b-status.is-upcoming { background: #E5F3EA; color: #1D4F2C; }
     .b-status.is-cancelled { background: #FCE8E5; color: #8A2419; }
+    .b-status.is-biz-cancelled { background: var(--danger); color: #FFFFFF; }
+    .b-dot.is-biz-cancelled { background: var(--danger); box-shadow: 0 0 0 2px rgba(192,57,43,0.18); }
     .b-place { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .b-when { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; color: var(--text-muted); }
 
@@ -222,10 +275,32 @@ interface BookingItem {
     .btn-cancel:hover:not(:disabled) { background: rgba(192, 57, 43, 0.06); }
     .btn-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
 
+    .row-actions { display: flex; justify-content: flex-end; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+    .row-grace {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 28px; padding: 0 10px; border-radius: 8px;
+      background: var(--accent-blue);
+      border: 1px solid rgba(125,168,207,0.55);
+      color: #1a3a52;
+      font-family: var(--font-body); font-size: 11px; font-weight: 600;
+      cursor: pointer;
+    }
+    .row-grace:disabled { opacity: 0.55; cursor: not-allowed; }
+    .row-grace-time { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-weight: 600; }
+    .row-cancel {
+      height: 28px; padding: 0 12px; border-radius: 8px;
+      background: #FFFFFF; color: var(--danger);
+      border: 1px solid var(--line);
+      font-family: var(--font-body); font-size: 11px; font-weight: 600;
+      cursor: pointer;
+    }
+    .row-cancel:hover:not(:disabled) { background: #FCE8E5; border-color: var(--danger); }
+    .row-cancel:disabled { opacity: 0.55; cursor: not-allowed; }
+
     .bottom-nav { display: flex; background: #FFFFFF; border-top: 1px solid var(--line); box-shadow: 0 -2px 14px rgba(15,35,60,0.08); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
     .nav-tab { flex: 1; height: 64px; background: transparent; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; color: var(--text); font-family: var(--font-body); }
     .nav-tab:disabled { opacity: 0.4; cursor: not-allowed; }
-    .nav-tab.is-active { color: var(--accent-blue-deep); }
+    .nav-tab.is-active { color: #1a3a52; }
     .nav-dot { position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
     .nav-tab.is-active .nav-dot { background: var(--accent-blue-deep); }
     .nav-icon { width: 24px; height: 24px; }
@@ -237,15 +312,61 @@ interface BookingItem {
     }
   `],
 })
-export class BeautyBookingsComponent {
+export class BeautyBookingsComponent implements OnInit, OnDestroy {
   @Input() data: Record<string, unknown> = {};
   @Input() links: Record<string, BffLink> = {};
   @Output() followLink = new EventEmitter<BffLink>();
 
   busyId: number | null = null;
   activeTab: 'upcoming' | 'past' = 'upcoming';
+  now = Date.now();
+  private tickTimer: ReturnType<typeof setInterval> | null = null;
+  private isBrowser = false;
 
-  constructor(private authService: BeautyAuthService) {}
+  constructor(
+    private authService: BeautyAuthService,
+    @Inject(PLATFORM_ID) platformId: object,
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
+
+  ngOnInit(): void {
+    if (!this.isBrowser) return;
+    this.tickTimer = setInterval(() => { this.now = Date.now(); }, 1000);
+  }
+
+  ngOnDestroy(): void {
+    if (this.tickTimer != null) {
+      clearInterval(this.tickTimer);
+      this.tickTimer = null;
+    }
+  }
+
+  graceRemaining(b: BookingItem): number {
+    if (!b.grace_period_ends_at) return 0;
+    return Math.max(0, Math.floor((new Date(b.grace_period_ends_at).getTime() - this.now) / 1000));
+  }
+
+  graceLabel(b: BookingItem): string {
+    const total = this.graceRemaining(b);
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  }
+
+  cancelGrace(b: BookingItem): void {
+    const link = b._links?.['cancel_grace'];
+    if (!link || this.busyId != null) return;
+    this.busyId = b.id;
+    this.authService.follow(link).subscribe({
+      next: () => {
+        this.busyId = null;
+        const self = this.links['self'];
+        if (self) this.followLink.emit(self);
+      },
+      error: () => { this.busyId = null; },
+    });
+  }
 
   get upcoming(): BookingItem[] {
     return (this.data['upcoming'] as BookingItem[]) || [];
@@ -280,8 +401,27 @@ export class BeautyBookingsComponent {
     if (link) this.followLink.emit(link);
   }
 
-  /** Render the booking time in the viewer's local timezone. */
-  formatLocal(iso: string | undefined | null): string {
-    return formatSlotLocal(iso);
+  /** Render the booking time in the BUSINESS provider's local timezone. */
+  formatLocal(iso: string | undefined | null, tz?: string | null): string {
+    return formatSlotLocal(iso, tz);
+  }
+
+  isCancelled(status: string): boolean {
+    return status === 'cancelled'
+      || status === 'cancelled_by_customer'
+      || status === 'cancelled_by_business'
+      || status === 'cancelled_immediate';
+  }
+
+  /** Friendly label for the row badge. Compact for the small chip. */
+  statusLabel(status: string): string {
+    switch (status) {
+      case 'cancelled_by_business': return 'Provider cancelled';
+      case 'cancelled_by_customer': return 'Cancelled';
+      case 'cancelled_immediate':   return 'Cancelled (free)';
+      case 'cancelled':             return 'Cancelled';
+      case 'completed':             return 'Completed';
+      default: return status.charAt(0).toUpperCase() + status.slice(1);
+    }
   }
 }

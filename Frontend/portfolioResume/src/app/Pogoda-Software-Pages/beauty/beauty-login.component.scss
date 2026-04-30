@@ -21,6 +21,26 @@
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* a11y: shared focus ring (WCAG 2.4.7) */
+:host *:focus-visible {
+  outline: 2px solid #1a3a52;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* a11y: visually-hidden helper for sr-only labels */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 .login-page,
 .signup-page {
   display: flex;
@@ -180,7 +200,7 @@
   right: 6px;
   background: transparent;
   border: none;
-  color: var(--accent-blue-deep);
+  color: #1a3a52;
   font-family: var(--font-body);
   font-size: 0.7rem;
   font-weight: 600;
@@ -188,11 +208,13 @@
   text-transform: uppercase;
   cursor: pointer;
   padding: 6px 8px;
-  min-height: 36px;
+  min-height: 44px;
+  min-width: 44px;
   display: flex;
   align-items: center;
+  justify-content: center;
 
-  &:hover { color: #1a3a52; }
+  &:hover { color: #0d2738; }
 }
 
 .field-error {
@@ -286,7 +308,11 @@
   &:hover { color: var(--accent-blue-deep); text-decoration: underline; text-underline-offset: 2px; }
 }
 
-.link-business { color: var(--accent-blue-deep); }
+.link-business { color: #1a3a52; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation: none; }
+}
 
 /* Spinner */
 .spinner {
@@ -384,9 +410,9 @@
   font-family: var(--font-body);
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--accent-blue-deep);
+  color: #1a3a52;
 
-  &:hover { color: #1a3a52; text-decoration: underline; text-underline-offset: 2px; }
+  &:hover { color: #0d2738; text-decoration: underline; text-underline-offset: 2px; }
 }
 
 .terms-row {
@@ -419,11 +445,29 @@
 }
 
 .terms-link {
-  color: var(--accent-blue-deep);
+  color: #1a3a52;
   font-weight: 600;
   text-decoration: none;
 
   &:hover { text-decoration: underline; }
+}
+
+/* Real checkbox visually hidden; styled box rendered as a sibling span */
+.terms-input {
+  position: absolute;
+  opacity: 0;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  cursor: pointer;
+}
+.terms-input:focus-visible + .terms-checkbox {
+  outline: 2px solid #1a3a52;
+  outline-offset: 2px;
+}
+.terms-input:checked + .terms-checkbox {
+  border-color: var(--text);
+  background: #FFFFFF;
 }
 
 .or-divider {
