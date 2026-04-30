@@ -20,22 +20,21 @@
             "outputPath": "dist/portfolio-resume-frontend",
             "index": "src/index.html",
             "browser": "src/main.ts",
-            "polyfills": ["zone.js"],
+            "polyfills": [
+              "zone.js"
+            ],
             "tsConfig": "tsconfig.app.json",
             "inlineStyleLanguage": "scss",
-              "assets": [
-                {
-                  "glob": "**/*",
-                  "input": "src/app/Kevin-Pages/assets",
-                  "output": "/assets"
-                },
-                {
-                  "glob": "**/*",
-                  "input": "../../attached_assets",
-                  "output": "/assets/attached_assets"
-                }
-              ],
-            "styles": ["src/styles.scss"],
+            "assets": [
+              {
+                "glob": "**/*",
+                "input": "src/app/Kevin-Pages/assets",
+                "output": "/assets"
+              }
+            ],
+            "styles": [
+              "src/styles.scss"
+            ],
             "scripts": [],
             "prerender": false,
             "ssr": false
@@ -98,9 +97,13 @@
                 "input": "public"
               }
             ],
-            "polyfills": ["zone.js", "zone.js/testing"],
-
-            "styles": ["src/styles.scss"],
+            "polyfills": [
+              "zone.js",
+              "zone.js/testing"
+            ],
+            "styles": [
+              "src/styles.scss"
+            ],
             "scripts": []
           }
         }
