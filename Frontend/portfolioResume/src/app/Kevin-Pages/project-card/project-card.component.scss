@@ -1,0 +1,90 @@
+/* Reusable project card — ported from home.component.scss .project-card block */
+
+:host { display: block; }
+
+.project-card {
+  background: var(--bg-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: all 250ms ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+:host-context([data-variant="engineer"]) .project-card,
+[data-variant="engineer"] .project-card { border-radius: var(--radius-md); }
+.project-card:hover {
+  border-color: var(--border-hi);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.project-thumb {
+  aspect-ratio: 4/3;
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 30% 30%, color-mix(in oklab, var(--accent) 20%, transparent), transparent 60%),
+    var(--bg-2);
+}
+.project-thumb-tag {
+  position: absolute; top: 12px; left: 12px;
+  font-family: var(--font-mono); font-size: 10px;
+  padding: 4px 8px;
+  background: color-mix(in oklab, var(--bg) 70%, transparent);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-hi);
+  border-radius: 999px;
+  color: var(--fg-2);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  display: inline-flex; align-items: center; gap: 6px;
+  z-index: 1;
+}
+.project-thumb-tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+
+.project-body {
+  padding: 22px;
+  flex: 1;
+  display: flex; flex-direction: column;
+  gap: 10px;
+}
+.project-name {
+  font-family: var(--font-display);
+  font-size: 22px; font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+}
+:host-context([data-variant="engineer"]) .project-name,
+[data-variant="engineer"] .project-name { font-family: var(--font-body); font-weight: 700; }
+.project-desc { font-size: 14px; line-height: 1.55; color: var(--fg-2); flex: 1; }
+
+.project-links { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+.project-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px; font-weight: 500;
+  color: var(--fg);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 180ms ease;
+  font-family: inherit;
+}
+:host-context([data-variant="engineer"]) .project-link,
+[data-variant="engineer"] .project-link {
+  border-radius: 7px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.project-link:hover { background: var(--bg-3); transform: translateY(-1px); }
+.project-link.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}

@@ -1,5 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
 
+/* Kevin portfolio design tokens — must live globally so :root[data-theme]
+   tokens reach <html> (Angular emulated encapsulation scopes :root selectors
+   inside styleUrls and they never match the document root). */
+@import "./app/Kevin-Pages/global/global.component.scss";
+
 /* ============================================================================
  * Beauty App — Mobile proportion breakpoints
  * Per design system reference (proportions-card.jsx):

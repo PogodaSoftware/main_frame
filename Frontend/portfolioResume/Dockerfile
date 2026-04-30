@@ -20,12 +20,12 @@ RUN npm run build && \
     npm cache clean --force && \
     rm -rf /root/.npm && \
     rm -rf node_modules && \
-    rm -rf /tmp/*
+    rm -rf /tmp/* && \
+    mkdir -p /app/dist/portfolio-resume-frontend/assets && \
+    cp -r /app/src/app/Kevin-Pages/assets/* /app/dist/portfolio-resume-frontend/assets/ 2>/dev/null || true
 
 FROM nginx:stable-alpine3.20-perl
 
 COPY --from=build /app/dist/portfolio-resume-frontend /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-
