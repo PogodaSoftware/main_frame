@@ -1,0 +1,66 @@
+.timeline { position: relative; padding-left: 32px; }
+.timeline::before {
+  content: ''; position: absolute;
+  left: 9px; top: 8px; bottom: 8px; width: 1px;
+  background: linear-gradient(180deg, var(--accent), transparent);
+}
+.tl-item { position: relative; padding-bottom: 48px; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-dot {
+  position: absolute; left: -32px; top: 6px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--accent);
+  display: grid; place-items: center;
+}
+.tl-dot::after {
+  content: ''; width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.tl-item.is-current .tl-dot {
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--accent) 25%, transparent);
+}
+.tl-meta {
+  font-family: var(--font-mono); font-size: 12px;
+  color: var(--fg-3);
+  display: inline-flex; align-items: center; gap: 10px;
+  margin-bottom: 6px;
+}
+.tl-meta .badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--accent) 18%, transparent);
+  color: var(--accent);
+  font-size: 10px;
+  text-transform: uppercase; letter-spacing: 0.1em;
+}
+.tl-meta .duration { color: var(--fg-4); }
+.tl-role {
+  font-family: var(--font-display); font-size: 22px; font-weight: 600;
+  color: var(--fg); margin-bottom: 4px; letter-spacing: -0.02em;
+}
+:host-context([data-variant="engineer"]) .tl-role,
+[data-variant="engineer"] .tl-role { font-family: var(--font-body); font-weight: 700; }
+.tl-company {
+  font-size: 14px; color: var(--fg-2); margin-bottom: 14px;
+  font-family: var(--font-mono);
+}
+.tl-points { list-style: none; padding: 0; margin: 0 0 14px; }
+.tl-points li {
+  position: relative; padding-left: 18px;
+  font-size: 15px; line-height: 1.55; color: var(--fg-2);
+  margin-bottom: 6px;
+}
+.tl-points li::before {
+  content: ''; position: absolute; left: 0; top: 10px;
+  width: 8px; height: 1px; background: var(--fg-4);
+}
+.tl-stack { display: flex; flex-wrap: wrap; gap: 6px; }
+.tl-stack .chip {
+  font-family: var(--font-mono); font-size: 11px;
+  padding: 3px 9px; border-radius: 6px;
+  background: var(--bg-2); color: var(--fg-2);
+  border: 1px solid var(--border);
+}

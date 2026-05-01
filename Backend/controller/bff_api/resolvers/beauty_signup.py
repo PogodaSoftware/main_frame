@@ -21,8 +21,15 @@ _PRESENTATION = {
     'header_brand_label': 'Beauty',
     'footer_label': 'Already have an account?',
     'footer_class': 'signup-footer',
-    # Signup originally had no per-field labels; suppress label rendering.
-    'show_field_labels': False,
+    'show_field_labels': True,
+    # Design-system flags.
+    'hide_top_header': True,
+    'show_back_bar': True,
+    'show_brand_block': True,
+    'show_terms_checkbox': True,
+    'show_or_divider': True,
+    'show_social': True,
+    'social_button_label': 'Sign up with Google',
 }
 
 
@@ -36,16 +43,26 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     links = {
         'self': h.self_link('beauty_signup'),
         'home': h.screen_link('home', 'beauty_home', prompt='Beauty'),
+        'back': h.screen_link('back', 'beauty_welcome', prompt='Back'),
         'login': h.screen_link('login', 'beauty_login', prompt='Sign in'),
     }
 
     form = h.signup_form(
-        title="What's your email?",
-        subtitle='',
+        title='Create account',
+        subtitle="A few seconds — then you're booking.",
         submit_href='/api/beauty/signup/',
-        submit_prompt='Continue',
+        submit_prompt='Create account',
         success_screen='beauty_home',
         presentation=_PRESENTATION,
+        fields=[
+            h.name_field(),
+            h.email_field(placeholder='you@example.com'),
+            h.password_field(
+                placeholder='At least 8 characters',
+                autocomplete='new-password',
+                min_length=8,
+            ),
+        ],
         footer_links=[
             h.footer_link(
                 rel='login',

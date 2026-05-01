@@ -1,64 +1,11 @@
-.project-containers {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2rem;
-  justify-content: center;
-  width: 100%;
-  max-width: 1400px;
-  margin: 2rem auto 2rem; 
-}
+/* Standalone /kevin/projects page — reuses .section / .shell / .section-head
+ * tokens from global.component.scss and renders cards in the same grid as
+ * the home page projects section. */
 
-.details-container {
-  flex: 0 0 calc(50% - 2rem);
-  padding: 0.5rem;
-  background: #1a1a1a;
-  border-radius: 2rem;
-  border: 0.1rem solid #444444;
-  text-align: center;
-  box-sizing: border-box;
-}
+:host { display: block; }
 
-@media (max-width: 768px) {
-  .details-container {
-    flex: 0 0 calc(100% - 2rem);
-  }
-}
-
-.article-container {
-  display: flex;
-  text-align: initial;
-  flex-wrap: wrap;
-  gap: 2.5rem;
-  justify-content: space-around;
-
-}
-
-.project-sub-title {
-  color: #b0d4ff;
-  font-weight: 600;
-  font-size: 1.75rem;
-  margin-bottom: 2rem;
-}
-
-#projects {
-  position: relative;
-}
-
-.color-container {
-  border-color: #444444;
-  background: #1a1a1a;
-}
-
-.project-image {
-  border-radius: 2rem;
-}
-
-.project-title {
-  margin: 1rem;
-  color: #e0e0e0;
-}
-
-.project-btn {
-  color: #e0e0e0;
-  border-color: #555555; 
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
 }

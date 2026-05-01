@@ -1,1 +1,114 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Kevin portfolio design tokens — must live globally so :root[data-theme]
+   tokens reach <html> (Angular emulated encapsulation scopes :root selectors
+   inside styleUrls and they never match the document root). */
+@import "./app/Kevin-Pages/global/global.component.scss";
+
+/* ============================================================================
+ * Beauty App — Mobile proportion breakpoints
+ * Per design system reference (proportions-card.jsx):
+ *   --bp-xs 320  (legacy SE / small Android)
+ *   --bp-sm 360  (Galaxy S, Pixel A)
+ *   --bp-md 390  (iPhone 13/14 — design baseline)
+ *   --bp-lg 412  (Pixel Pro)
+ *   --bp-xl 430  (iPhone Pro Max)
+ *
+ * Globals reach inside Angular components, but component-scoped rules carry
+ * higher specificity via attribute selectors. Use !important here to win
+ * the cascade across every beauty screen.
+ * ========================================================================= */
+
+:root {
+  --bp-xs: 320px;
+  --bp-sm: 360px;
+  --bp-md: 390px;
+  --bp-lg: 412px;
+  --bp-xl: 430px;
+}
+
+/* sm: 360–389px — Galaxy S24 / Pixel A — tighter gutters */
+@media (max-width: 389px) {
+  app-beauty-shell, app-beauty-welcome, app-beauty-forgot, app-beauty-error {
+    .sub-header, .beauty-header { padding: 0 8px !important; }
+    .auth-page, .welcome-page, .forgot-page, .error-page, .login-page, .signup-page,
+    .success-main, .detail-section, .services-section, .map-section,
+    .actions, .cta-row, .error-main, .forgot-main {
+      padding-left: 14px !important; padding-right: 14px !important;
+    }
+    .title, .err-title { font-size: 28px !important; line-height: 1.1 !important; }
+    .hero-stripe { height: 150px !important; }
+    .nav-label { font-size: 0.65rem !important; letter-spacing: 0 !important; }
+    .day-chip { flex: 0 0 calc((100% - 18px) / 4) !important; }
+    .time-chip { font-size: 0.78rem !important; }
+    .carousel-item { width: 200px !important; height: 144px !important; }
+    .carousel-label { font-size: 1.15rem !important; padding: 14px 12px 10px !important; }
+  }
+}
+
+/* xs: 320–359px — legacy SE / Galaxy Fold cover — most compact */
+@media (max-width: 359px) {
+  app-beauty-shell, app-beauty-welcome, app-beauty-forgot, app-beauty-error {
+    .title, .err-title { font-size: 26px !important; }
+    .summary-card .row, .info-row { padding: 10px 12px !important; }
+    .btn-primary, .btn-confirm, .btn-cancel, .btn-ghost, .btn-secondary {
+      height: 44px !important; font-size: 0.82rem !important;
+    }
+    .nav-tab { height: 60px !important; }
+    .nav-icon { width: 22px !important; height: 22px !important; }
+    .day-chip { flex: 0 0 calc((100% - 12px) / 3) !important; }
+    .services-section { padding-left: 12px !important; padding-right: 0 !important; }
+    .services-track { gap: 10px !important; }
+    .carousel-item { width: 168px !important; height: 124px !important; border-radius: 12px !important; }
+    .carousel-label { font-size: 1rem !important; padding: 12px 10px 8px !important; letter-spacing: 0 !important; }
+  }
+}
+
+/* short height (iPhone SE 667, foldables) — compress vertical chrome */
+@media (max-height: 700px) {
+  app-beauty-shell, app-beauty-welcome, app-beauty-forgot, app-beauty-error {
+    .sub-header { height: 48px !important; }
+    .hero-stripe { height: 120px !important; }
+    .err-sparkle, .sparkle-disc { width: 64px !important; height: 64px !important; margin-bottom: 8px !important; }
+    .err-sparkle svg, .sparkle-check { width: 28px !important; height: 28px !important; }
+    .hero { padding: 8px 4px 12px !important; }
+    .title, .err-title { font-size: 26px !important; }
+  }
+}
+
+/* lg: 412–429px — Pixel 8 Pro — restored gutters */
+@media (min-width: 412px) and (max-width: 429px) {
+  app-beauty-shell, app-beauty-welcome, app-beauty-forgot, app-beauty-error {
+    .auth-page, .welcome-page, .forgot-page, .error-page, .login-page, .signup-page,
+    .success-main, .detail-section, .services-section, .actions, .cta-row,
+    .error-main, .forgot-main {
+      padding-left: 22px !important; padding-right: 22px !important;
+    }
+  }
+}
+
+/* xl: 430+ on phones — iPhone Pro Max — cap layout, breathing-room margins */
+@media (min-width: 430px) and (max-width: 767px) {
+  app-beauty-shell, app-beauty-welcome, app-beauty-forgot, app-beauty-error {
+    .beauty-app, .auth-page, .welcome-page, .forgot-page, .error-page,
+    .login-page, .signup-page {
+      max-width: 430px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+    }
+  }
+}
+
+/* tablet+ (768+) — same cap with desktop shadow */
+@media (min-width: 768px) {
+  app-beauty-shell, app-beauty-welcome, app-beauty-forgot, app-beauty-error {
+    .beauty-app, .auth-page, .welcome-page, .forgot-page, .error-page,
+    .login-page, .signup-page {
+      max-width: 430px !important;
+      margin-left: auto !important;
+      margin-right: auto !important;
+      box-shadow: 0 0 40px rgba(15, 35, 60, 0.15) !important;
+    }
+  }
+}
+

@@ -6,10 +6,16 @@ protected write endpoints (bookings) for the Beauty marketplace.
 
 The mutating endpoints live under `/api/beauty/protected/bookings/` so
 the existing BeautyAuthMiddleware enforces a valid customer session.
+
+Public read endpoints (`categories`, `providers/<id>`, `services/<id>`)
+require a valid customer session as well — see the auth gate at the
+top of each handler. The only public POST endpoints in `beauty_api`
+are signup and login.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
+from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,6 +30,10 @@ from .models import (
 )
 
 
+def _grace_period_minutes() -> int:
+    return getattr(settings, 'BEAUTY_GRACE_PERIOD_MINUTES', 5)
+
+
 def _service_to_dict(svc: BeautyService) -> dict:
     return {
         'id': svc.id,
@@ -33,6 +43,81 @@ def _service_to_dict(svc: BeautyService) -> dict:
         'duration_minutes': svc.duration_minutes,
         'category': svc.category,
     }
+
+
+def _booking_service_view(b: BeautyBooking) -> dict:
+    """Render service info for a booking using snapshot fields when present."""
+    svc = b.service
+    return {
+        'id': svc.id,
+        'name': b.display_service_name,
+        'description': svc.description,
+        'price_cents': b.display_price_cents,
+        'duration_minutes': b.display_duration_minutes,
+        'category': svc.category,
+    }
+
+
+def _require_authenticated(request):
+    """Block anonymous callers on previously-public read endpoints.
+
+    These views live OUTSIDE `/api/beauty/protected/` so the auth
+    middleware doesn't pre-populate `request.beauty_user_id`. We
+    re-validate the signed cookie here so anonymous calls return
+    401 instead of leaking the catalog.
+    """
+    # If middleware already set these (i.e. for protected paths), trust it.
+    user_id = getattr(request, 'beauty_user_id', None)
+    user_type = getattr(request, 'beauty_user_type', None)
+    if user_id and user_type:
+        return None
+
+    # Re-validate signed cookie inline.
+    import hashlib
+    from django.core import signing
+    from .middleware import (
+        SESSION_COOKIE_NAME,
+        SESSION_MAX_AGE_SECONDS,
+        DEVICE_ID_HEADER,
+    )
+
+    raw_cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
+    device_id = (request.META.get(DEVICE_ID_HEADER, '') or '').strip()
+    if not raw_cookie or not device_id:
+        return Response(
+            {'detail': 'Authentication required.'},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    try:
+        payload = signing.loads(raw_cookie, max_age=SESSION_MAX_AGE_SECONDS)
+    except Exception:
+        return Response(
+            {'detail': 'Authentication required.'},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    if payload.get('device_id') != device_id:
+        return Response(
+            {'detail': 'Authentication required.'},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    token_hash = hashlib.sha256(raw_cookie.encode()).hexdigest()
+    session_valid = BeautySession.objects.filter(
+        token_hash=token_hash,
+        user_id=payload['user_id'],
+        user_type=payload['user_type'],
+        device_id=payload['device_id'],
+        is_active=True,
+        expires_at__gt=datetime.now(timezone.utc),
+    ).exists()
+    if not session_valid:
+        return Response(
+            {'detail': 'Authentication required.'},
+            status=status.HTTP_401_UNAUTHORIZED,
+        )
+    request.beauty_user_id = payload['user_id']
+    request.beauty_user_type = payload['user_type']
+    request.beauty_device_id = payload['device_id']
+    return None
 
 
 def _provider_to_dict(p: BeautyProvider) -> dict:
@@ -48,9 +133,15 @@ VALID_CATEGORIES = {c[0] for c in BeautyService.CATEGORY_CHOICES}
 
 
 class CategoryListView(APIView):
-    """GET /api/beauty/categories/<slug>/ — providers offering this category."""
+    """GET /api/beauty/categories/<slug>/ — providers offering this category.
+
+    Requires a valid customer/business session (no anonymous access).
+    """
 
     def get(self, request, category):
+        err = _require_authenticated(request)
+        if err:
+            return err
         cat = (category or '').lower()
         if cat not in VALID_CATEGORIES:
             return Response({'detail': 'Unknown category.'}, status=status.HTTP_404_NOT_FOUND)
@@ -78,9 +169,15 @@ class CategoryListView(APIView):
 
 
 class ProviderDetailView(APIView):
-    """GET /api/beauty/providers/<id>/ — provider profile + all services."""
+    """GET /api/beauty/providers/<id>/ — provider profile + all services.
+
+    Requires a valid session.
+    """
 
     def get(self, request, provider_id):
+        err = _require_authenticated(request)
+        if err:
+            return err
         try:
             provider = BeautyProvider.objects.get(id=provider_id)
         except BeautyProvider.DoesNotExist:
@@ -101,9 +198,15 @@ class ProviderDetailView(APIView):
 
 
 class ServiceDetailView(APIView):
-    """GET /api/beauty/services/<id>/ — single-service info for booking screens."""
+    """GET /api/beauty/services/<id>/ — single-service info for booking screens.
+
+    Requires a valid session.
+    """
 
     def get(self, request, service_id):
+        err = _require_authenticated(request)
+        if err:
+            return err
         try:
             svc = BeautyService.objects.select_related('provider').get(id=service_id)
         except BeautyService.DoesNotExist:
@@ -139,22 +242,36 @@ class MyBookingsView(APIView):
         bookings = (
             BeautyBooking.objects.select_related('service', 'service__provider')
             .filter(customer_id=customer_id)
-            .order_by('-slot_at')
         )
         now = datetime.now(timezone.utc)
+        upcoming = []
+        past = []
+        for b in bookings:
+            # Bookings cancelled within the grace period are hidden from
+            # the past list (treated as never-happened).
+            if b.status == BeautyBooking.STATUS_CANCELLED_IMMEDIATE:
+                continue
+            item = {
+                'id': b.id,
+                'status': b.status,
+                'slot_at': b.slot_at.isoformat(),
+                'is_upcoming': b.status == BeautyBooking.STATUS_BOOKED and b.slot_at > now,
+                'service': _booking_service_view(b),
+                'provider': _provider_to_dict(b.service.provider),
+            }
+            if b.status == BeautyBooking.STATUS_BOOKED and b.slot_at > now:
+                upcoming.append(item)
+            else:
+                past.append(item)
+        # Upcoming: soonest first. Past: most-recent first.
+        upcoming.sort(key=lambda x: x['slot_at'])
+        past.sort(key=lambda x: x['slot_at'], reverse=True)
         return Response(
             {
-                'bookings': [
-                    {
-                        'id': b.id,
-                        'status': b.status,
-                        'slot_at': b.slot_at.isoformat(),
-                        'is_upcoming': b.status == BeautyBooking.STATUS_BOOKED and b.slot_at > now,
-                        'service': _service_to_dict(b.service),
-                        'provider': _provider_to_dict(b.service.provider),
-                    }
-                    for b in bookings
-                ],
+                'upcoming': upcoming,
+                'past': past,
+                # Legacy flat list kept so older clients/tests still pass.
+                'bookings': upcoming + past,
             },
             status=status.HTTP_200_OK,
         )
@@ -202,10 +319,18 @@ class MyBookingsView(APIView):
         except BeautyUser.DoesNotExist:
             return Response({'detail': 'Customer not found.'}, status=status.HTTP_404_NOT_FOUND)
 
+        now = datetime.now(timezone.utc)
+        grace_minutes = _grace_period_minutes()
         booking = BeautyBooking.objects.create(
             customer=customer,
             service=service,
             slot_at=slot_at,
+            # Snapshot service fields so past bookings keep their original
+            # price/duration/name even if the business edits the service.
+            service_name_at_booking=service.name,
+            service_price_cents_at_booking=service.price_cents,
+            service_duration_minutes_at_booking=service.duration_minutes,
+            grace_period_ends_at=now + timedelta(minutes=grace_minutes),
         )
 
         return Response(
@@ -213,7 +338,11 @@ class MyBookingsView(APIView):
                 'id': booking.id,
                 'status': booking.status,
                 'slot_at': booking.slot_at.isoformat(),
-                'service': _service_to_dict(service),
+                'grace_period_ends_at': (
+                    booking.grace_period_ends_at.isoformat()
+                    if booking.grace_period_ends_at else None
+                ),
+                'service': _booking_service_view(booking),
                 'provider': _provider_to_dict(service.provider),
             },
             status=status.HTTP_201_CREATED,
@@ -296,7 +425,13 @@ class RescheduleBookingView(APIView):
 
 
 class CancelBookingView(APIView):
-    """POST /api/beauty/protected/bookings/<id>/cancel/ — owner cancels."""
+    """POST /api/beauty/protected/bookings/<id>/cancel/ — owner cancels.
+
+    After the grace period this is the regular customer-initiated
+    cancellation: status becomes ``cancelled_by_customer`` and NO
+    automatic refund is triggered. To cancel within the grace period
+    (with refund + hidden from past list) use ``CancelBookingGraceView``.
+    """
 
     def post(self, request, booking_id):
         customer_id = _require_customer(request)
@@ -314,7 +449,47 @@ class CancelBookingView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        booking.status = BeautyBooking.STATUS_CANCELLED
+        # Customer-initiated cancellation after grace period — no refund.
+        booking.status = BeautyBooking.STATUS_CANCELLED_BY_CUSTOMER
         booking.save(update_fields=['status'])
+
+        return Response({'id': booking.id, 'status': booking.status}, status=status.HTTP_200_OK)
+
+
+class CancelBookingGraceView(APIView):
+    """POST /api/beauty/protected/bookings/<id>/cancel-grace/
+
+    Customer cancels within the grace period — status becomes
+    ``cancelled_immediate`` and the booking is hidden from the past
+    list. Refund SHOULD be triggered (TODO: Stripe). Refuses if the
+    grace window has already expired.
+    """
+
+    def post(self, request, booking_id):
+        customer_id = _require_customer(request)
+        if customer_id is None:
+            return Response({'detail': 'Customers only.'}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            booking = BeautyBooking.objects.get(id=booking_id, customer_id=customer_id)
+        except BeautyBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if booking.status != BeautyBooking.STATUS_BOOKED:
+            return Response(
+                {'detail': 'Only active bookings can be cancelled.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        now = datetime.now(timezone.utc)
+        if not booking.grace_period_ends_at or now >= booking.grace_period_ends_at:
+            return Response(
+                {'detail': 'Grace period has expired.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        booking.status = BeautyBooking.STATUS_CANCELLED_IMMEDIATE
+        booking.save(update_fields=['status'])
+        # TODO: trigger Stripe refund for grace-period cancellation.
 
         return Response({'id': booking.id, 'status': booking.status}, status=status.HTTP_200_OK)

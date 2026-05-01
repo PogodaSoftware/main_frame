@@ -26,10 +26,9 @@ services:
       context: ./Backend/controller
       dockerfile: Dockerfile
     working_dir: /app
+    restart: unless-stopped
     ports:
       - "${BACKEND_PORT:-8000}:${BACKEND_PORT:-8000}"
-    volumes:
-      - ./Backend/controller:/app
     environment:
       - PYTHONUNBUFFERED=1
       - PGHOST=${PGHOST:-db}
@@ -49,15 +48,20 @@ services:
       context: ./Frontend/portfolioResume
       dockerfile: Dockerfile
     ports:
-      - "${FRONTEND_PORT:-4200}:${FRONTEND_PORT:-4200}"
-    volumes:
-      - ./Frontend/portfolioResume:/app
-    stdin_open: true
-    tty: true
-
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      backend:
+        condition: service_started
     develop:
       watch:
-        - path: ../main_frame
+        - path: ./Frontend/portfolioResume/src
+          action: rebuild
+          ignore:
+            - node_modules/
+            - dist/
+        - path: ./Frontend/portfolioResume/package.json
+          action: rebuild
+        - path: ./Frontend/portfolioResume/nginx.conf
           action: rebuild
 
 volumes:

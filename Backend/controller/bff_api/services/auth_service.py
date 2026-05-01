@@ -6,6 +6,22 @@ return the authenticated user's details, or None if not authenticated.
 
 Triggered per BFF resolve request. Never stores state — every call is
 a fresh validation against the signed cookie and the session DB record.
+
+Cookie security envelope (set by `_set_auth_cookie` in `beauty_api.views`):
+    - HttpOnly: True            — no JS access (XSS-resistant).
+    - Secure:   not DEBUG       — production-only, dev still works on http.
+    - SameSite: Lax             — top-level nav allowed, cross-site POST/fetch blocked.
+    - Path:     /
+    - Max-Age:  SESSION_MAX_AGE_SECONDS (24h).
+
+Cookie rotation
+---------------
+The cookie is NOT auto-rotated on every request — that would invalidate
+the previous tab's cookie and confuse multi-tab users. Instead the
+client opts in by calling ``POST /api/beauty/session/refresh/`` shortly
+before expiry; the endpoint validates the existing cookie and reissues
+a fresh one with a new ``issued_at`` and a new BeautySession row hash.
+A successful refresh is otherwise transparent — no other state changes.
 """
 
 import hashlib
@@ -14,7 +30,10 @@ from datetime import datetime, timezone
 
 from django.core import signing
 
-from beauty_api.middleware import SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS
+# SESSION_COOKIE_NAME is intentionally NOT imported here — this service
+# receives the cookie value already extracted by the resolver, so it
+# never has to know the cookie's key name.
+from beauty_api.middleware import SESSION_MAX_AGE_SECONDS
 from beauty_api.models import BeautySession, BeautyUser, BusinessProvider
 
 logger = logging.getLogger(__name__)

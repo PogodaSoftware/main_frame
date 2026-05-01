@@ -54,7 +54,7 @@ interface BusinessForm {
         <h1 class="biz-h1">{{ form?.title || 'Service' }}</h1>
       </header>
 
-      <section class="biz-section">
+      <main id="main" class="biz-section">
         <form class="biz-form" (ngSubmit)="onSubmit()" novalidate *ngIf="form">
           <ng-container *ngFor="let f of form.fields">
             <label class="field-label" [for]="f.name">{{ f.label }}</label>
@@ -66,6 +66,8 @@ interface BusinessForm {
               class="form-input"
               [(ngModel)]="values[f.name]"
               [required]="f.required ?? false"
+              [attr.aria-invalid]="touched[f.name] && f.required && !values[f.name] ? 'true' : null"
+              autocomplete="off"
             >
               <option *ngFor="let o of f.options" [value]="o.value">{{ o.label }}</option>
             </select>
@@ -80,6 +82,9 @@ interface BusinessForm {
               [required]="f.required ?? false"
               [min]="f.min ?? null"
               [max]="f.max ?? null"
+              [attr.aria-invalid]="touched[f.name] && f.required && (values[f.name] === '' || values[f.name] == null) ? 'true' : null"
+              (blur)="touched[f.name] = true"
+              autocomplete="off"
             />
 
             <input
@@ -90,16 +95,19 @@ interface BusinessForm {
               class="form-input"
               [(ngModel)]="values[f.name]"
               [required]="f.required ?? false"
+              [attr.aria-invalid]="touched[f.name] && f.required && !values[f.name] ? 'true' : null"
+              (blur)="touched[f.name] = true"
+              autocomplete="off"
             />
           </ng-container>
 
-          <p *ngIf="serverError" class="server-error">{{ serverError }}</p>
+          <p *ngIf="serverError" class="server-error" role="alert" aria-live="assertive">{{ serverError }}</p>
 
           <button type="submit" class="btn-primary" [disabled]="isSubmitting">
             {{ isSubmitting ? 'Saving…' : (form.submit_label || 'Save') }}
           </button>
         </form>
-      </section>
+      </main>
     </div>
   `,
   styles: [`
@@ -114,6 +122,8 @@ interface BusinessForm {
     .btn-primary { background: #1d4ed8; color: #fff; border: none; padding: 14px; border-radius: 10px; font-size: 1rem; cursor: pointer; margin-top: 16px; }
     .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
     .server-error { color: #c62828; font-size: 0.9rem; }
+    .btn-primary, .form-input { min-height: 44px; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
   `],
 })
 export class BeautyBusinessServiceFormComponent implements OnChanges {
@@ -122,6 +132,7 @@ export class BeautyBusinessServiceFormComponent implements OnChanges {
   @Output() followLink = new EventEmitter<BffLink>();
 
   values: Record<string, string | number> = {};
+  touched: Record<string, boolean> = {};
   isSubmitting = false;
   serverError = '';
 

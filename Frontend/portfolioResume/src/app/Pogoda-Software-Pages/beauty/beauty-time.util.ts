@@ -1,42 +1,47 @@
 /**
  * Render a slot's ISO timestamp (with TZ offset, e.g. "2026-04-20T14:30:00+00:00")
- * in the viewer's *browser-local* timezone. This lets an out-of-town
- * customer see times on their own clock, and naturally surfaces the
- * full 24 hours of slots when a provider has marked a day "Open 24h"
- * regardless of the offset between UTC and the customer's local zone.
+ * in the BUSINESS provider's local timezone — NOT the viewer's. A
+ * customer in PT looking at a NYC appointment must see "5:00 PM EDT",
+ * never "2:00 PM PDT". The TZ abbreviation suffix makes the choice
+ * unambiguous, including in border-zone towns.
+ *
+ * The optional `timeZone` argument is an IANA name like
+ * ``"America/New_York"``. Pass the value the BFF returns at
+ * ``provider.timezone`` for the booking. If omitted (legacy callers,
+ * unparseable input, or runtime where ``Intl`` rejects the zone), this
+ * falls back to the viewer's local time so we never blow up the page.
  *
  * Returns '' for missing or unparseable input so callers can fall back
  * to the BFF's UTC label.
  */
-export function formatSlotLocal(iso: string | undefined | null): string {
+export function formatSlotLocal(
+  iso: string | undefined | null,
+  timeZone?: string | null,
+): string {
   if (!iso) return '';
   const d = new Date(iso);
   if (isNaN(d.getTime())) return '';
+
+  const tz = (timeZone || '').trim() || undefined;
+
   try {
-    const fmt = new Intl.DateTimeFormat(undefined, {
+    const dateOpts: Intl.DateTimeFormatOptions = {
       weekday: 'short',
       month: 'short',
       day: 'numeric',
+    };
+    const timeOpts: Intl.DateTimeFormatOptions = {
       hour: 'numeric',
       minute: '2-digit',
       timeZoneName: 'short',
-    });
-    // Format produces e.g. "Mon, Apr 20, 2:30 PM PDT" — collapse the
-    // first comma to a middot for parity with the old UTC label.
-    const parts = fmt.formatToParts(d);
-    const date = parts
-      .filter((p) => ['weekday', 'month', 'day'].includes(p.type))
-      .map((p) => p.value)
-      .join(' ')
-      .replace(/\s+,/g, ',');
-    const time = parts
-      .filter((p) => ['hour', 'minute', 'dayPeriod', 'literal'].includes(p.type))
-      .map((p) => p.value)
-      .join('')
-      .trim()
-      .replace(/^,\s*/, '');
-    const tz = parts.find((p) => p.type === 'timeZoneName')?.value || '';
-    return `${date} · ${time}${tz ? ' ' + tz : ''}`;
+    };
+    if (tz) {
+      dateOpts.timeZone = tz;
+      timeOpts.timeZone = tz;
+    }
+    const dateFmt = new Intl.DateTimeFormat(undefined, dateOpts);
+    const timeFmt = new Intl.DateTimeFormat(undefined, timeOpts);
+    return `${dateFmt.format(d)} · ${timeFmt.format(d)}`;
   } catch {
     return d.toLocaleString();
   }

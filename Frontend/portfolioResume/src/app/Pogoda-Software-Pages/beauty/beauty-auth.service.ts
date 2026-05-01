@@ -123,4 +123,49 @@ export class BeautyAuthService {
         catchError(() => of(false)),
       );
   }
+
+  // ── Cookie auto-refresh ────────────────────────────────────
+  //
+  // The backend's auth cookie is HttpOnly so we cannot inspect it from
+  // JS. Instead we keep an in-memory "last refresh" timestamp and fire
+  // POST /api/beauty/session/refresh/ at most once per `REFRESH_EVERY_MS`
+  // of activity. A 401 from the endpoint means the user is already
+  // signed out and we silently no-op; any 2xx counts as a successful
+  // rotation.
+
+  private static readonly REFRESH_EVERY_MS = 30 * 60 * 1000;
+  private lastRefreshAttemptAt = 0;
+  private refreshInFlight = false;
+
+  /**
+   * Try to rotate the auth cookie if at least 30 minutes have elapsed
+   * since the previous attempt. Returns an observable that emits `true`
+   * when a refresh round-trip succeeded, `false` otherwise (including
+   * "skipped because too recent" and 401).
+   */
+  maybeRefreshSession(): Observable<boolean> {
+    if (!isPlatformBrowser(this.platformId)) return of(false);
+    const now = Date.now();
+    if (this.refreshInFlight) return of(false);
+    if (now - this.lastRefreshAttemptAt < BeautyAuthService.REFRESH_EVERY_MS) {
+      return of(false);
+    }
+    this.lastRefreshAttemptAt = now;
+    this.refreshInFlight = true;
+    return this.http
+      .post(`${this.apiBase}/api/beauty/session/refresh/`, {}, {
+        withCredentials: true,
+        headers: this.getAuthHeaders(),
+      })
+      .pipe(
+        map(() => {
+          this.refreshInFlight = false;
+          return true;
+        }),
+        catchError(() => {
+          this.refreshInFlight = false;
+          return of(false);
+        }),
+      );
+  }
 }

@@ -35,7 +35,7 @@ import { BffLink } from './beauty-bff.types';
         </button>
       </header>
 
-      <section class="biz-section">
+      <main id="main" class="biz-section">
         <h1 class="biz-title">{{ storefront?.name || 'Your storefront' }}</h1>
         <p class="biz-sub">{{ business?.email }}</p>
 
@@ -68,7 +68,7 @@ import { BffLink } from './beauty-bff.types';
             <span>See every booking your customers have placed.</span>
           </button>
         </div>
-      </section>
+      </main>
     </div>
   `,
   styles: [`
@@ -90,6 +90,9 @@ import { BffLink } from './beauty-bff.types';
     .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
     .action { background: #fff; border: 1px solid #ddd; border-radius: 12px; padding: 20px; text-align: left; cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: border-color .15s; }
     .action:hover { border-color: #1d4ed8; }
+    .action:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; }
+    .btn-logout, .btn-primary, .action { min-height: 44px; }
+    :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
     .action strong { font-size: 1.05rem; }
     .action span { color: #666; font-size: 0.9rem; }
   `],

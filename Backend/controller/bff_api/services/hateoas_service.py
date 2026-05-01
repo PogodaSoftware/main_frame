@@ -233,6 +233,8 @@ SCREEN_ROUTES = {
     'beauty_home': '/pogoda/beauty',
     'beauty_login': '/pogoda/beauty/login',
     'beauty_signup': '/pogoda/beauty/signup',
+    'beauty_welcome': '/pogoda/beauty/welcome',
+    'beauty_forgot': '/pogoda/beauty/forgot',
     'beauty_business_login': '/pogoda/beauty/business/login',
     'beauty_wireframe': '/pogoda/beauty/wireframe',
     'beauty_users': '/pogoda/beauty/admin/users',
@@ -431,6 +433,18 @@ def login_form(
     }
 
 
+def name_field(*, label: str = 'Name', placeholder: str = 'What should we call you?') -> dict:
+    return field(
+        'name',
+        type='text',
+        label=label,
+        placeholder=placeholder,
+        required=False,
+        autocomplete='given-name',
+        autocapitalize='words',
+    )
+
+
 def signup_form(
     *,
     title: str,
@@ -440,11 +454,12 @@ def signup_form(
     success_screen: str,
     presentation: dict,
     footer_links: list | None = None,
+    fields: list | None = None,
 ) -> dict:
     return {
         'title': title,
         'subtitle': subtitle,
-        'fields': [
+        'fields': fields or [
             email_field(),
             password_field(
                 placeholder='Create a password',

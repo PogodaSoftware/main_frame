@@ -14,54 +14,33 @@
 
 import { Routes } from '@angular/router';
 import { KevinHomeComponent } from './Kevin-Pages/home/home.component';
-import { KevinAboutComponent } from './Kevin-Pages/about/about.component';
-import { KevinExperienceComponent } from './Kevin-Pages/experience/experience.component';
 import { PogodaHomeComponent } from './Pogoda-Software-Pages/home/home.component';
 import { PogodaExperienceComponent } from './Pogoda-Software-Pages/experience/experience.component';
 import { KevinProjectsComponent } from './Kevin-Pages/projects/projects.component';
-import { KevinContactComponent } from './Kevin-Pages/contact/contact.component';
 import { KevinBlenderFilesComponent } from './Kevin-Pages/blenderfiles/blenderfiles.component';
 import { BeautyShellComponent } from './Pogoda-Software-Pages/beauty/beauty-shell.component';
+import { BeautyWelcomeComponent } from './Pogoda-Software-Pages/beauty/beauty-welcome.component';
+import { BeautyForgotComponent } from './Pogoda-Software-Pages/beauty/beauty-forgot.component';
+import { BeautyErrorComponent } from './Pogoda-Software-Pages/beauty/beauty-error.component';
 import { beautyAuthGuard, beautyBusinessAuthGuard } from './Pogoda-Software-Pages/beauty/beauty-auth.guard';
 
 
 export const routes: Routes = [
-  /** Root path redirects to Kevin's portfolio home page. */
+  /** Kevin Ortiz Portfolio Routes (relative to base href /kevin/) */
   {
     path: '',
-    redirectTo: 'kevin',
-    pathMatch: 'full',
-  },
-
-  /** Kevin Ortiz Portfolio Routes */
-  {
-    path: 'kevin',
     component: KevinHomeComponent,
     title: 'Kevin Home Page',
   },
   {
-    path: 'kevin/about',
-    component: KevinAboutComponent,
-    title: 'Kevin About Page',
-  },
-  {
-    path: 'kevin/experience',
-    component: KevinExperienceComponent,
-    title: 'Kevin Experience Page',
-  },
-  {
-    path: 'kevin/projects',
+    path: 'projects',
     component: KevinProjectsComponent,
     title: 'Kevin Projects Page',
   },
   {
-    path: 'kevin/contacts',
-    component: KevinContactComponent,
-    title: 'Kevin Contact Page',
-  },
-  {
-    path: 'kevin/blender-projects',
+    path: 'blender-projects',
     component: KevinBlenderFilesComponent,
+    title: 'Kevin 3D Viewer',
   },
 
   /** Pogoda Software Routes */
@@ -85,7 +64,36 @@ export const routes: Routes = [
     path: 'pogoda/beauty',
     component: BeautyShellComponent,
     title: 'Beauty - Home',
+    canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_home' },
+  },
+  {
+    path: 'pogoda/beauty/welcome',
+    component: BeautyWelcomeComponent,
+    title: 'Beauty - Welcome',
+  },
+  {
+    path: 'pogoda/beauty/forgot',
+    component: BeautyForgotComponent,
+    title: 'Beauty - Reset Password',
+  },
+  {
+    path: 'pogoda/beauty/error',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Error',
+    data: { variant: 'generic' },
+  },
+  {
+    path: 'pogoda/beauty/not-found',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Page Not Found',
+    data: { variant: 'notfound' },
+  },
+  {
+    path: 'pogoda/beauty/offline',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Offline',
+    data: { variant: 'offline' },
   },
   {
     path: 'pogoda/beauty/signup',
@@ -123,12 +131,14 @@ export const routes: Routes = [
     path: 'pogoda/beauty/category/:slug',
     component: BeautyShellComponent,
     title: 'Beauty - Category',
+    canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_category' },
   },
   {
     path: 'pogoda/beauty/providers/:id',
     component: BeautyShellComponent,
     title: 'Beauty - Provider',
+    canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_provider_detail' },
   },
   {
@@ -216,5 +226,13 @@ export const routes: Routes = [
     title: 'Beauty - Incoming Bookings',
     canActivate: [beautyBusinessAuthGuard],
     data: { screen: 'beauty_business_bookings' },
+  },
+
+  /** Global 404 — covers any unmatched route. */
+  {
+    path: '**',
+    component: BeautyErrorComponent,
+    title: 'Page Not Found',
+    data: { variant: 'notfound' },
   },
 ];

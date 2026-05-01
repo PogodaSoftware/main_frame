@@ -7,6 +7,7 @@ from Playwright.pages.pogoda.beauty.signup_page import (
     email_input as signup_email_input,
     password_input as signup_password_input,
     submit_button as signup_submit_button,
+    terms_checkbox as signup_terms_checkbox,
 )
 from Playwright.pages.pogoda.beauty.login_page import (
     email_input as login_email_input,
@@ -15,10 +16,15 @@ from Playwright.pages.pogoda.beauty.login_page import (
 )
 from Playwright.pages.pogoda.beauty.home_page import (
     home_page_root,
-    user_email_badge,
-    signout_button,
-    signin_button,
-    signup_button,
+    bottom_nav,
+    nav_tab_profile,
+)
+from Playwright.pages.pogoda.beauty.profile_page import (
+    sign_out_button,
+)
+from Playwright.pages.pogoda.beauty.welcome_page import (
+    welcome_page_root,
+    signin_button as welcome_signin_button,
 )
 
 from .beauty_utils import delete_test_users
@@ -62,6 +68,9 @@ def go_to_login_page(page):
 def fill_signup_form(page, signup_credentials):
     page.locator(signup_email_input).fill(signup_credentials["email"])
     page.locator(signup_password_input).fill(signup_credentials["password"])
+    # Dynamic-form signup now requires accepting the terms checkbox before
+    # the submit button enables.
+    page.locator(signup_terms_checkbox).click()
 
 
 @when("I submit the signup form")
@@ -70,14 +79,14 @@ def submit_signup(page):
     page.wait_for_timeout(3000)
 
 
-@then("I should be on the beauty home page after signup")
-def verify_home_after_signup(page):
-    expect(page.locator(home_page_root)).to_be_visible()
+@then("I should be on the beauty welcome page after signup")
+def verify_welcome_after_signup(page):
+    expect(page.locator(welcome_page_root)).to_be_visible()
 
 
-@then("the user email badge should be visible after signup")
-def verify_email_badge_after_signup(page):
-    expect(page.locator(user_email_badge)).to_be_visible()
+@then("the welcome sign in button should be visible after signup")
+def verify_welcome_signin_after_signup(page):
+    expect(page.locator(welcome_signin_button)).to_be_visible()
 
 
 @when("I fill in the login email and password for the test customer")
@@ -97,9 +106,9 @@ def verify_home_after_login(page):
     expect(page.locator(home_page_root)).to_be_visible()
 
 
-@then("the user email badge should be visible after login")
-def verify_email_badge_after_login(page):
-    expect(page.locator(user_email_badge)).to_be_visible()
+@then("the bottom nav should be visible after login")
+def verify_bottom_nav_after_login(page):
+    expect(page.locator(bottom_nav)).to_be_visible()
 
 
 @given("I fill in the login email and password for logout")
@@ -114,18 +123,29 @@ def submit_login_for_logout(page):
     page.wait_for_timeout(3000)
 
 
-@when("I click the sign out button")
-def click_signout(page):
-    expect(page.locator(signout_button)).to_be_visible()
-    page.locator(signout_button).click()
+@when("I open the profile page from the bottom nav")
+def open_profile_from_nav(page):
+    expect(page.locator(nav_tab_profile)).to_be_visible()
+    page.locator(nav_tab_profile).click()
+    page.wait_for_timeout(2000)
+
+
+@when("I click the sign out button on the profile page")
+def click_signout_on_profile(page):
+    expect(page.locator(sign_out_button)).to_be_visible()
+    page.locator(sign_out_button).click()
+    # Sign-out now opens a confirm modal — click the primary button to confirm.
+    page.locator(
+        "css=div.beauty-modal-backdrop button.beauty-modal-btn.primary"
+    ).click()
     page.wait_for_timeout(3000)
 
 
-@then("the sign in button should be visible on the home page after logout")
-def verify_signin_visible_after_logout(page):
-    expect(page.locator(signin_button)).to_be_visible()
+@then("I should be back on the welcome page after logout")
+def verify_welcome_visible(page):
+    expect(page.locator(welcome_page_root)).to_be_visible()
 
 
-@then("the sign up button should be visible on the home page after logout")
-def verify_signup_visible_after_logout(page):
-    expect(page.locator(signup_button)).to_be_visible()
+@then("the welcome sign in button should be visible")
+def verify_welcome_signin_visible(page):
+    expect(page.locator(welcome_signin_button)).to_be_visible()

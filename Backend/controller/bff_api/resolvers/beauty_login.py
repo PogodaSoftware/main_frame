@@ -20,6 +20,14 @@ _PRESENTATION = {
     'header_brand_icon': '✨',
     'header_brand_label': 'Beauty',
     'footer_label': "Don't have an account?",
+    # Design-system visual flags consumed by BeautyDynamicFormComponent.
+    'hide_top_header': True,
+    'show_back_bar': True,
+    'show_brand_block': True,
+    'show_forgot_link': True,
+    'show_or_divider': True,
+    'show_social': True,
+    'social_button_label': 'Continue with Google',
 }
 
 
@@ -33,6 +41,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     links = {
         'self': h.self_link('beauty_login'),
         'home': h.screen_link('home', 'beauty_home', prompt='Beauty'),
+        'back': h.screen_link('back', 'beauty_welcome', prompt='Back'),
+        'forgot': h.screen_link('forgot', 'beauty_forgot', prompt='Forgot password?'),
     }
     if h.is_signup_enabled():
         links['signup'] = h.screen_link('signup', 'beauty_signup', prompt='Sign up')

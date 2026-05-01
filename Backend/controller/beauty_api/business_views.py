@@ -87,6 +87,11 @@ class BusinessDashboardView(APIView):
             status=BeautyBooking.STATUS_BOOKED,
             slot_at__gt=now,
         ).count()
+        # cancelled_immediate bookings are treated as never-happened, so they
+        # don't count toward total bookings either.
+        all_bookings = all_bookings.exclude(
+            status=BeautyBooking.STATUS_CANCELLED_IMMEDIATE,
+        )
         services_count = BeautyService.objects.filter(provider=storefront).count()
         return Response(
             {
@@ -166,10 +171,13 @@ class BusinessServiceDetailView(APIView):
         if err:
             return err
         # PROTECT FK from BeautyBooking → cancel any future bookings first.
+        # Business is removing the service, so any active bookings are
+        # business-side cancellations (refund owed).
         future_bookings = BeautyBooking.objects.filter(
             service=svc, status=BeautyBooking.STATUS_BOOKED,
         )
-        future_bookings.update(status=BeautyBooking.STATUS_CANCELLED)
+        # TODO: trigger Stripe refund for each cancelled booking.
+        future_bookings.update(status=BeautyBooking.STATUS_CANCELLED_BY_BUSINESS)
         # If past completed/cancelled bookings still reference it, the FK
         # blocks deletion — soft-delete by zeroing duration is overkill, so
         # we just refuse and ask the owner to keep it.
@@ -250,12 +258,23 @@ class BusinessBookingsView(APIView):
         now = datetime.now(timezone.utc)
         items = []
         for b in bookings:
+            # Hide grace-period cancellations from the business list — they're
+            # treated as never-happened.
+            if b.status == BeautyBooking.STATUS_CANCELLED_IMMEDIATE:
+                continue
             items.append({
                 'id': b.id,
                 'status': b.status,
                 'slot_at': b.slot_at.isoformat(),
                 'is_upcoming': b.status == BeautyBooking.STATUS_BOOKED and b.slot_at > now,
-                'service': _service_to_dict(b.service),
+                'service': {
+                    'id': b.service.id,
+                    'name': b.display_service_name,
+                    'description': b.service.description,
+                    'category': b.service.category,
+                    'price_cents': b.display_price_cents,
+                    'duration_minutes': b.display_duration_minutes,
+                },
                 'customer_email': b.customer.email,
             })
         return Response({'bookings': items}, status=status.HTTP_200_OK)

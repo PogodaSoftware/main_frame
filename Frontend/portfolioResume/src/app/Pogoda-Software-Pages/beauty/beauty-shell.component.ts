@@ -259,6 +259,16 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Best-effort cookie rotation at startup if the BFF treats us as
+    // authenticated. We don't gate the UI on the result — if the user
+    // is already logged out, isAuthenticated() returns false and the
+    // refresh is skipped (and would 401 anyway).
+    this.authService.isAuthenticated().subscribe((isAuthed) => {
+      if (isAuthed) {
+        this.authService.maybeRefreshSession().subscribe();
+      }
+    });
+
     // Re-resolve whenever the route data OR the path params change so that
     // `/category/:slug`, `/providers/:id`, `/book/:serviceId` all work.
     this.routeSub = combineLatest([this.route.data, this.route.paramMap])

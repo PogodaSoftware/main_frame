@@ -150,7 +150,7 @@ export class KevinGlobalService {
 
       // Load HDR environment map if specified (provides realistic reflections)
       const rgbeLoader = new RGBELoader();
-      rgbeLoader.load(`./assets/${hdrPath}.hdr`, (texture) => {
+      rgbeLoader.load(`/assets/${hdrPath}.hdr`, (texture) => {
         texture.mapping = THREE.EquirectangularReflectionMapping;
         scene.background = texture;
         scene.environment = texture;
@@ -215,9 +215,20 @@ export class KevinGlobalService {
     loader.setDRACOLoader(dLoader);
 
     loader.load(
-      `./assets/${modelPath}.glb`,
+      `/assets/${modelPath}.glb`,
       (glb) => {
-        console.log(glb.scene);
+        // Remove any previously loaded model from this scene so successive
+        // navigations don't stack meshes on top of each other.
+        if (threeScene.currentModel) {
+          threeScene.scene.remove(threeScene.currentModel);
+          threeScene.currentModel.traverse((obj: any) => {
+            if (obj.isMesh) {
+              obj.geometry?.dispose();
+              if (Array.isArray(obj.material)) obj.material.forEach((m: any) => m.dispose());
+              else obj.material?.dispose();
+            }
+          });
+        }
         threeScene.currentModel = glb.scene;
         threeScene.scene.add(glb.scene);
       },

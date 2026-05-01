@@ -10,10 +10,13 @@ Auth required — redirects unauthenticated visitors to `beauty_login`.
 `params` must contain `bookingId` (the freshly-created booking's PK).
 """
 
+from datetime import datetime, timezone
+
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyBooking
 from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
+from ..services.beauty_timezone_service import provider_timezone as _provider_timezone
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
@@ -37,6 +40,30 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     except BeautyBooking.DoesNotExist:
         return h.redirect_envelope('beauty_bookings', 'booking_not_found')
 
+    now = datetime.now(timezone.utc)
+    in_grace_window = (
+        booking.status == BeautyBooking.STATUS_BOOKED
+        and booking.grace_period_ends_at is not None
+        and now < booking.grace_period_ends_at
+    )
+
+    links = {
+        'self': h.self_link('beauty_booking_success', params={'bookingId': booking.id}),
+        'bookings': h.screen_link('bookings', 'beauty_bookings', prompt='My Bookings'),
+        'detail': h.screen_link(
+            'detail', 'beauty_booking_detail',
+            prompt='View booking', params={'id': booking.id},
+        ),
+        'home': h.screen_link('home', 'beauty_home', prompt='Back to Home'),
+    }
+    if in_grace_window:
+        links['cancel_grace'] = h.link(
+            'cancel_grace',
+            method='POST',
+            href=f'/api/beauty/protected/bookings/{booking.id}/cancel-grace/',
+            prompt='Cancel free',
+        )
+
     return {
         'action': 'render',
         'screen': 'beauty_booking_success',
@@ -46,27 +73,25 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 'status': booking.status,
                 'slot_at': booking.slot_at.isoformat(),
                 'slot_label': booking.slot_at.strftime('%A %b %-d · %-I:%M %p UTC'),
+                'grace_period_ends_at': (
+                    booking.grace_period_ends_at.isoformat()
+                    if booking.grace_period_ends_at else None
+                ),
+                'in_grace_window': in_grace_window,
                 'service': {
                     'id': booking.service.id,
-                    'name': booking.service.name,
-                    'price_cents': booking.service.price_cents,
-                    'duration_minutes': booking.service.duration_minutes,
+                    'name': booking.display_service_name,
+                    'price_cents': booking.display_price_cents,
+                    'duration_minutes': booking.display_duration_minutes,
                 },
                 'provider': {
                     'id': booking.service.provider.id,
                     'name': booking.service.provider.name,
                     'location_label': booking.service.provider.location_label,
+                    'timezone': _provider_timezone(booking.service.provider),
                 },
             },
         },
         'meta': {'title': 'Booking confirmed'},
-        '_links': {
-            'self': h.self_link('beauty_booking_success', params={'bookingId': booking.id}),
-            'bookings': h.screen_link('bookings', 'beauty_bookings', prompt='My Bookings'),
-            'detail': h.screen_link(
-                'detail', 'beauty_booking_detail',
-                prompt='View booking', params={'id': booking.id},
-            ),
-            'home': h.screen_link('home', 'beauty_home', prompt='Back to Home'),
-        },
+        '_links': links,
     }
