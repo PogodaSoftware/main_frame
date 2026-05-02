@@ -17,7 +17,7 @@ auto-provisions a storefront on first access so the portal works
 immediately after sign-up.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -33,11 +33,18 @@ from .models import (
     BeautyProvider,
     BeautyService,
     BeautySession,
+    BusinessApplication,
     BusinessProvider,
 )
 
 
 VALID_CATEGORIES = {c[0] for c in BeautyService.CATEGORY_CHOICES}
+
+# Whitelist of integration tool slugs the application step 5 may store.
+VALID_THIRD_PARTY_TOOLS = {
+    'google_calendar', 'apple_calendar', 'mailchimp', 'square_pos',
+    'instagram', 'tiktok', 'yelp',
+}
 
 
 def _require_business_storefront(request) -> tuple[BusinessProvider | None, BeautyProvider | None, Response | None]:

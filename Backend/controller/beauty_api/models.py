@@ -21,6 +21,9 @@ class BusinessProvider(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
     business_name = models.CharField(max_length=255)
+    first_name = models.CharField(max_length=120, blank=True, default='')
+    last_name = models.CharField(max_length=120, blank=True, default='')
+    application_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -31,6 +34,98 @@ class BusinessProvider(models.Model):
 
     def __str__(self):
         return f"{self.business_name} ({self.email})"
+
+
+class BusinessApplication(models.Model):
+    """
+    Multi-step business provider application. Captures everything we ask
+    a new business owner before activating their portal:
+
+      Step 1 — Identity / business: applicant_kind, ITIN, address.
+      Step 2 — Services offered (any subset of the 4 categories).
+      Step 3 — Stripe placeholder (a stub flag we'll wire to real Stripe later).
+      Step 4 — Schedule baseline (template applied to BeautyProviderAvailability).
+      Step 5 — Third-party tools they want to integrate (optional checklist).
+
+    The row is created lazily on the first GET to the application endpoint
+    and updated step-by-step. The final POST `submit/` flips
+    `BusinessProvider.application_completed = True`, applies the schedule
+    to the public storefront, and seeds any chosen service categories with
+    a placeholder service so the dashboard isn't empty.
+    """
+
+    APPLICANT_PERSON = 'person'
+    APPLICANT_BUSINESS = 'business'
+    APPLICANT_KIND_CHOICES = [
+        (APPLICANT_PERSON, 'Individual / Sole Proprietor'),
+        (APPLICANT_BUSINESS, 'Registered Business'),
+    ]
+
+    STATUS_DRAFT = 'draft'
+    STATUS_SUBMITTED = 'submitted'
+    STATUS_APPROVED = 'approved'
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, 'Draft'),
+        (STATUS_SUBMITTED, 'Submitted'),
+        (STATUS_APPROVED, 'Approved'),
+    ]
+
+    business = models.OneToOneField(
+        BusinessProvider,
+        on_delete=models.CASCADE,
+        related_name='application',
+    )
+
+    # Step 1 — identity
+    applicant_kind = models.CharField(
+        max_length=16,
+        choices=APPLICANT_KIND_CHOICES,
+        default=APPLICANT_PERSON,
+    )
+    itin = models.CharField(max_length=32, blank=True, default='')
+    legal_business_name = models.CharField(max_length=255, blank=True, default='')
+    address_line1 = models.CharField(max_length=255, blank=True, default='')
+    address_line2 = models.CharField(max_length=255, blank=True, default='')
+    address_city = models.CharField(max_length=120, blank=True, default='')
+    address_state = models.CharField(max_length=64, blank=True, default='')
+    address_postal_code = models.CharField(max_length=32, blank=True, default='')
+
+    # Step 2 — services offered (subset of the 4 marketplace categories).
+    # Stored as JSON list of category slugs, e.g. ['nails', 'hair'].
+    services_offered = models.JSONField(default=list, blank=True)
+
+    # Step 3 — Stripe placeholder. Will be replaced with a real Stripe
+    # Connect account id when payments are wired up.
+    stripe_connected = models.BooleanField(default=False)
+    stripe_placeholder_account = models.CharField(
+        max_length=64, blank=True, default='',
+    )
+
+    # Step 4 — schedule template. JSON list of 7 dicts with the same
+    # shape as BeautyProviderAvailability rows; applied at submit time.
+    schedule_template = models.JSONField(default=list, blank=True)
+
+    # Step 5 — optional third-party tool integrations checklist. JSON
+    # list of tool slugs (e.g. ['google_calendar', 'mailchimp']).
+    third_party_tools = models.JSONField(default=list, blank=True)
+
+    # Terms of Service acceptance (the lorem-ipsum agreement).
+    tos_accepted = models.BooleanField(default=False)
+    tos_accepted_at = models.DateTimeField(null=True, blank=True)
+
+    status = models.CharField(
+        max_length=16, choices=STATUS_CHOICES, default=STATUS_DRAFT,
+    )
+    current_step = models.IntegerField(default=1)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'beauty_business_applications'
+
+    def __str__(self):
+        return f"Application for {self.business.business_name} ({self.status})"
 
 
 class BeautySession(models.Model):
