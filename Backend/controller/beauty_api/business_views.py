@@ -28,16 +28,19 @@ from .availability_service import (
     get_weekly_hours,
     replace_weekly_hours,
 )
+from .calendar_stats_service import compute_month_payload
 from .models import (
     BeautyBooking,
     BeautyProvider,
     BeautyService,
     BeautySession,
     BusinessProvider,
+    BusinessProviderApplication,
 )
 
 
 VALID_CATEGORIES = {c[0] for c in BeautyService.CATEGORY_CHOICES}
+VALID_TOOLS = {'google_calendar', 'icloud', 'outlook', 'square', 'mindbody', 'vagaro'}
 
 
 def _require_business_storefront(request) -> tuple[BusinessProvider | None, BeautyProvider | None, Response | None]:
@@ -241,6 +244,254 @@ class BusinessAvailabilityView(APIView):
         if errors:
             return Response({'detail': ' '.join(errors)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({'weekly_hours': get_weekly_hours(storefront)}, status=status.HTTP_200_OK)
+
+
+def _get_or_create_application(business: BusinessProvider) -> BusinessProviderApplication:
+    app, _ = BusinessProviderApplication.objects.get_or_create(
+        business_provider=business,
+        defaults={'business_name': business.business_name},
+    )
+    return app
+
+
+def _application_to_dict(app: BusinessProviderApplication) -> dict:
+    return {
+        'id': app.id,
+        'status': app.status,
+        'entity_type': app.entity_type,
+        'itin_masked': ('***-**-' + app.itin[-4:]) if app.itin else '',
+        'has_itin': bool(app.itin),
+        'applicant_first_name': app.applicant_first_name,
+        'applicant_last_name': app.applicant_last_name,
+        'business_name': app.business_name,
+        'address_line1': app.address_line1,
+        'address_line2': app.address_line2,
+        'city': app.city,
+        'state': app.state,
+        'postal_code': app.postal_code,
+        'selected_categories': list(app.selected_categories or []),
+        'third_party_tools': list(app.third_party_tools or []),
+        'completed_steps': list(app.completed_steps or []),
+        'tos_accepted': bool(app.tos_accepted_at),
+        'submitted_at': app.submitted_at.isoformat() if app.submitted_at else None,
+        'next_incomplete_step': app.next_incomplete_step(),
+        'is_ready_to_submit': app.is_ready_to_submit(),
+    }
+
+
+class BusinessApplicationView(APIView):
+    """GET / PATCH the current business's application.
+
+    GET  /api/beauty/protected/business/application/  — fetch (auto-create on first hit).
+    PATCH /api/beauty/protected/business/application/ — partial update for one step.
+
+    PATCH body shape:
+        {
+            "step": "entity" | "services" | "stripe" | "schedule" | "tools",
+            "entity_type": "person|business",
+            "itin": "...",
+            ...
+        }
+    The step key (when present) gets appended to ``completed_steps``.
+    """
+
+    def get(self, request):
+        business, _store, err = _require_business_storefront(request)
+        if err:
+            return err
+        app = _get_or_create_application(business)
+        return Response({'application': _application_to_dict(app)}, status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        business, _store, err = _require_business_storefront(request)
+        if err:
+            return err
+        app = _get_or_create_application(business)
+        if app.status == BusinessProviderApplication.STATUS_ACCEPTED:
+            return Response(
+                {'detail': 'Application already accepted.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        data = request.data or {}
+        step = (data.get('step') or '').strip().lower()
+
+        if step == 'entity':
+            entity_type = (data.get('entity_type') or '').strip().lower()
+            if entity_type not in {BusinessProviderApplication.ENTITY_PERSON,
+                                   BusinessProviderApplication.ENTITY_BUSINESS}:
+                return Response(
+                    {'detail': 'Choose person or business.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            itin = (data.get('itin') or '').strip()
+            if entity_type == BusinessProviderApplication.ENTITY_BUSINESS:
+                digits = ''.join(ch for ch in itin if ch.isdigit())
+                if len(digits) != 9:
+                    return Response(
+                        {'detail': 'ITIN must be 9 digits.'},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                itin = digits
+            else:
+                itin = ''
+            first = (data.get('applicant_first_name') or '').strip()
+            last = (data.get('applicant_last_name') or '').strip()
+            if not first or not last:
+                return Response(
+                    {'detail': 'Applicant first and last name are required.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            biz_name = (data.get('business_name') or '').strip()
+            if not biz_name:
+                return Response(
+                    {'detail': 'Business name is required.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            app.entity_type = entity_type
+            app.itin = itin
+            app.applicant_first_name = first[:128]
+            app.applicant_last_name = last[:128]
+            app.business_name = biz_name[:255]
+            app.address_line1 = (data.get('address_line1') or '').strip()[:255]
+            app.address_line2 = (data.get('address_line2') or '').strip()[:255]
+            app.city = (data.get('city') or '').strip()[:128]
+            app.state = (data.get('state') or '').strip()[:64]
+            app.postal_code = (data.get('postal_code') or '').strip()[:32]
+            app.mark_step_complete('entity')
+
+        elif step == 'services':
+            cats = data.get('selected_categories') or []
+            if not isinstance(cats, list):
+                return Response({'detail': 'selected_categories must be a list.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            cleaned = [c for c in cats if isinstance(c, str) and c in VALID_CATEGORIES]
+            if not cleaned:
+                return Response(
+                    {'detail': 'Pick at least one service category.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            app.selected_categories = list(dict.fromkeys(cleaned))
+            app.mark_step_complete('services')
+
+        elif step == 'stripe':
+            # Stand-in only — flips a completion flag.
+            app.mark_step_complete('stripe')
+
+        elif step == 'schedule':
+            # The actual hours are saved through the existing
+            # BusinessAvailabilityView. This call just records that the
+            # user reviewed/saved their hours.
+            app.mark_step_complete('schedule')
+
+        elif step == 'tools':
+            tools = data.get('third_party_tools') or []
+            if not isinstance(tools, list):
+                return Response({'detail': 'third_party_tools must be a list.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            cleaned = [t for t in tools if isinstance(t, str) and t in VALID_TOOLS]
+            app.third_party_tools = list(dict.fromkeys(cleaned))
+            app.mark_step_complete('tools')
+
+        else:
+            return Response(
+                {'detail': f'Unknown step: {step or "(missing)"}.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        app.save()
+        return Response({'application': _application_to_dict(app)}, status=status.HTTP_200_OK)
+
+
+class BusinessApplicationSubmitView(APIView):
+    """POST /api/beauty/protected/business/application/submit/
+
+    Validates the application is ready (all steps complete + ToS accepted)
+    and flips status to ``accepted`` (auto-approval this round). On success
+    the response carries a ``redirect`` link the BFF emits onward to the
+    business home.
+    """
+
+    def post(self, request):
+        business, _store, err = _require_business_storefront(request)
+        if err:
+            return err
+        app = _get_or_create_application(business)
+        if app.status == BusinessProviderApplication.STATUS_ACCEPTED:
+            return Response(
+                {'detail': 'Application already accepted.', 'application': _application_to_dict(app)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        accept_tos = bool((request.data or {}).get('accept_tos'))
+        if accept_tos and not app.tos_accepted_at:
+            app.tos_accepted_at = datetime.now(timezone.utc)
+        if not app.is_ready_to_submit():
+            return Response(
+                {
+                    'detail': 'Application is not ready to submit.',
+                    'application': _application_to_dict(app),
+                    'next_incomplete_step': app.next_incomplete_step(),
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        now = datetime.now(timezone.utc)
+        app.submitted_at = now
+        app.accepted_at = now
+        app.status = BusinessProviderApplication.STATUS_ACCEPTED
+        app.save()
+        # Sync the auth-account business_name to whatever the applicant
+        # submitted so the storefront title and dashboard greeting match.
+        if business.business_name != app.business_name and app.business_name:
+            business.business_name = app.business_name[:255]
+            business.save(update_fields=['business_name'])
+        # Reflect onto the public storefront too.
+        store = ensure_storefront(business)
+        if store.name != app.business_name and app.business_name:
+            store.name = app.business_name[:255]
+            store.save(update_fields=['name'])
+        return Response(
+            {
+                'application': _application_to_dict(app),
+                'next_screen': 'beauty_business_home',
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class BusinessCalendarStatsView(APIView):
+    """GET /api/beauty/protected/business/calendar/
+
+    Month-bucketed calendar + earnings/booking gauges.
+
+    Query: ?year=YYYY&month=MM (defaults to current month UTC).
+
+    Response::
+        {
+          "month":          "2026-05",
+          "today":          "2026-05-02",
+          "month_bookings": { "YYYY-MM-DD": [ {id, customer_email, service_name, slot_at, status, price_cents, duration_minutes} ] },
+          "stats": {
+            "earnings_cents":    int,
+            "earnings_target_cents": int,
+            "bookings_count":    int,
+            "by_category":       { "facial": 3, ... },
+            "new_clients":       int,
+            "recurring_clients": int
+          }
+        }
+    """
+
+    def get(self, request):
+        _, storefront, err = _require_business_storefront(request)
+        if err:
+            return err
+        try:
+            year = int(request.GET.get('year')) if request.GET.get('year') else None
+            month = int(request.GET.get('month')) if request.GET.get('month') else None
+            payload = compute_month_payload(storefront, year=year, month=month)
+        except (TypeError, ValueError):
+            return Response({'detail': 'Invalid year/month.'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(payload, status=status.HTTP_200_OK)
 
 
 class BusinessBookingsView(APIView):

@@ -11,8 +11,11 @@ from .booking_views import (
     ServiceDetailView,
 )
 from .business_views import (
+    BusinessApplicationSubmitView,
+    BusinessApplicationView,
     BusinessAvailabilityView,
     BusinessBookingsView,
+    BusinessCalendarStatsView,
     BusinessDashboardView,
     BusinessServiceDetailView,
     BusinessServiceListView,
@@ -56,6 +59,9 @@ urlpatterns = [
 
     # Business portal (business auth required — same middleware enforces session,
     # the views additionally check user_type == 'business').
+    path('protected/business/application/', BusinessApplicationView.as_view(), name='beauty-business-application'),
+    path('protected/business/application/submit/', BusinessApplicationSubmitView.as_view(), name='beauty-business-application-submit'),
+    path('protected/business/calendar/', BusinessCalendarStatsView.as_view(), name='beauty-business-calendar'),
     path('protected/business/dashboard/', BusinessDashboardView.as_view(), name='beauty-business-dashboard'),
     path('protected/business/services/', BusinessServiceListView.as_view(), name='beauty-business-services'),
     path('protected/business/services/<int:service_id>/', BusinessServiceDetailView.as_view(), name='beauty-business-service-detail'),

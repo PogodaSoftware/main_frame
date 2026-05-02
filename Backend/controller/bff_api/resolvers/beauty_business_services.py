@@ -9,10 +9,12 @@ Auth required — non-business users are redirected to the business login.
 """
 
 from beauty_api.availability_service import ensure_storefront
-from beauty_api.middleware import SESSION_COOKIE_NAME
-from beauty_api.models import BeautyService, BusinessProvider
-from ..services.auth_service import get_authenticated_user
+from beauty_api.models import BeautyService
 from ..services import hateoas_service as h
+from ..services.application_gate import (
+    redirect_to_wizard_if_incomplete,
+    resolve_business_or_redirect,
+)
 
 
 CATEGORY_LABELS = {
@@ -24,17 +26,12 @@ CATEGORY_LABELS = {
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
-    cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
-    user = get_authenticated_user(cookie, device_id)
-    if not user:
-        return h.redirect_envelope('beauty_business_login', 'auth_required')
-    if user.get('user_type') != 'business':
-        return h.redirect_envelope('beauty_home', 'wrong_user_type')
-
-    try:
-        business = BusinessProvider.objects.get(id=user['user_id'])
-    except BusinessProvider.DoesNotExist:
-        return h.redirect_envelope('beauty_business_login', 'account_missing')
+    business, app, redirect = resolve_business_or_redirect(request, device_id)
+    if redirect is not None:
+        return redirect
+    gate = redirect_to_wizard_if_incomplete(app)
+    if gate is not None:
+        return gate
 
     storefront = ensure_storefront(business)
     services = list(BeautyService.objects.filter(provider=storefront).order_by('category', 'name'))

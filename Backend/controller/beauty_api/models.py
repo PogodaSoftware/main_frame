@@ -296,6 +296,97 @@ class BeautyProviderAvailability(models.Model):
         return f"{self.provider.name} · {label} {self.start_time}-{self.end_time}"
 
 
+class BusinessProviderApplication(models.Model):
+    """Onboarding application for a `BusinessProvider`.
+
+    Gates portal access. A new business signup creates a `BusinessProvider`
+    auth account; the portal stays locked behind the wizard until this
+    row reaches ``status=accepted``. Each step's payload lands here via
+    PATCH; submission flips the row to accepted (auto-approved this round)
+    so the user is sent to the new business home.
+    """
+
+    STATUS_DRAFT = 'draft'
+    STATUS_SUBMITTED = 'submitted'
+    STATUS_ACCEPTED = 'accepted'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, 'Draft'),
+        (STATUS_SUBMITTED, 'Submitted'),
+        (STATUS_ACCEPTED, 'Accepted'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+
+    ENTITY_PERSON = 'person'
+    ENTITY_BUSINESS = 'business'
+    ENTITY_CHOICES = [
+        (ENTITY_PERSON, 'Person'),
+        (ENTITY_BUSINESS, 'Business'),
+    ]
+
+    STEP_ORDER = ['entity', 'services', 'stripe', 'schedule', 'tools']
+
+    business_provider = models.OneToOneField(
+        BusinessProvider, on_delete=models.CASCADE, related_name='application',
+    )
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    entity_type = models.CharField(max_length=16, choices=ENTITY_CHOICES, blank=True, default='')
+    itin = models.CharField(max_length=9, blank=True, default='')
+    applicant_first_name = models.CharField(max_length=128, blank=True, default='')
+    applicant_last_name = models.CharField(max_length=128, blank=True, default='')
+    business_name = models.CharField(max_length=255, blank=True, default='')
+    address_line1 = models.CharField(max_length=255, blank=True, default='')
+    address_line2 = models.CharField(max_length=255, blank=True, default='')
+    city = models.CharField(max_length=128, blank=True, default='')
+    state = models.CharField(max_length=64, blank=True, default='')
+    postal_code = models.CharField(max_length=32, blank=True, default='')
+    selected_categories = models.JSONField(default=list, blank=True)
+    third_party_tools = models.JSONField(default=list, blank=True)
+    completed_steps = models.JSONField(default=list, blank=True)
+    tos_accepted_at = models.DateTimeField(null=True, blank=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'beauty_business_applications'
+
+    def is_step_complete(self, step: str) -> bool:
+        return step in (self.completed_steps or [])
+
+    def mark_step_complete(self, step: str) -> None:
+        steps = list(self.completed_steps or [])
+        if step in self.STEP_ORDER and step not in steps:
+            steps.append(step)
+            self.completed_steps = steps
+
+    def next_incomplete_step(self) -> str | None:
+        completed = set(self.completed_steps or [])
+        for step in self.STEP_ORDER:
+            if step not in completed:
+                return step
+        return None
+
+    def is_ready_to_submit(self) -> bool:
+        if self.next_incomplete_step() is not None:
+            return False
+        if not self.tos_accepted_at:
+            return False
+        if not self.applicant_first_name.strip() or not self.applicant_last_name.strip():
+            return False
+        if not self.business_name.strip():
+            return False
+        if self.entity_type == self.ENTITY_BUSINESS and len(self.itin) != 9:
+            return False
+        if not self.selected_categories:
+            return False
+        return True
+
+    def __str__(self):
+        return f"{self.business_provider.email} [{self.status}]"
+
+
 class BeautyFlagAudit(models.Model):
     """Append-only audit trail for every feature-flag change."""
 

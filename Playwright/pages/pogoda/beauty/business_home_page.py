@@ -1,0 +1,12 @@
+"""Locators for the business home (calendar + gauges) screen."""
+
+home_root = "css=div.business-shell.business-home"
+biz_title = "css=div.business-shell.business-home h1.biz-title"
+calendar_grid = "css=div.business-shell.business-home div.cal-grid"
+today_cell = "css=div.business-shell.business-home button.cal-cell.is-today"
+day_cell = "css=div.business-shell.business-home button.cal-cell[data-date='{date}']"
+day_bookings = "css=div.business-shell.business-home div.day-bookings"
+gauge_earnings_value = "css=div.business-shell.business-home div.arc-value strong"
+gauge_volume_value = "css=div.business-shell.business-home div.big-num strong"
+sign_out_button = "css=div.business-shell.business-home button.btn-outline-danger"
+services_button = "css=div.business-shell.business-home button.btn-outline >> text=Services"
