@@ -1,0 +1,19 @@
+Goal: Using the above images they are the frontend UI structure and how the project should be displayed. I want to create business provider pages from the customer's existing pages. I want it to have a business provider URL, log in page, log out page. Businesses can create an account and they must fill out a business sign up form before they have access to the business provider account functionality. 
+
+The business account application form will include a request to fill out 
+The first page will be: “Are you a person or a business” if its a business they must include ITIN
+The second page will ask what beauty services they provide, such as nails, hair, etc
+The third page will be a request to set up stripe, but for now it will be a stand in we will not include the gateway yet
+The fourth page will allow the business to set up their schedule, when they are open and when are able to take in customers
+The fifth page integrate third party tools
+
+Then after they submit their form it will take them to the business provider home page. It will be a giant calendar, you can scroll down and there will be 2 gauges.
+
+Gauge 1 shows how much money you can earn through the application 
+Gauge 2 how many people are booking for the services and what services.How many new clients and how many recurring clients
+
+the first and last name of the applicant, ITIN, name of the business, address, and anything else needed for a business provider to  sign up. They must also fill out the terms of service, for now the terms of service can be lorum ipsum but it must be accepted before submitting.
+
+Context: I want business provider pages with the same look and similar functionality as the customer mobile pages. Log in, log out, business application, creating the services that the customer will be able to book. All these functionalities should work
+
+Validation: There are playwright tests for the customer, there should be similar playwright tests for the business providers such as log in, log out, some unique tests such as filling out the business provider application and setting up services, etc. The entire business provider pages should look like the customer pages frontend UI design, it should be ADA compliant, and all the functionality should work. I will validate it personally. Once the code is ready make a github pull request and I will verify that the code works correctly
