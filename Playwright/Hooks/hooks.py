@@ -2,7 +2,7 @@ import os
 from playwright.sync_api import Page
 
 frontend_port = os.getenv('FRONTEND_PORT', '4200')
-beauty_port = os.getenv('BEAUTY_PORT', '4200')
+beauty_port = os.getenv('BEAUTY_PORT', '4300')
 
 _BEAUTY_BASE = "/pogoda/beauty"
 

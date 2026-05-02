@@ -48,6 +48,8 @@ services:
       context: ./Frontend/beautyApp
       dockerfile: Dockerfile
     restart: unless-stopped
+    ports:
+      - "${BEAUTY_PORT:-4300}:80"
     depends_on:
       backend:
         condition: service_started
