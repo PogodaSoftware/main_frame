@@ -1,5 +1,38 @@
 # Portfolio Resume Application
 
+## Architecture: Beauty App Separation (May 2, 2026)
+
+The Beauty booking app (`/pogoda/beauty/*`) has been extracted from the portfolio Angular project into its own standalone Angular application to eliminate cross-vulnerability risk.
+
+### Project Structure
+- **`Frontend/portfolioResume/`** — Kevin/Pogoda portfolio (Angular 19, port 5000 in dev)
+- **`Frontend/beautyApp/`** — Beauty booking app (Angular 19 + NgRx, port 4200 in dev)
+- **`Backend/controller/`** — Django BFF (port 8000)
+
+### How Routing Works
+- In **Docker** (`docker-compose.yml`): the portfolio nginx proxies all `/pogoda/beauty/*` requests to the `beauty_frontend` container (internal port 80). Both apps share the same public-facing port.
+- In **dev** (`Playwright` tests): `FRONTEND_PORT` (default 5000) → portfolio routes; `BEAUTY_PORT` (default 4200) → beauty routes. The `hooks.py` router selects the port automatically by route key.
+
+### Workflows
+- `frontend` — portfolio Angular dev server on port 5000
+- `beauty` — beauty Angular dev server on port 4200
+- `backend` — Django dev server on port 8000
+
+### Key Files
+| File | Purpose |
+|---|---|
+| `Frontend/beautyApp/src/app/app.routes.ts` | All 26 `/pogoda/beauty/*` routes |
+| `Frontend/beautyApp/src/app/beauty/` | All beauty components, services, guards, store |
+| `Frontend/portfolioResume/nginx.conf` | Proxies `/pogoda/beauty` → `beauty_frontend:80` |
+| `docker-compose.yml` | Added `beauty_frontend` service |
+| `Playwright/Hooks/hooks.py` | Routes beauty test URLs to `BEAUTY_PORT` |
+
+### What Was Removed from Portfolio
+- All files under `src/app/Pogoda-Software-Pages/beauty/` deleted
+- `@ngrx/store` and `@ngrx/effects` removed from `portfolioResume/package.json`
+- Beauty route imports removed from `portfolioResume/src/app/app.routes.ts`
+- `**` wildcard now shows a simple portfolio 404 page instead of `BeautyErrorComponent`
+
 ## Recent Changes (April 18, 2026) — 24-hour Availability + Local-Time Display
 
 Two related improvements so a 24-hour shop (e.g. an all-night hairdresser) and an out-of-town customer both work correctly:

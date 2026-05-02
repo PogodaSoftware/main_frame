@@ -1,12 +1,3 @@
-/**
- * BeautyAuthGuard
- * ---------------
- * Functional route guard that protects Beauty app routes requiring login.
- * Calls the /me/ endpoint (which runs the backend middleware) to confirm
- * the HttpOnly cookie is present, valid, and device-matched.
- * On failure the user is redirected to /pogoda/beauty/login.
- */
-
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { map, catchError } from 'rxjs/operators';
@@ -22,10 +13,10 @@ export const beautyAuthGuard: CanActivateFn = () => {
       if (authenticated) {
         return true;
       }
-      return router.createUrlTree(['/pogoda/beauty/welcome']);
+      return router.createUrlTree(['/welcome']);
     }),
     catchError(() => {
-      return of(router.createUrlTree(['/pogoda/beauty/welcome']));
+      return of(router.createUrlTree(['/welcome']));
     }),
   );
 };
@@ -39,10 +30,10 @@ export const beautyBusinessAuthGuard: CanActivateFn = () => {
       if (authenticated) {
         return true;
       }
-      return router.createUrlTree(['/pogoda/beauty/business/login']);
+      return router.createUrlTree(['/business/login']);
     }),
     catchError(() => {
-      return of(router.createUrlTree(['/pogoda/beauty/business/login']));
+      return of(router.createUrlTree(['/business/login']));
     }),
   );
 };

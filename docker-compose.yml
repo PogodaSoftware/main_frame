@@ -43,6 +43,28 @@ services:
       db:
         condition: service_healthy
 
+  beauty_frontend:
+    build:
+      context: ./Frontend/beautyApp
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BEAUTY_PORT:-4300}:80"
+    depends_on:
+      backend:
+        condition: service_started
+    develop:
+      watch:
+        - path: ./Frontend/beautyApp/src
+          action: rebuild
+          ignore:
+            - node_modules/
+            - dist/
+        - path: ./Frontend/beautyApp/package.json
+          action: rebuild
+        - path: ./Frontend/beautyApp/nginx.conf
+          action: rebuild
+
   frontend:
     build:
       context: ./Frontend/portfolioResume
@@ -51,6 +73,8 @@ services:
       - "${FRONTEND_PORT:-4200}:80"
     depends_on:
       backend:
+        condition: service_started
+      beauty_frontend:
         condition: service_started
     develop:
       watch:

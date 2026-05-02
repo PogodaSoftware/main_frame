@@ -260,7 +260,7 @@ export class BeautyDynamicFormComponent implements OnChanges {
         href: null,
         method: 'NAV',
         screen: 'beauty_home',
-        route: '/pogoda/beauty',
+        route: '/',
         prompt: 'Home',
       }
     );
@@ -273,7 +273,7 @@ export class BeautyDynamicFormComponent implements OnChanges {
         href: null,
         method: 'NAV',
         screen: 'beauty_welcome',
-        route: '/pogoda/beauty/welcome',
+        route: '/welcome',
         prompt: 'Back',
       }
     );
@@ -285,7 +285,7 @@ export class BeautyDynamicFormComponent implements OnChanges {
       href: null,
       method: 'NAV',
       screen: 'beauty_login',
-      route: '/pogoda/beauty/login',
+      route: '/login',
       prompt: 'Continue with Google',
       params: { provider: 'google' },
     };

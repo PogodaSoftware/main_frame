@@ -1,0 +1,178 @@
+import { Routes } from '@angular/router';
+import { BeautyShellComponent } from './beauty/beauty-shell.component';
+import { BeautyWelcomeComponent } from './beauty/beauty-welcome.component';
+import { BeautyForgotComponent } from './beauty/beauty-forgot.component';
+import { BeautyErrorComponent } from './beauty/beauty-error.component';
+import { beautyAuthGuard, beautyBusinessAuthGuard } from './beauty/beauty-auth.guard';
+
+export const routes: Routes = [
+  {
+    path: '',
+    component: BeautyShellComponent,
+    title: 'Beauty - Home',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_home' },
+  },
+  {
+    path: 'welcome',
+    component: BeautyWelcomeComponent,
+    title: 'Beauty - Welcome',
+  },
+  {
+    path: 'forgot',
+    component: BeautyForgotComponent,
+    title: 'Beauty - Reset Password',
+  },
+  {
+    path: 'error',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Error',
+    data: { variant: 'generic' },
+  },
+  {
+    path: 'not-found',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Page Not Found',
+    data: { variant: 'notfound' },
+  },
+  {
+    path: 'offline',
+    component: BeautyErrorComponent,
+    title: 'Beauty - Offline',
+    data: { variant: 'offline' },
+  },
+  {
+    path: 'signup',
+    component: BeautyShellComponent,
+    title: 'Beauty - Sign Up',
+    data: { screen: 'beauty_signup' },
+  },
+  {
+    path: 'login',
+    component: BeautyShellComponent,
+    title: 'Beauty - Sign In',
+    data: { screen: 'beauty_login' },
+  },
+  {
+    path: 'business/login',
+    component: BeautyShellComponent,
+    title: 'Beauty - Business Sign In',
+    data: { screen: 'beauty_business_login' },
+  },
+  {
+    path: 'wireframe',
+    component: BeautyShellComponent,
+    title: 'Beauty - Wireframe',
+    data: { screen: 'beauty_wireframe' },
+  },
+  {
+    path: 'admin/flags',
+    component: BeautyShellComponent,
+    title: 'Beauty - Feature Flags',
+    data: { screen: 'beauty_admin_flags' },
+  },
+  {
+    path: 'category/:slug',
+    component: BeautyShellComponent,
+    title: 'Beauty - Category',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_category' },
+  },
+  {
+    path: 'providers/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Provider',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_provider_detail' },
+  },
+  {
+    path: 'book/:serviceId',
+    component: BeautyShellComponent,
+    title: 'Beauty - Book',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_book' },
+  },
+  {
+    path: 'bookings',
+    component: BeautyShellComponent,
+    title: 'Beauty - My Bookings',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_bookings' },
+  },
+  {
+    path: 'bookings/:bookingId/success',
+    component: BeautyShellComponent,
+    title: 'Beauty - Booking Confirmed',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_booking_success' },
+  },
+  {
+    path: 'bookings/:bookingId/reschedule',
+    component: BeautyShellComponent,
+    title: 'Beauty - Reschedule Booking',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_reschedule' },
+  },
+  {
+    path: 'bookings/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Booking Details',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_booking_detail' },
+  },
+  {
+    path: 'profile',
+    component: BeautyShellComponent,
+    title: 'Beauty - Profile',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_profile' },
+  },
+  {
+    path: 'business',
+    component: BeautyShellComponent,
+    title: 'Beauty - Business Portal',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_home' },
+  },
+  {
+    path: 'business/services',
+    component: BeautyShellComponent,
+    title: 'Beauty - Manage Services',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_services' },
+  },
+  {
+    path: 'business/services/new',
+    component: BeautyShellComponent,
+    title: 'Beauty - Add Service',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_service_form' },
+  },
+  {
+    path: 'business/services/:serviceId/edit',
+    component: BeautyShellComponent,
+    title: 'Beauty - Edit Service',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_service_form' },
+  },
+  {
+    path: 'business/availability',
+    component: BeautyShellComponent,
+    title: 'Beauty - Weekly Hours',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_availability' },
+  },
+  {
+    path: 'business/bookings',
+    component: BeautyShellComponent,
+    title: 'Beauty - Incoming Bookings',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_bookings' },
+  },
+  {
+    path: '**',
+    component: BeautyErrorComponent,
+    title: 'Page Not Found',
+    data: { variant: 'notfound' },
+  },
+];

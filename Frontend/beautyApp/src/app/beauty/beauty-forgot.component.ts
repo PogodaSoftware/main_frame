@@ -11,7 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 
-import { environment } from '../../../environments/environment';
+import { environment } from '../../environments/environment';
 import { BeautyAuthService } from './beauty-auth.service';
 
 @Component({
@@ -260,7 +260,7 @@ export class BeautyForgotComponent {
   }
 
   back(): void {
-    this.router.navigate(['/pogoda/beauty/login']);
+    this.router.navigate(['/login']);
   }
 
   submit(): void {

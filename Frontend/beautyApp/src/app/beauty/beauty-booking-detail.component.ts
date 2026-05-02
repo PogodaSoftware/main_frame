@@ -85,7 +85,7 @@ type ConfirmKind = 'cancel' | 'cancel_grace';
             <path d="M15 18l-6-6 6-6"/>
           </svg>
         </button>
-        <span class="sub-header-title"></span>
+        <span class="sub-header-title">Booking</span>
         <span class="sub-header-spacer"></span>
       </header>
 

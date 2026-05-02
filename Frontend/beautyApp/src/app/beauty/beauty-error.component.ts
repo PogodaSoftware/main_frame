@@ -251,7 +251,7 @@ export class BeautyErrorComponent implements OnInit {
   }
 
   goHome(): void {
-    this.router.navigate(['/pogoda/beauty']);
+    this.router.navigate(['/']);
   }
 
   goBack(): void {
