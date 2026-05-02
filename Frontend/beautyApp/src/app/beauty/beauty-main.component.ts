@@ -216,7 +216,7 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
         href: null,
         method: 'NAV',
         screen: 'beauty_home',
-        route: '/pogoda/beauty',
+        route: '/',
         prompt: 'Beauty',
       }
     );

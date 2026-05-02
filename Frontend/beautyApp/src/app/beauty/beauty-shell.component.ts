@@ -349,30 +349,40 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
    * navigate by name instead of just retrying the current screen.
    */
   private static readonly SCREEN_FALLBACK_ROUTES: Record<string, string> = {
-    beauty_home: '/pogoda/beauty',
-    beauty_login: '/pogoda/beauty/login',
-    beauty_signup: '/pogoda/beauty/signup',
-    beauty_business_login: '/pogoda/beauty/business/login',
-    beauty_wireframe: '/pogoda/beauty/wireframe',
-    beauty_admin_flags: '/pogoda/beauty/admin/flags',
-    beauty_bookings: '/pogoda/beauty/bookings',
-    beauty_profile: '/pogoda/beauty/profile',
+    beauty_home: '/',
+    beauty_login: '/login',
+    beauty_signup: '/signup',
+    beauty_business_login: '/business/login',
+    beauty_wireframe: '/wireframe',
+    beauty_admin_flags: '/admin/flags',
+    beauty_bookings: '/bookings',
+    beauty_profile: '/profile',
     // beauty_reschedule and beauty_booking_detail are param routes — the
     // BFF always supplies a substituted `route`, so no fallback entry.
-    beauty_business_home: '/pogoda/beauty/business',
-    beauty_business_services: '/pogoda/beauty/business/services',
-    beauty_business_availability: '/pogoda/beauty/business/availability',
-    beauty_business_bookings: '/pogoda/beauty/business/bookings',
+    beauty_business_home: '/business',
+    beauty_business_services: '/business/services',
+    beauty_business_availability: '/business/availability',
+    beauty_business_bookings: '/business/bookings',
   };
 
+  /**
+   * Normalize a route string coming from the BFF. The BFF emits full paths
+   * like /pogoda/beauty/login; strip that prefix so the standalone beauty
+   * router (whose routes are app-local: login, signup, …) handles them.
+   */
+  private normalizeBffRoute(route: string): string {
+    return route.replace(/^\/pogoda\/beauty/, '') || '/';
+  }
+
   private navigateToLink(link: BffLink): void {
-    const targetRoute =
+    const rawRoute =
       link.route ||
       (link.screen
         ? BeautyShellComponent.SCREEN_FALLBACK_ROUTES[link.screen] ?? null
         : null);
 
-    if (targetRoute) {
+    if (rawRoute) {
+      const targetRoute = this.normalizeBffRoute(rawRoute);
       // If we're already on this URL, Angular ignores the navigation by
       // default — re-resolve in place so screens update after mutations
       // like cancel-booking.
@@ -406,7 +416,7 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
   }
 
   goHome(): void {
-    this.router.navigateByUrl('/pogoda/beauty');
+    this.router.navigateByUrl('/');
   }
 
   private applyResponse(response: BffResponse): void {

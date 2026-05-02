@@ -201,17 +201,17 @@ export class BeautyWelcomeComponent {
   constructor(private router: Router) {}
 
   goLogin(): void {
-    this.router.navigate(['/pogoda/beauty/login']);
+    this.router.navigate(['/login']);
   }
 
   goSignup(): void {
-    this.router.navigate(['/pogoda/beauty/signup']);
+    this.router.navigate(['/signup']);
   }
 
   goGoogle(): void {
     // Google OAuth entrypoint — backend returns redirect.
     // Falls back to login if endpoint not configured.
-    this.router.navigate(['/pogoda/beauty/login'], { queryParams: { provider: 'google' } });
+    this.router.navigate(['/login'], { queryParams: { provider: 'google' } });
   }
 
   // TODO: route to /legal/terms or /legal/privacy when those pages exist.
