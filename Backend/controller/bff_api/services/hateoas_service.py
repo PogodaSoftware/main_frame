@@ -236,6 +236,8 @@ SCREEN_ROUTES = {
     'beauty_welcome': '/pogoda/beauty/welcome',
     'beauty_forgot': '/pogoda/beauty/forgot',
     'beauty_business_login': '/pogoda/beauty/business/login',
+    'beauty_business_signup': '/pogoda/beauty/business/signup',
+    'beauty_business_application': '/pogoda/beauty/business/application',
     'beauty_wireframe': '/pogoda/beauty/wireframe',
     'beauty_users': '/pogoda/beauty/admin/users',
     'beauty_business_providers': '/pogoda/beauty/admin/business-providers',
