@@ -21,6 +21,10 @@ args = "frontend"
 task = "workflow.run"
 args = "backend"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "beauty"
+
 [[workflows.workflow]]
 name = "frontend"
 author = "agent"
@@ -44,6 +48,22 @@ waitForPort = 8000
 
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow]]
+name = "beauty"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd Frontend/beautyApp && NG_CLI_ANALYTICS=false npm start -- --port 4200 --host 0.0.0.0 --disable-host-check"
+waitForPort = 4200
+
+[[ports]]
+localPort = 4200
+externalPort = 4200
 
 [[ports]]
 localPort = 5000

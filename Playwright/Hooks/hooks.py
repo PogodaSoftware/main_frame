@@ -2,10 +2,31 @@ import os
 from playwright.sync_api import Page
 
 frontend_port = os.getenv('FRONTEND_PORT', '4200')
-
+beauty_port = os.getenv('BEAUTY_PORT', '4200')
 
 _BEAUTY_BASE = "/pogoda/beauty"
 
+# Routes that are served by the beauty app (Frontend/beautyApp).
+# All other routes are served by the portfolio app (Frontend/portfolioResume).
+_BEAUTY_ROUTES = {
+    'beauty_home',
+    'beauty_login',
+    'beauty_signup',
+    'beauty_business_login',
+    'beauty_welcome',
+    'beauty_forgot',
+    'beauty_error',
+    'beauty_404',
+    'beauty_offline',
+    'beauty_catchall',
+    'beauty_category',
+    'beauty_provider',
+    'beauty_book',
+    'beauty_bookings',
+    'beauty_booking_detail',
+    'beauty_booking_success',
+    'beauty_profile',
+}
 
 # Static and templated routes for selecting_different_routes / goto_route.
 # Templated routes use string-format placeholders matching keyword args in
@@ -33,13 +54,19 @@ _ROUTE_PATHS = {
 }
 
 
+def _port_for_route(route: str) -> str:
+    """Return the dev-server port for the given route key."""
+    return beauty_port if route in _BEAUTY_ROUTES else frontend_port
+
+
 def _build_url(route: str, **params) -> str:
     if route not in _ROUTE_PATHS:
         raise ValueError(f"Unknown route: {route}")
     path = _ROUTE_PATHS[route]
     if params:
         path = path.format(**params)
-    return f"http://localhost:{frontend_port}{path}"
+    port = _port_for_route(route)
+    return f"http://localhost:{port}{path}"
 
 
 def goto_route(page: Page, route: str, **params) -> str:

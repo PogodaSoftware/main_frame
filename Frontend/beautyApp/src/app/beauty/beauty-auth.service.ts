@@ -22,7 +22,7 @@ import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { environment } from '../../environments/environment';
 import { BffLink } from './beauty-bff.types';
 
 const DEVICE_ID_KEY = 'beauty_device_id';
