@@ -1,8 +1,8 @@
 import os
 from playwright.sync_api import Page
 
-frontend_port = os.getenv('FRONTEND_PORT', '4200')
-beauty_port = os.getenv('BEAUTY_PORT', '4300')
+frontend_port = os.getenv('FRONTEND_PORT', '5000')
+beauty_port = os.getenv('BEAUTY_PORT', '4200')
 
 _BEAUTY_BASE = "/pogoda/beauty"
 
@@ -34,7 +34,7 @@ _BEAUTY_ROUTES = {
 _ROUTE_PATHS = {
     'kevin': '/kevin',
     'pogoda': '/pogoda',
-    'beauty_home': f'{_BEAUTY_BASE}',
+    'beauty_home': f'{_BEAUTY_BASE}/',
     'beauty_login': f'{_BEAUTY_BASE}/login',
     'beauty_signup': f'{_BEAUTY_BASE}/signup',
     'beauty_business_login': f'{_BEAUTY_BASE}/business/login',

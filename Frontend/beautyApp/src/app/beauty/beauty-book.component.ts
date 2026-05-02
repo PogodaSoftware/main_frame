@@ -84,7 +84,7 @@ interface TimeChip {
             <path d="M15 18l-6-6 6-6"/>
           </svg>
         </button>
-        <span class="sub-header-title"></span>
+        <span class="sub-header-title">Book</span>
         <span class="sub-header-spacer"></span>
       </header>
 

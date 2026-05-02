@@ -8,7 +8,7 @@ echo ">>> [post-merge] Installing Python deps"
 pip install -q -r requirements.txt 2>/dev/null || pip install -q -r Backend/requirements.txt 2>/dev/null || true
 
 echo ">>> [post-merge] Applying Django migrations"
-python Backend/controller/manage.py migrate --noinput
+( cd Backend/controller && python manage.py migrate --noinput )
 
 echo ">>> [post-merge] Installing frontend deps"
 if [ -f Frontend/portfolioResume/package.json ]; then
