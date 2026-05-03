@@ -513,7 +513,12 @@ export class BeautyBusinessApplicationComponent implements OnChanges {
       prompt: null,
     };
     this.auth.follow(availLink, { weekly_hours: this.rows }).subscribe({
-      next: () => this.patch({ step: 'schedule' }),
+      next: () => {
+        // Reset isLoading so `patch()` proceeds — patch() bails if
+        // isLoading is already true (so its own caller can't double-fire).
+        this.isLoading = false;
+        this.patch({ step: 'schedule' });
+      },
       error: (err) => {
         this.isLoading = false;
         this.serverError = err?.error?.detail || 'Could not save weekly hours.';

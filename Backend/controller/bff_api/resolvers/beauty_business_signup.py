@@ -79,6 +79,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             ),
         ],
     )
+    # Auto-login on signup needs the device_id in the request body so the
+    # backend can issue the same signed cookie a normal login would.
+    form['include_device_id'] = True
 
     links = {
         'self': h.self_link('beauty_business_signup'),
