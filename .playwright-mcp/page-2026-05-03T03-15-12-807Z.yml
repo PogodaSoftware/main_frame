@@ -1,0 +1,33 @@
+- generic [ref=e179]:
+  - banner [ref=e180]:
+    - button "Application" [ref=e181] [cursor=pointer]:
+      - generic [ref=e182]: 🏢
+      - generic [ref=e183]: Application
+    - generic [ref=e184]: Step 3 of 6
+  - navigation "Application progress" [ref=e185]:
+    - list [ref=e186]:
+      - listitem [ref=e187]:
+        - generic [ref=e188]: "1"
+        - generic [ref=e189]: About
+      - listitem [ref=e190]:
+        - generic [ref=e191]: "2"
+        - generic [ref=e192]: Services
+      - listitem [ref=e193]:
+        - generic [ref=e194]: "3"
+        - generic [ref=e195]: Payments
+      - listitem [ref=e196]:
+        - generic [ref=e197]: "4"
+        - generic [ref=e198]: Hours
+      - listitem [ref=e199]:
+        - generic [ref=e200]: "5"
+        - generic [ref=e201]: Tools
+      - listitem [ref=e202]:
+        - generic [ref=e203]: "6"
+        - generic [ref=e204]: Review
+  - main [ref=e205]:
+    - heading "Payments setup" [level=1] [ref=e206]
+    - generic [ref=e207]:
+      - paragraph [ref=e208]: Stripe Connect lets us send payouts straight to your bank account when customers pay for bookings. The full flow is coming soon — for now, click below to mark this step complete and continue your application.
+      - generic [ref=e209]:
+        - button "Back" [ref=e210] [cursor=pointer]
+        - button "Connect Stripe (coming soon)" [ref=e211] [cursor=pointer]

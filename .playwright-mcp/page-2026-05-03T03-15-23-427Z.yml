@@ -1,0 +1,125 @@
+- generic [ref=e214]:
+  - banner [ref=e215]:
+    - button "Application" [ref=e216] [cursor=pointer]:
+      - generic [ref=e217]: 🏢
+      - generic [ref=e218]: Application
+    - generic [ref=e219]: Step 4 of 6
+  - navigation "Application progress" [ref=e220]:
+    - list [ref=e221]:
+      - listitem [ref=e222]:
+        - generic [ref=e223]: "1"
+        - generic [ref=e224]: About
+      - listitem [ref=e225]:
+        - generic [ref=e226]: "2"
+        - generic [ref=e227]: Services
+      - listitem [ref=e228]:
+        - generic [ref=e229]: "3"
+        - generic [ref=e230]: Payments
+      - listitem [ref=e231]:
+        - generic [ref=e232]: "4"
+        - generic [ref=e233]: Hours
+      - listitem [ref=e234]:
+        - generic [ref=e235]: "5"
+        - generic [ref=e236]: Tools
+      - listitem [ref=e237]:
+        - generic [ref=e238]: "6"
+        - generic [ref=e239]: Review
+  - main [ref=e240]:
+    - heading "Weekly hours" [level=1] [ref=e241]
+    - generic [ref=e242]:
+      - paragraph [ref=e243]: When are you open? Customers can only book during these hours.
+      - list [ref=e244]:
+        - listitem [ref=e245]:
+          - generic [ref=e246]: Monday
+          - generic [ref=e247]:
+            - checkbox "Closed" [ref=e248]
+            - text: Closed
+          - generic [ref=e249]:
+            - checkbox "Open 24h" [ref=e250]
+            - text: Open 24h
+          - generic [ref=e251]: Monday start
+          - textbox "Monday start" [ref=e252]: 10:00
+          - generic [ref=e253]: –
+          - generic [ref=e254]: Monday end
+          - textbox "Monday end" [ref=e255]: 18:00
+        - listitem [ref=e256]:
+          - generic [ref=e257]: Tuesday
+          - generic [ref=e258]:
+            - checkbox "Closed" [ref=e259]
+            - text: Closed
+          - generic [ref=e260]:
+            - checkbox "Open 24h" [ref=e261]
+            - text: Open 24h
+          - generic [ref=e262]: Tuesday start
+          - textbox "Tuesday start" [ref=e263]: 10:00
+          - generic [ref=e264]: –
+          - generic [ref=e265]: Tuesday end
+          - textbox "Tuesday end" [ref=e266]: 18:00
+        - listitem [ref=e267]:
+          - generic [ref=e268]: Wednesday
+          - generic [ref=e269]:
+            - checkbox "Closed" [ref=e270]
+            - text: Closed
+          - generic [ref=e271]:
+            - checkbox "Open 24h" [ref=e272]
+            - text: Open 24h
+          - generic [ref=e273]: Wednesday start
+          - textbox "Wednesday start" [ref=e274]: 10:00
+          - generic [ref=e275]: –
+          - generic [ref=e276]: Wednesday end
+          - textbox "Wednesday end" [ref=e277]: 18:00
+        - listitem [ref=e278]:
+          - generic [ref=e279]: Thursday
+          - generic [ref=e280]:
+            - checkbox "Closed" [ref=e281]
+            - text: Closed
+          - generic [ref=e282]:
+            - checkbox "Open 24h" [ref=e283]
+            - text: Open 24h
+          - generic [ref=e284]: Thursday start
+          - textbox "Thursday start" [ref=e285]: 10:00
+          - generic [ref=e286]: –
+          - generic [ref=e287]: Thursday end
+          - textbox "Thursday end" [ref=e288]: 18:00
+        - listitem [ref=e289]:
+          - generic [ref=e290]: Friday
+          - generic [ref=e291]:
+            - checkbox "Closed" [ref=e292]
+            - text: Closed
+          - generic [ref=e293]:
+            - checkbox "Open 24h" [ref=e294]
+            - text: Open 24h
+          - generic [ref=e295]: Friday start
+          - textbox "Friday start" [ref=e296]: 10:00
+          - generic [ref=e297]: –
+          - generic [ref=e298]: Friday end
+          - textbox "Friday end" [ref=e299]: 18:00
+        - listitem [ref=e300]:
+          - generic [ref=e301]: Saturday
+          - generic [ref=e302]:
+            - checkbox "Closed" [ref=e303]
+            - text: Closed
+          - generic [ref=e304]:
+            - checkbox "Open 24h" [ref=e305]
+            - text: Open 24h
+          - generic [ref=e306]: Saturday start
+          - textbox "Saturday start" [ref=e307]: 10:00
+          - generic [ref=e308]: –
+          - generic [ref=e309]: Saturday end
+          - textbox "Saturday end" [ref=e310]: 18:00
+        - listitem [ref=e311]:
+          - generic [ref=e312]: Sunday
+          - generic [ref=e313]:
+            - checkbox "Closed" [checked] [ref=e314]
+            - text: Closed
+          - generic [ref=e315]:
+            - checkbox "Open 24h" [disabled] [ref=e316]
+            - text: Open 24h
+          - generic [ref=e317]: Sunday start
+          - textbox "Sunday start" [disabled] [ref=e318]: 00:00
+          - generic [ref=e319]: –
+          - generic [ref=e320]: Sunday end
+          - textbox "Sunday end" [disabled] [ref=e321]: 00:00
+      - generic [ref=e322]:
+        - button "Back" [ref=e323] [cursor=pointer]
+        - button "Save & continue" [ref=e324] [cursor=pointer]

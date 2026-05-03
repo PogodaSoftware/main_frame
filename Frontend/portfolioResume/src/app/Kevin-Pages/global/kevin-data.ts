@@ -398,3 +398,6 @@ export const SKILL_GROUPS: SkillGroup[] = [
       viewer: { cameraX: 0, cameraY: -1.5, cameraZ: 6.5, hdrPath: 'industrial_sunset_puresky_1k' },
     },
   ];
+
+
+  
