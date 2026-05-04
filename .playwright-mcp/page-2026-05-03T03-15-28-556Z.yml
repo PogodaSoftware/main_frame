@@ -1,0 +1,53 @@
+- generic [ref=e327]:
+  - banner [ref=e328]:
+    - button "Application" [ref=e329] [cursor=pointer]:
+      - generic [ref=e330]: 🏢
+      - generic [ref=e331]: Application
+    - generic [ref=e332]: Step 5 of 6
+  - navigation "Application progress" [ref=e333]:
+    - list [ref=e334]:
+      - listitem [ref=e335]:
+        - generic [ref=e336]: "1"
+        - generic [ref=e337]: About
+      - listitem [ref=e338]:
+        - generic [ref=e339]: "2"
+        - generic [ref=e340]: Services
+      - listitem [ref=e341]:
+        - generic [ref=e342]: "3"
+        - generic [ref=e343]: Payments
+      - listitem [ref=e344]:
+        - generic [ref=e345]: "4"
+        - generic [ref=e346]: Hours
+      - listitem [ref=e347]:
+        - generic [ref=e348]: "5"
+        - generic [ref=e349]: Tools
+      - listitem [ref=e350]:
+        - generic [ref=e351]: "6"
+        - generic [ref=e352]: Review
+  - main [ref=e353]:
+    - heading "Third-party tools" [level=1] [ref=e354]
+    - generic [ref=e355]:
+      - group "Optional integrations" [ref=e356]:
+        - generic [ref=e357]: Optional integrations
+        - generic [ref=e358] [cursor=pointer]:
+          - checkbox "Google Calendar" [ref=e359]
+          - generic [ref=e360]: Google Calendar
+        - generic [ref=e361] [cursor=pointer]:
+          - checkbox "iCloud Calendar" [ref=e362]
+          - generic [ref=e363]: iCloud Calendar
+        - generic [ref=e364] [cursor=pointer]:
+          - checkbox "Outlook Calendar" [ref=e365]
+          - generic [ref=e366]: Outlook Calendar
+        - generic [ref=e367] [cursor=pointer]:
+          - checkbox "Square POS" [ref=e368]
+          - generic [ref=e369]: Square POS
+        - generic [ref=e370] [cursor=pointer]:
+          - checkbox "Mindbody" [ref=e371]
+          - generic [ref=e372]: Mindbody
+        - generic [ref=e373] [cursor=pointer]:
+          - checkbox "Vagaro" [ref=e374]
+          - generic [ref=e375]: Vagaro
+      - paragraph [ref=e376]: Selections are saved with your application — real syncing comes later.
+      - generic [ref=e377]:
+        - button "Back" [ref=e378] [cursor=pointer]
+        - button "Save & continue" [ref=e379] [cursor=pointer]

@@ -1,0 +1,124 @@
+- region "Business dashboard" [ref=e459]:
+  - generic [ref=e460]:
+    - generic [ref=e461]:
+      - generic [ref=e462]: 🏢
+      - button "Beauty" [ref=e463] [cursor=pointer]
+      - generic [ref=e464]: Business Portal
+    - generic [ref=e465]:
+      - button "Services" [ref=e466] [cursor=pointer]
+      - button "Hours" [ref=e467] [cursor=pointer]
+      - button "Bookings" [ref=e468] [cursor=pointer]
+      - button "Sign out" [ref=e469] [cursor=pointer]
+  - main [ref=e470]:
+    - heading "MCP Test Studio" [level=1] [ref=e471]
+    - paragraph [ref=e472]: mcp_test_biz@beauty-test.com
+    - region "May 2026" [ref=e473]:
+      - heading "May 2026" [level=2] [ref=e475]
+      - grid "Bookings for May 2026" [ref=e476]:
+        - row "Sun Mon Tue Wed Thu Fri Sat" [ref=e477]:
+          - columnheader "Sun" [ref=e478]
+          - columnheader "Mon" [ref=e479]
+          - columnheader "Tue" [ref=e480]
+          - columnheader "Wed" [ref=e481]
+          - columnheader "Thu" [ref=e482]
+          - columnheader "Fri" [ref=e483]
+          - columnheader "Sat" [ref=e484]
+        - row "2026-05-01, no bookings 2026-05-02, no bookings" [ref=e485]:
+          - gridcell [disabled] [ref=e486]
+          - gridcell [disabled] [ref=e487]
+          - gridcell [disabled] [ref=e488]
+          - gridcell [disabled] [ref=e489]
+          - gridcell [disabled] [ref=e490]
+          - gridcell "2026-05-01, no bookings" [ref=e491] [cursor=pointer]:
+            - generic [ref=e492]: "1"
+          - gridcell "2026-05-02, no bookings" [ref=e493] [cursor=pointer]:
+            - generic [ref=e494]: "2"
+        - row "2026-05-03 (today), no bookings 2026-05-04, no bookings 2026-05-05, no bookings 2026-05-06, no bookings 2026-05-07, no bookings 2026-05-08, no bookings 2026-05-09, no bookings" [ref=e495]:
+          - gridcell "2026-05-03 (today), no bookings" [ref=e496] [cursor=pointer]:
+            - generic [ref=e497]: "3"
+          - gridcell "2026-05-04, no bookings" [ref=e498] [cursor=pointer]:
+            - generic [ref=e499]: "4"
+          - gridcell "2026-05-05, no bookings" [ref=e500] [cursor=pointer]:
+            - generic [ref=e501]: "5"
+          - gridcell "2026-05-06, no bookings" [ref=e502] [cursor=pointer]:
+            - generic [ref=e503]: "6"
+          - gridcell "2026-05-07, no bookings" [ref=e504] [cursor=pointer]:
+            - generic [ref=e505]: "7"
+          - gridcell "2026-05-08, no bookings" [ref=e506] [cursor=pointer]:
+            - generic [ref=e507]: "8"
+          - gridcell "2026-05-09, no bookings" [ref=e508] [cursor=pointer]:
+            - generic [ref=e509]: "9"
+        - row "2026-05-10, no bookings 2026-05-11, no bookings 2026-05-12, no bookings 2026-05-13, no bookings 2026-05-14, no bookings 2026-05-15, no bookings 2026-05-16, no bookings" [ref=e510]:
+          - gridcell "2026-05-10, no bookings" [ref=e511] [cursor=pointer]:
+            - generic [ref=e512]: "10"
+          - gridcell "2026-05-11, no bookings" [ref=e513] [cursor=pointer]:
+            - generic [ref=e514]: "11"
+          - gridcell "2026-05-12, no bookings" [ref=e515] [cursor=pointer]:
+            - generic [ref=e516]: "12"
+          - gridcell "2026-05-13, no bookings" [ref=e517] [cursor=pointer]:
+            - generic [ref=e518]: "13"
+          - gridcell "2026-05-14, no bookings" [ref=e519] [cursor=pointer]:
+            - generic [ref=e520]: "14"
+          - gridcell "2026-05-15, no bookings" [ref=e521] [cursor=pointer]:
+            - generic [ref=e522]: "15"
+          - gridcell "2026-05-16, no bookings" [ref=e523] [cursor=pointer]:
+            - generic [ref=e524]: "16"
+        - row "2026-05-17, no bookings 2026-05-18, no bookings 2026-05-19, no bookings 2026-05-20, no bookings 2026-05-21, no bookings 2026-05-22, no bookings 2026-05-23, no bookings" [ref=e525]:
+          - gridcell "2026-05-17, no bookings" [ref=e526] [cursor=pointer]:
+            - generic [ref=e527]: "17"
+          - gridcell "2026-05-18, no bookings" [ref=e528] [cursor=pointer]:
+            - generic [ref=e529]: "18"
+          - gridcell "2026-05-19, no bookings" [ref=e530] [cursor=pointer]:
+            - generic [ref=e531]: "19"
+          - gridcell "2026-05-20, no bookings" [ref=e532] [cursor=pointer]:
+            - generic [ref=e533]: "20"
+          - gridcell "2026-05-21, no bookings" [ref=e534] [cursor=pointer]:
+            - generic [ref=e535]: "21"
+          - gridcell "2026-05-22, no bookings" [ref=e536] [cursor=pointer]:
+            - generic [ref=e537]: "22"
+          - gridcell "2026-05-23, no bookings" [ref=e538] [cursor=pointer]:
+            - generic [ref=e539]: "23"
+        - row "2026-05-24, no bookings 2026-05-25, no bookings 2026-05-26, no bookings 2026-05-27, no bookings 2026-05-28, no bookings 2026-05-29, no bookings 2026-05-30, no bookings" [ref=e540]:
+          - gridcell "2026-05-24, no bookings" [ref=e541] [cursor=pointer]:
+            - generic [ref=e542]: "24"
+          - gridcell "2026-05-25, no bookings" [ref=e543] [cursor=pointer]:
+            - generic [ref=e544]: "25"
+          - gridcell "2026-05-26, no bookings" [ref=e545] [cursor=pointer]:
+            - generic [ref=e546]: "26"
+          - gridcell "2026-05-27, no bookings" [ref=e547] [cursor=pointer]:
+            - generic [ref=e548]: "27"
+          - gridcell "2026-05-28, no bookings" [ref=e549] [cursor=pointer]:
+            - generic [ref=e550]: "28"
+          - gridcell "2026-05-29, no bookings" [ref=e551] [cursor=pointer]:
+            - generic [ref=e552]: "29"
+          - gridcell "2026-05-30, no bookings" [ref=e553] [cursor=pointer]:
+            - generic [ref=e554]: "30"
+        - row "2026-05-31, no bookings" [ref=e555]:
+          - gridcell "2026-05-31, no bookings" [ref=e556] [cursor=pointer]:
+            - generic [ref=e557]: "31"
+          - gridcell [disabled] [ref=e558]
+          - gridcell [disabled] [ref=e559]
+          - gridcell [disabled] [ref=e560]
+          - gridcell [disabled] [ref=e561]
+          - gridcell [disabled] [ref=e562]
+          - gridcell [disabled] [ref=e563]
+    - generic [ref=e564]:
+      - generic "Earnings · May 2026" [ref=e565]:
+        - heading "Earnings · May 2026" [level=2] [ref=e566]
+        - img [ref=e567]
+        - generic [ref=e569]:
+          - strong [ref=e570]: $0.00
+          - generic [ref=e571]: of $5,000.00 target
+      - generic "Bookings volume" [ref=e572]:
+        - heading "Bookings volume" [level=2] [ref=e573]
+        - generic [ref=e574]:
+          - strong [ref=e575]: "0"
+          - text: this month
+        - list
+        - generic [ref=e576]:
+          - generic [ref=e577]:
+            - strong [ref=e578]: "0"
+            - text: New
+          - generic [ref=e579]:
+            - strong [ref=e580]: "0"
+            - text: Recurring

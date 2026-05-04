@@ -1,47 +1,38 @@
-"""
-Beauty Business Home Resolver
-=============================
-Dashboard landing page for an authenticated business provider. Shows
-storefront info + headline counts and HATEOAS links to the manage-services,
-weekly-availability, and incoming-bookings sub-screens.
+"""Beauty Business Home Resolver
 
-Auth required — non-business users are redirected to the business login.
+Authenticated business landing screen. Redirects unsubmitted /
+unaccepted applications back into the wizard. Returns the calendar +
+gauge payload consumed by ``BeautyBusinessHomeComponent``.
 """
 
 from datetime import datetime, timezone
 
 from beauty_api.availability_service import ensure_storefront
-from beauty_api.middleware import SESSION_COOKIE_NAME
-from beauty_api.models import (
-    BeautyBooking,
-    BeautyService,
-    BusinessProvider,
-)
-from ..services.auth_service import get_authenticated_user
+from beauty_api.calendar_stats_service import compute_month_payload
+
 from ..services import hateoas_service as h
+from ..services.application_gate import (
+    redirect_to_wizard_if_incomplete,
+    resolve_business_or_redirect,
+)
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
-    cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
-    user = get_authenticated_user(cookie, device_id)
-    if not user:
-        return h.redirect_envelope('beauty_business_login', 'auth_required')
-    if user.get('user_type') != 'business':
-        return h.redirect_envelope('beauty_home', 'wrong_user_type')
-
-    try:
-        business = BusinessProvider.objects.get(id=user['user_id'])
-    except BusinessProvider.DoesNotExist:
-        return h.redirect_envelope('beauty_business_login', 'account_missing')
+    business, app, redirect = resolve_business_or_redirect(request, device_id)
+    if redirect is not None:
+        return redirect
+    gate = redirect_to_wizard_if_incomplete(app)
+    if gate is not None:
+        return gate
 
     storefront = ensure_storefront(business)
-
+    try:
+        year = int(request.GET.get('year')) if request.GET.get('year') else None
+        month = int(request.GET.get('month')) if request.GET.get('month') else None
+    except (TypeError, ValueError):
+        year, month = None, None
+    payload = compute_month_payload(storefront, year=year, month=month)
     now = datetime.now(timezone.utc)
-    bookings_qs = BeautyBooking.objects.filter(service__provider=storefront)
-    upcoming_count = bookings_qs.filter(
-        status=BeautyBooking.STATUS_BOOKED, slot_at__gt=now,
-    ).count()
-    services_count = BeautyService.objects.filter(provider=storefront).count()
 
     links = {
         'self': h.self_link('beauty_business_home'),
@@ -76,14 +67,12 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'storefront': {
                 'id': storefront.id,
                 'name': storefront.name,
-                'short_description': storefront.short_description,
-                'location_label': storefront.location_label,
             },
-            'stats': {
-                'services_count': services_count,
-                'upcoming_bookings': upcoming_count,
-                'total_bookings': bookings_qs.count(),
-            },
+            'now': now.isoformat(),
+            'today': payload['today'],
+            'month': payload['month'],
+            'month_bookings': payload['month_bookings'],
+            'stats': payload['stats'],
         },
         'meta': {'title': 'Business Portal'},
         '_links': links,
