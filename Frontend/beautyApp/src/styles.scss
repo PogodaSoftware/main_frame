@@ -1,3 +1,53 @@
+/* Beauty App — global tokens + button system.
+ *
+ * Tokens
+ * ------
+ * Design palette is promoted out of per-component :host blocks so every
+ * screen (especially the new business portal) shares one source of truth.
+ *
+ * Button system
+ * -------------
+ * Reusable classes match the attached button-system reference:
+ *   .btn-confirm   — green primary  (sign in / sign up / confirm)
+ *   .btn-delete    — red destructive
+ *   .btn-neutral   — black neutral default ("My Bookings")
+ *   .btn-outline   — outlined neutral (cancel / secondary)
+ *   .btn--size-{sm,md,lg}
+ *   .is-loading state shows a spinner and disables the button
+ *
+ * The page-specific .btn-login / .btn-signup / .btn-business / .btn-logout
+ * classes already in beauty-main / beauty-login scss continue to work — the
+ * tokens here keep their declarations consistent.
+ */
+
+:root {
+  /* surface */
+  --surface:        #F2F2F2;
+  --surface-2:      #E9E9EB;
+  --line:           #DCDCDF;
+  /* text */
+  --text:           #0F1115;
+  --text-muted:     #6B6F77;
+  /* accents (10% / 10%) */
+  --accent-blue:        #CFE3F5;
+  --accent-blue-deep:   #7DA8CF;
+  --ink:                #0A0A0B;
+  --ink-soft:           #1F1F22;
+  /* semantic */
+  --success:        #2F7A47;
+  --success-hover:  #256238;
+  --success-bg:     #E5F2EA;
+  --danger:         #C0392B;
+  --danger-hover:   #9F2F23;
+  --danger-bg:      #FCE8E5;
+  /* type */
+  --font-body:    'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+  /* nav / mobile */
+  --nav-h: 64px;
+  --phone-max: 430px;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,5 +56,155 @@
 
 html, body {
   height: 100%;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--surface);
+}
+
+/* Global focus ring (WCAG 2.4.7 / 1.4.11). */
+*:focus-visible {
+  outline: 2px solid #1a3a52;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+.sr-only {
+  position: absolute !important; width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+}
+
+/* ---------------------------------------------------------------------------
+ * Mobile phone-frame container
+ *
+ * Customer screens already wrap their content in `.beauty-app`. The business
+ * portal screens use `.biz-app` — this rule mirrors the same desktop framing
+ * so the visual proportions match across both portals.
+ * --------------------------------------------------------------------------- */
+@media screen and (min-width: 768px) {
+  .beauty-app,
+  .biz-app,
+  .business-shell {
+    max-width: var(--phone-max);
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(15, 35, 60, 0.15);
+    min-height: 100dvh;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Button system
+ * --------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  letter-spacing: 0.1px;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  min-height: 44px;            /* WCAG target size */
+  padding: 0 18px;
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.btn--size-sm { min-height: 32px; padding: 0 12px; font-size: 0.8rem; }
+.btn--size-md { min-height: 40px; padding: 0 16px; font-size: 0.9rem; }
+.btn--size-lg { min-height: 48px; padding: 0 22px; font-size: 1rem; }
+
+/* Loading state — inline spinner + disables interactions. */
+.btn.is-loading { cursor: wait; pointer-events: none; opacity: 0.85; }
+.btn.is-loading::before {
+  content: '';
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: btn-spin 0.7s linear infinite;
+}
+@keyframes btn-spin { to { transform: rotate(360deg); } }
+
+/* Variants — match the attached button-system reference. */
+
+.btn-confirm,
+.btn-signin,
+.btn-signup-primary {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
+}
+.btn-confirm:hover,
+.btn-signin:hover,
+.btn-signup-primary:hover {
+  background: var(--success-hover);
+  border-color: var(--success-hover);
+  box-shadow: 0 2px 8px rgba(47, 122, 71, 0.25);
+}
+.btn-confirm:active,
+.btn-signin:active,
+.btn-signup-primary:active {
+  background: #1D4F2C;
+  border-color: #1D4F2C;
+}
+
+.btn-delete {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+.btn-delete:hover {
+  background: var(--danger-hover);
+  border-color: var(--danger-hover);
+  box-shadow: 0 2px 8px rgba(192, 57, 43, 0.25);
+}
+.btn-delete:active { background: #802519; border-color: #802519; }
+
+.btn-neutral {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.btn-neutral:hover { background: var(--ink-soft); border-color: var(--ink-soft); }
+.btn-neutral:active { background: #000; border-color: #000; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--ink);
+}
+.btn-outline:hover { background: rgba(10, 10, 11, 0.06); }
+.btn-outline:active { background: rgba(10, 10, 11, 0.12); }
+
+.btn-outline-success {
+  background: transparent;
+  color: var(--success-hover);
+  border-color: var(--success);
+}
+.btn-outline-success:hover { background: rgba(47, 122, 71, 0.08); }
+
+.btn-outline-danger {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+.btn-outline-danger:hover { background: rgba(192, 57, 43, 0.08); }
+
+.btn-link {
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  text-decoration: underline;
+  min-height: auto;
+  padding: 0;
 }

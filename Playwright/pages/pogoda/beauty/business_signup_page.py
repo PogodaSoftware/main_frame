@@ -1,0 +1,10 @@
+"""Locators for /pogoda/beauty/business/signup."""
+
+business_signup_page_root = "css=div.business-signup-page"
+business_signup_title = "css=div.business-signup-page h1.signup-title"
+business_signup_subtitle = "css=div.business-signup-page p.signup-subtitle"
+business_name_input = "css=div.business-signup-page input#business_name"
+email_input = "css=div.business-signup-page input#email"
+password_input = "css=div.business-signup-page input#password"
+submit_button = "css=div.business-signup-page button.btn-business"
+business_login_link = "css=div.business-signup-page button.link-business"

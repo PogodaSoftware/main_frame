@@ -21,9 +21,6 @@ class BusinessProvider(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
     business_name = models.CharField(max_length=255)
-    first_name = models.CharField(max_length=120, blank=True, default='')
-    last_name = models.CharField(max_length=120, blank=True, default='')
-    application_completed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -34,98 +31,6 @@ class BusinessProvider(models.Model):
 
     def __str__(self):
         return f"{self.business_name} ({self.email})"
-
-
-class BusinessApplication(models.Model):
-    """
-    Multi-step business provider application. Captures everything we ask
-    a new business owner before activating their portal:
-
-      Step 1 — Identity / business: applicant_kind, ITIN, address.
-      Step 2 — Services offered (any subset of the 4 categories).
-      Step 3 — Stripe placeholder (a stub flag we'll wire to real Stripe later).
-      Step 4 — Schedule baseline (template applied to BeautyProviderAvailability).
-      Step 5 — Third-party tools they want to integrate (optional checklist).
-
-    The row is created lazily on the first GET to the application endpoint
-    and updated step-by-step. The final POST `submit/` flips
-    `BusinessProvider.application_completed = True`, applies the schedule
-    to the public storefront, and seeds any chosen service categories with
-    a placeholder service so the dashboard isn't empty.
-    """
-
-    APPLICANT_PERSON = 'person'
-    APPLICANT_BUSINESS = 'business'
-    APPLICANT_KIND_CHOICES = [
-        (APPLICANT_PERSON, 'Individual / Sole Proprietor'),
-        (APPLICANT_BUSINESS, 'Registered Business'),
-    ]
-
-    STATUS_DRAFT = 'draft'
-    STATUS_SUBMITTED = 'submitted'
-    STATUS_APPROVED = 'approved'
-    STATUS_CHOICES = [
-        (STATUS_DRAFT, 'Draft'),
-        (STATUS_SUBMITTED, 'Submitted'),
-        (STATUS_APPROVED, 'Approved'),
-    ]
-
-    business = models.OneToOneField(
-        BusinessProvider,
-        on_delete=models.CASCADE,
-        related_name='application',
-    )
-
-    # Step 1 — identity
-    applicant_kind = models.CharField(
-        max_length=16,
-        choices=APPLICANT_KIND_CHOICES,
-        default=APPLICANT_PERSON,
-    )
-    itin = models.CharField(max_length=32, blank=True, default='')
-    legal_business_name = models.CharField(max_length=255, blank=True, default='')
-    address_line1 = models.CharField(max_length=255, blank=True, default='')
-    address_line2 = models.CharField(max_length=255, blank=True, default='')
-    address_city = models.CharField(max_length=120, blank=True, default='')
-    address_state = models.CharField(max_length=64, blank=True, default='')
-    address_postal_code = models.CharField(max_length=32, blank=True, default='')
-
-    # Step 2 — services offered (subset of the 4 marketplace categories).
-    # Stored as JSON list of category slugs, e.g. ['nails', 'hair'].
-    services_offered = models.JSONField(default=list, blank=True)
-
-    # Step 3 — Stripe placeholder. Will be replaced with a real Stripe
-    # Connect account id when payments are wired up.
-    stripe_connected = models.BooleanField(default=False)
-    stripe_placeholder_account = models.CharField(
-        max_length=64, blank=True, default='',
-    )
-
-    # Step 4 — schedule template. JSON list of 7 dicts with the same
-    # shape as BeautyProviderAvailability rows; applied at submit time.
-    schedule_template = models.JSONField(default=list, blank=True)
-
-    # Step 5 — optional third-party tool integrations checklist. JSON
-    # list of tool slugs (e.g. ['google_calendar', 'mailchimp']).
-    third_party_tools = models.JSONField(default=list, blank=True)
-
-    # Terms of Service acceptance (the lorem-ipsum agreement).
-    tos_accepted = models.BooleanField(default=False)
-    tos_accepted_at = models.DateTimeField(null=True, blank=True)
-
-    status = models.CharField(
-        max_length=16, choices=STATUS_CHOICES, default=STATUS_DRAFT,
-    )
-    current_step = models.IntegerField(default=1)
-    submitted_at = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'beauty_business_applications'
-
-    def __str__(self):
-        return f"Application for {self.business.business_name} ({self.status})"
 
 
 class BeautySession(models.Model):
@@ -389,6 +294,97 @@ class BeautyProviderAvailability(models.Model):
         if self.is_24h:
             return f"{self.provider.name} · {label} 24h"
         return f"{self.provider.name} · {label} {self.start_time}-{self.end_time}"
+
+
+class BusinessProviderApplication(models.Model):
+    """Onboarding application for a `BusinessProvider`.
+
+    Gates portal access. A new business signup creates a `BusinessProvider`
+    auth account; the portal stays locked behind the wizard until this
+    row reaches ``status=accepted``. Each step's payload lands here via
+    PATCH; submission flips the row to accepted (auto-approved this round)
+    so the user is sent to the new business home.
+    """
+
+    STATUS_DRAFT = 'draft'
+    STATUS_SUBMITTED = 'submitted'
+    STATUS_ACCEPTED = 'accepted'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_DRAFT, 'Draft'),
+        (STATUS_SUBMITTED, 'Submitted'),
+        (STATUS_ACCEPTED, 'Accepted'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+
+    ENTITY_PERSON = 'person'
+    ENTITY_BUSINESS = 'business'
+    ENTITY_CHOICES = [
+        (ENTITY_PERSON, 'Person'),
+        (ENTITY_BUSINESS, 'Business'),
+    ]
+
+    STEP_ORDER = ['entity', 'services', 'stripe', 'schedule', 'tools']
+
+    business_provider = models.OneToOneField(
+        BusinessProvider, on_delete=models.CASCADE, related_name='application',
+    )
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_DRAFT)
+    entity_type = models.CharField(max_length=16, choices=ENTITY_CHOICES, blank=True, default='')
+    itin = models.CharField(max_length=9, blank=True, default='')
+    applicant_first_name = models.CharField(max_length=128, blank=True, default='')
+    applicant_last_name = models.CharField(max_length=128, blank=True, default='')
+    business_name = models.CharField(max_length=255, blank=True, default='')
+    address_line1 = models.CharField(max_length=255, blank=True, default='')
+    address_line2 = models.CharField(max_length=255, blank=True, default='')
+    city = models.CharField(max_length=128, blank=True, default='')
+    state = models.CharField(max_length=64, blank=True, default='')
+    postal_code = models.CharField(max_length=32, blank=True, default='')
+    selected_categories = models.JSONField(default=list, blank=True)
+    third_party_tools = models.JSONField(default=list, blank=True)
+    completed_steps = models.JSONField(default=list, blank=True)
+    tos_accepted_at = models.DateTimeField(null=True, blank=True)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'beauty_business_applications'
+
+    def is_step_complete(self, step: str) -> bool:
+        return step in (self.completed_steps or [])
+
+    def mark_step_complete(self, step: str) -> None:
+        steps = list(self.completed_steps or [])
+        if step in self.STEP_ORDER and step not in steps:
+            steps.append(step)
+            self.completed_steps = steps
+
+    def next_incomplete_step(self) -> str | None:
+        completed = set(self.completed_steps or [])
+        for step in self.STEP_ORDER:
+            if step not in completed:
+                return step
+        return None
+
+    def is_ready_to_submit(self) -> bool:
+        if self.next_incomplete_step() is not None:
+            return False
+        if not self.tos_accepted_at:
+            return False
+        if not self.applicant_first_name.strip() or not self.applicant_last_name.strip():
+            return False
+        if not self.business_name.strip():
+            return False
+        if self.entity_type == self.ENTITY_BUSINESS and len(self.itin) != 9:
+            return False
+        if not self.selected_categories:
+            return False
+        return True
+
+    def __str__(self):
+        return f"{self.business_provider.email} [{self.status}]"
 
 
 class BeautyFlagAudit(models.Model):

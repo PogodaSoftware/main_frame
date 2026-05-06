@@ -35,6 +35,10 @@ import { BeautyMainComponent } from './beauty-main.component';
 import { BeautyLoginComponent } from './beauty-login.component';
 import { BeautySignupComponent } from './beauty-signup.component';
 import { BeautyBusinessLoginComponent } from './beauty-business-login.component';
+import { BeautyBusinessSignupComponent } from './beauty-business-signup.component';
+import { BeautyBusinessApplicationComponent } from './beauty-business-application.component';
+import { BeautyBusinessHomeComponent } from './beauty-business-home.component';
+import { WizardData } from './beauty-business-application.types';
 import { BeautyWireframeComponent } from './wireframe.component';
 import { BeautyCategoryComponent } from './beauty-category.component';
 import { BeautyProviderDetailComponent } from './beauty-provider-detail.component';
@@ -66,6 +70,9 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyLoginComponent,
     BeautySignupComponent,
     BeautyBusinessLoginComponent,
+    BeautyBusinessSignupComponent,
+    BeautyBusinessApplicationComponent,
+    BeautyBusinessHomeComponent,
     BeautyWireframeComponent,
     BeautyAdminFlagsComponent,
     BeautyCategoryComponent,
@@ -115,6 +122,18 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       <app-beauty-business-login
         *ngIf="bffResponse!.screen === 'beauty_business_login'"
         [form]="bffResponse!.form ?? null"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-signup
+        *ngIf="bffResponse!.screen === 'beauty_business_signup'"
+        [form]="bffResponse!.form ?? null"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-application
+        *ngIf="isWizardScreen(bffResponse!.screen)"
+        [data]="asWizardData(bffResponse!.data)"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
       />
@@ -176,7 +195,7 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
       />
-      <app-beauty-business-dashboard
+      <app-beauty-business-home
         *ngIf="bffResponse!.screen === 'beauty_business_home'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
@@ -353,6 +372,13 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_login: '/login',
     beauty_signup: '/signup',
     beauty_business_login: '/business/login',
+    beauty_business_signup: '/business/signup',
+    beauty_business_application_entity: '/business/apply/entity',
+    beauty_business_application_services: '/business/apply/services',
+    beauty_business_application_stripe: '/business/apply/stripe',
+    beauty_business_application_schedule: '/business/apply/schedule',
+    beauty_business_application_tools: '/business/apply/tools',
+    beauty_business_application_review: '/business/apply/review',
     beauty_wireframe: '/wireframe',
     beauty_admin_flags: '/admin/flags',
     beauty_bookings: '/bookings',
@@ -417,6 +443,23 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
 
   goHome(): void {
     this.router.navigateByUrl('/');
+  }
+
+  private static readonly WIZARD_SCREENS = new Set([
+    'beauty_business_application_entity',
+    'beauty_business_application_services',
+    'beauty_business_application_stripe',
+    'beauty_business_application_schedule',
+    'beauty_business_application_tools',
+    'beauty_business_application_review',
+  ]);
+
+  isWizardScreen(screen: string | undefined): boolean {
+    return !!screen && BeautyShellComponent.WIZARD_SCREENS.has(screen);
+  }
+
+  asWizardData(data: Record<string, unknown> | undefined | null): WizardData | null {
+    return (data as unknown as WizardData) || null;
   }
 
   private applyResponse(response: BffResponse): void {

@@ -49,8 +49,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'customer_login', 'beauty_login', prompt='Customer sign in',
         ),
         'business_signup': h.screen_link(
-            'business_signup', 'beauty_business_signup',
-            prompt='Become a provider',
+            'business_signup', 'beauty_business_signup', prompt='Sign up',
         ),
     }
 
@@ -66,11 +65,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 rel='business_signup',
                 cta_class='link-btn link-signup',
                 group_class='login-footer',
-                label_prefix='New provider?',
+                label_prefix='New here?',
             ),
             h.footer_link(
                 rel='customer_login',
-                cta_class='link-btn',
+                cta_class='link-btn link-business',
                 group_class='login-footer',
                 label_prefix='Not a business provider?',
             ),

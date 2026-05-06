@@ -43,8 +43,6 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8, write_only=True)
     business_name = serializers.CharField(max_length=255)
-    first_name = serializers.CharField(max_length=120, required=False, allow_blank=True, default='')
-    last_name = serializers.CharField(max_length=120, required=False, allow_blank=True, default='')
 
     def validate_email(self, value):
         value = value.lower().strip()
@@ -63,18 +61,10 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
             raise serializers.ValidationError('Business name is required.')
         return value
 
-    def validate_first_name(self, value):
-        return (value or '').strip()
-
-    def validate_last_name(self, value):
-        return (value or '').strip()
-
     def create(self, validated_data):
         provider = BusinessProvider(
             email=validated_data['email'],
             business_name=validated_data['business_name'],
-            first_name=validated_data.get('first_name', ''),
-            last_name=validated_data.get('last_name', ''),
         )
         provider.set_password(validated_data['password'])
         provider.save()
