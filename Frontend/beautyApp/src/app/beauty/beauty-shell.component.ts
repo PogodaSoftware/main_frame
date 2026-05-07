@@ -48,17 +48,26 @@ import { BeautyBookingSuccessComponent } from './beauty-booking-success.componen
 import { BeautyBookingDetailComponent } from './beauty-booking-detail.component';
 import { BeautyRescheduleComponent } from './beauty-reschedule.component';
 import { BeautyProfileComponent } from './beauty-profile.component';
+import { BeautyChatsComponent } from './beauty-chats.component';
+import { BeautyChatThreadComponent } from './beauty-chat-thread.component';
 import { BeautyBusinessDashboardComponent } from './beauty-business-dashboard.component';
 import { BeautyBusinessServicesComponent } from './beauty-business-services.component';
 import { BeautyBusinessServiceFormComponent } from './beauty-business-service-form.component';
 import { BeautyBusinessAvailabilityComponent } from './beauty-business-availability.component';
 import { BeautyBusinessBookingsComponent } from './beauty-business-bookings.component';
+import { BeautyBusinessSettingsComponent } from './beauty-business-settings.component';
+import { BeautyBusinessChangePasswordComponent } from './beauty-business-change-password.component';
+import { BeautyBusinessProfileComponent } from './beauty-business-profile.component';
+import { BeautyBusinessEmailContactComponent } from './beauty-business-email-contact.component';
+import { BeautyProviderNewMessageToastComponent } from './provider/beauty-provider-new-message-toast.component';
+import { BeautyProviderToastService, ToastPayload } from './provider/beauty-provider-toast.service';
 import {
   AdminFlag,
   AdminFlagAuditEntry,
   BeautyAdminFlagsComponent,
   FlagToggleEvent,
 } from './beauty-admin-flags.component';
+import { BeautyAdminCrmComponent } from './beauty-admin-crm.component';
 import { BffLink, BffResponse } from './beauty-bff.types';
 
 @Component({
@@ -75,6 +84,7 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBusinessHomeComponent,
     BeautyWireframeComponent,
     BeautyAdminFlagsComponent,
+    BeautyAdminCrmComponent,
     BeautyCategoryComponent,
     BeautyProviderDetailComponent,
     BeautyBookComponent,
@@ -83,14 +93,25 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBookingDetailComponent,
     BeautyRescheduleComponent,
     BeautyProfileComponent,
+    BeautyChatsComponent,
+    BeautyChatThreadComponent,
     BeautyBusinessDashboardComponent,
     BeautyBusinessServicesComponent,
     BeautyBusinessServiceFormComponent,
     BeautyBusinessAvailabilityComponent,
     BeautyBusinessBookingsComponent,
+    BeautyBusinessSettingsComponent,
+    BeautyBusinessChangePasswordComponent,
+    BeautyBusinessProfileComponent,
+    BeautyBusinessEmailContactComponent,
+    BeautyProviderNewMessageToastComponent,
   ],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
+    <app-prov-new-message-toast
+      (reply)="onToastReply($event)"
+      (markRead)="onToastMarkRead($event)"></app-prov-new-message-toast>
+
     <div *ngIf="isLoading" class="shell-loading">
       <div class="shell-spinner"></div>
     </div>
@@ -147,6 +168,12 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         (toggleFlag)="onFlagToggle($event)"
         (goHomeRequested)="goHome()"
       />
+      <app-beauty-admin-crm
+        *ngIf="bffResponse!.screen === 'beauty_admin_crm'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
       <app-beauty-category
         *ngIf="bffResponse!.screen === 'beauty_category'"
         [data]="bffResponse!.data ?? {}"
@@ -195,6 +222,18 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
       />
+      <app-beauty-chats
+        *ngIf="bffResponse!.screen === 'beauty_chats'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-chat-thread
+        *ngIf="bffResponse!.screen === 'beauty_chat_thread'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
       <app-beauty-business-home
         *ngIf="bffResponse!.screen === 'beauty_business_home'"
         [data]="bffResponse!.data ?? {}"
@@ -221,6 +260,30 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-beauty-business-bookings
         *ngIf="bffResponse!.screen === 'beauty_business_bookings'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-settings
+        *ngIf="bffResponse!.screen === 'beauty_business_settings'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-change-password
+        *ngIf="bffResponse!.screen === 'beauty_business_change_password'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-profile
+        *ngIf="bffResponse!.screen === 'beauty_business_profile'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-email-contact
+        *ngIf="bffResponse!.screen === 'beauty_business_email_contact'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
@@ -270,7 +333,24 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private router: Router,
     @Inject(PLATFORM_ID) private platformId: object,
-  ) {}
+    private toastService: BeautyProviderToastService,
+  ) {
+    if (typeof window !== 'undefined') {
+      // dev hook for Playwright verification of msg-toast-* artboards
+      (window as unknown as { beautyToastSvc?: BeautyProviderToastService }).beautyToastSvc = toastService;
+    }
+  }
+
+  onToastReply(p: ToastPayload): void {
+    this.followLink({
+      rel: 'reply', href: null, method: 'NAV',
+      screen: 'beauty_chat_thread',
+      route: `/business/messages/${p.conversationId}`,
+      prompt: 'Reply',
+    });
+  }
+
+  onToastMarkRead(_p: ToastPayload): void { /* future: PATCH read link */ }
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -381,14 +461,20 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_business_application_review: '/business/apply/review',
     beauty_wireframe: '/wireframe',
     beauty_admin_flags: '/admin/flags',
+    beauty_admin_crm: '/admin/crm',
     beauty_bookings: '/bookings',
     beauty_profile: '/profile',
+    beauty_chats: '/chats',
     // beauty_reschedule and beauty_booking_detail are param routes — the
     // BFF always supplies a substituted `route`, so no fallback entry.
     beauty_business_home: '/business',
     beauty_business_services: '/business/services',
     beauty_business_availability: '/business/availability',
     beauty_business_bookings: '/business/bookings',
+    beauty_business_settings: '/business/settings',
+    beauty_business_change_password: '/business/settings/password',
+    beauty_business_email_contact: '/business/settings/contact',
+    beauty_business_profile: '/business/profile',
   };
 
   /**

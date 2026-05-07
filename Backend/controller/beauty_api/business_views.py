@@ -17,8 +17,11 @@ auto-provisions a storefront on first access so the portal works
 immediately after sign-up.
 """
 
+import hashlib
+import re
 from datetime import datetime, timezone
 
+from django.contrib.auth.hashers import check_password
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -29,6 +32,7 @@ from .availability_service import (
     replace_weekly_hours,
 )
 from .calendar_stats_service import compute_month_payload
+from .middleware import SESSION_COOKIE_NAME
 from .models import (
     BeautyBooking,
     BeautyProvider,
@@ -67,12 +71,17 @@ def _require_business_storefront(request) -> tuple[BusinessProvider | None, Beau
 
 
 def _service_to_dict(svc: BeautyService) -> dict:
+    from decimal import Decimal
+    dollars = svc.price_dollars
+    if dollars is None:
+        dollars = (Decimal(svc.price_cents) / Decimal(100)).quantize(Decimal('0.01'))
     return {
         'id': svc.id,
         'name': svc.name,
         'description': svc.description,
         'category': svc.category,
         'price_cents': svc.price_cents,
+        'price_dollars': f"{dollars:.2f}",
         'duration_minutes': svc.duration_minutes,
     }
 
@@ -194,7 +203,11 @@ class BusinessServiceDetailView(APIView):
         return Response({'deleted': True}, status=status.HTTP_200_OK)
 
 
+_PRICE_DOLLARS_RX = re.compile(r'^\d+(\.\d{1,2})?$')
+
+
 def _clean_service_payload(data) -> tuple[dict, str | None]:
+    from decimal import Decimal, InvalidOperation
     name = (data.get('name') or '').strip()
     if not name:
         return {}, 'Name is required.'
@@ -202,12 +215,27 @@ def _clean_service_payload(data) -> tuple[dict, str | None]:
     if category not in VALID_CATEGORIES:
         return {}, 'Choose a valid category.'
     description = (data.get('description') or '').strip()
-    try:
-        price_cents = int(data.get('price_cents') or 0)
-    except (TypeError, ValueError):
-        return {}, 'Price must be a whole number of cents.'
-    if price_cents < 0:
-        return {}, 'Price must be zero or positive.'
+    # Prefer dollars from new UI; fall back to cents from legacy callers.
+    raw_dollars = data.get('price_dollars')
+    if raw_dollars is not None and str(raw_dollars).strip() != '':
+        s = str(raw_dollars).strip()
+        if not _PRICE_DOLLARS_RX.match(s):
+            return {}, 'Price must be in dollars with up to 2 decimals (e.g. 49.99).'
+        try:
+            dollars = Decimal(s).quantize(Decimal('0.01'))
+        except InvalidOperation:
+            return {}, 'Price must be in dollars with up to 2 decimals (e.g. 49.99).'
+        if dollars < 0 or dollars > Decimal('9999.99'):
+            return {}, 'Price must be between $0.00 and $9999.99.'
+        price_cents = int((dollars * 100).to_integral_value())
+    else:
+        try:
+            price_cents = int(data.get('price_cents') or 0)
+        except (TypeError, ValueError):
+            return {}, 'Price must be a whole number of cents.'
+        if price_cents < 0:
+            return {}, 'Price must be zero or positive.'
+        dollars = (Decimal(price_cents) / Decimal(100)).quantize(Decimal('0.01'))
     try:
         duration_minutes = int(data.get('duration_minutes') or 60)
     except (TypeError, ValueError):
@@ -219,6 +247,7 @@ def _clean_service_payload(data) -> tuple[dict, str | None]:
         'category': category,
         'description': description[:255],
         'price_cents': price_cents,
+        'price_dollars': dollars,
         'duration_minutes': duration_minutes,
     }, None
 
@@ -529,3 +558,210 @@ class BusinessBookingsView(APIView):
                 'customer_email': b.customer.email,
             })
         return Response({'bookings': items}, status=status.HTTP_200_OK)
+
+
+class BusinessEarningsView(APIView):
+    """GET /api/beauty/protected/business/earnings/
+
+    Returns lifetime + monthly + YTD earnings the storefront has collected
+    from customers. Earnings = sum of `display_price_cents` over all bookings
+    with `status in (booked, completed)` (i.e. money customers paid out).
+    """
+
+    def get(self, request):
+        _, storefront, err = _require_business_storefront(request)
+        if err:
+            return err
+        qs = BeautyBooking.objects.filter(
+            service__provider=storefront,
+            status__in=(BeautyBooking.STATUS_BOOKED, BeautyBooking.STATUS_COMPLETED),
+        )
+        now = datetime.now(timezone.utc)
+        month_start = datetime(now.year, now.month, 1, tzinfo=timezone.utc)
+        year_start = datetime(now.year, 1, 1, tzinfo=timezone.utc)
+
+        def _sum(rows) -> int:
+            total = 0
+            for b in rows:
+                total += b.display_price_cents or 0
+            return total
+
+        all_rows = list(qs)
+        total_cents = _sum(all_rows)
+        month_cents = _sum(b for b in all_rows if b.slot_at >= month_start)
+        year_cents = _sum(b for b in all_rows if b.slot_at >= year_start)
+        total_paid_bookings = len(all_rows)
+
+        return Response(
+            {
+                'currency': 'USD',
+                'total_cents': total_cents,
+                'this_month_cents': month_cents,
+                'this_year_cents': year_cents,
+                'paid_bookings_count': total_paid_bookings,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class BusinessAccountPasswordView(APIView):
+    """POST /api/beauty/protected/business/account/password/
+
+    Body: { "current_password": str, "new_password": str }
+    Verifies the current password, sets a new one, and invalidates all
+    sessions for the account so other devices are signed out.
+    """
+
+    def post(self, request):
+        business, _store, err = _require_business_storefront(request)
+        if err:
+            return err
+        data = request.data or {}
+        current = (data.get('current_password') or '').strip()
+        new_password = (data.get('new_password') or '').strip()
+
+        if not current or not new_password:
+            return Response(
+                {'detail': 'Both current and new password are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(new_password) < 8:
+            return Response(
+                {'detail': 'New password must be at least 8 characters.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not check_password(current, business.password):
+            return Response(
+                {'detail': 'Current password is incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        business.set_password(new_password)
+        business.save(update_fields=['password'])
+        # Invalidate all other sessions for this account except the current
+        # device — the user shouldn't be silently logged out where they are.
+        raw_cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
+        keep_token_hash = (
+            hashlib.sha256(raw_cookie.encode()).hexdigest() if raw_cookie else None
+        )
+        sessions = BeautySession.objects.filter(
+            user_id=business.id,
+            user_type=BeautySession.USER_TYPE_BUSINESS,
+        )
+        if keep_token_hash:
+            sessions = sessions.exclude(token_hash=keep_token_hash)
+        sessions.update(is_active=False)
+
+        return Response({'message': 'Password updated.'}, status=status.HTTP_200_OK)
+
+
+_PHONE_RX = re.compile(r'^[\d+()\-\s]{6,32}$')
+
+
+class BusinessAccountContactView(APIView):
+    """GET / PATCH /api/beauty/protected/business/account/contact/
+
+    Body fields (all optional on PATCH):
+        email                — sign-in email (unique)
+        public_email         — storefront-facing email; '' to hide
+        contact_phone        — '+1 415 555 0142' style; ''
+        show_phone_publicly  — bool
+    """
+
+    def get(self, request):
+        business, _store, err = _require_business_storefront(request)
+        if err:
+            return err
+        return Response(self._payload(business), status=status.HTTP_200_OK)
+
+    def patch(self, request):
+        business, _store, err = _require_business_storefront(request)
+        if err:
+            return err
+        data = request.data or {}
+
+        if 'email' in data:
+            new_email = (data.get('email') or '').strip().lower()
+            if not new_email or '@' not in new_email:
+                return Response({'detail': 'A valid sign-in email is required.'}, status=status.HTTP_400_BAD_REQUEST)
+            clash = BusinessProvider.objects.exclude(id=business.id).filter(email__iexact=new_email).exists()
+            if clash:
+                return Response({'detail': 'That email is already in use.'}, status=status.HTTP_400_BAD_REQUEST)
+            business.email = new_email
+
+        if 'public_email' in data:
+            pe = (data.get('public_email') or '').strip().lower()
+            if pe and '@' not in pe:
+                return Response({'detail': 'Public email must be a valid address (or blank).'}, status=status.HTTP_400_BAD_REQUEST)
+            business.public_email = pe
+
+        if 'contact_phone' in data:
+            phone = (data.get('contact_phone') or '').strip()
+            if phone and not _PHONE_RX.match(phone):
+                return Response({'detail': 'Phone must be 6–32 chars; digits, spaces, +, (, ), -.'}, status=status.HTTP_400_BAD_REQUEST)
+            business.contact_phone = phone
+
+        if 'show_phone_publicly' in data:
+            business.show_phone_publicly = bool(data.get('show_phone_publicly'))
+
+        business.save(update_fields=['email', 'public_email', 'contact_phone', 'show_phone_publicly'])
+        return Response(self._payload(business), status=status.HTTP_200_OK)
+
+    @staticmethod
+    def _payload(business: BusinessProvider) -> dict:
+        return {
+            'email': business.email,
+            'public_email': business.public_email or '',
+            'contact_phone': business.contact_phone or '',
+            'show_phone_publicly': bool(business.show_phone_publicly),
+        }
+
+
+class BusinessAccountDeleteView(APIView):
+    """POST /api/beauty/protected/business/account/delete/
+
+    Permanently removes the business provider account. All future
+    `booked` bookings are flagged ``cancelled_by_business`` so customers
+    are notified, then the auth row is deleted (storefront + services
+    cascade via FK). The session cookie is cleared so the client is
+    signed out on the response.
+    """
+
+    def post(self, request):
+        business, storefront, err = _require_business_storefront(request)
+        if err:
+            return err
+
+        # Cancel future bookings so customers get a refund pathway.
+        now = datetime.now(timezone.utc)
+        BeautyBooking.objects.filter(
+            service__provider=storefront,
+            status=BeautyBooking.STATUS_BOOKED,
+            slot_at__gt=now,
+        ).update(status=BeautyBooking.STATUS_CANCELLED_BY_BUSINESS)
+
+        # Invalidate every session bound to this business.
+        BeautySession.objects.filter(
+            user_id=business.id,
+            user_type=BeautySession.USER_TYPE_BUSINESS,
+        ).update(is_active=False)
+
+        # Drop the public storefront — keeps catalog clean. Services
+        # cascade via FK; past bookings keep snapshot fields (PROTECT
+        # would otherwise block service deletion if any booking exists,
+        # so we null the FK back-link instead and leave the storefront
+        # row in place when bookings reference it).
+        try:
+            storefront.delete()
+        except Exception:
+            # Some service has historical bookings via PROTECT —
+            # rename the storefront so it stops appearing publicly.
+            storefront.name = f'[deleted-{storefront.id}]'
+            storefront.business_provider_id = None
+            storefront.save(update_fields=['name', 'business_provider_id'])
+
+        business.delete()
+
+        response = Response({'message': 'Account deleted.'}, status=status.HTTP_200_OK)
+        response.delete_cookie(SESSION_COOKIE_NAME, path='/')
+        return response

@@ -15,6 +15,7 @@ from ..services.application_gate import (
     redirect_to_wizard_if_incomplete,
     resolve_business_or_redirect,
 )
+from ..services.price_format_service import dollars_or_from_cents
 
 
 CATEGORY_OPTIONS = [
@@ -55,6 +56,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'description': svc.description,
             'category': svc.category,
             'price_cents': svc.price_cents,
+            'price_dollars': dollars_or_from_cents(svc.price_dollars, svc.price_cents),
             'duration_minutes': svc.duration_minutes,
         }
     else:
@@ -67,6 +69,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'description': '',
             'category': 'facial',
             'price_cents': 5000,
+            'price_dollars': '50.00',
             'duration_minutes': 60,
         }
 
@@ -80,8 +83,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             {'name': 'name', 'type': 'text', 'label': 'Service name', 'required': True, 'value': defaults['name']},
             {'name': 'category', 'type': 'select', 'label': 'Category', 'required': True, 'value': defaults['category'], 'options': CATEGORY_OPTIONS},
             {'name': 'description', 'type': 'text', 'label': 'Description', 'required': False, 'value': defaults['description']},
-            {'name': 'price_cents', 'type': 'number', 'label': 'Price (cents)', 'required': True, 'value': defaults['price_cents'], 'min': 0},
-            {'name': 'duration_minutes', 'type': 'number', 'label': 'Duration (minutes)', 'required': True, 'value': defaults['duration_minutes'], 'min': 15, 'max': 480},
+            {'name': 'price_dollars', 'type': 'price_dollars', 'label': 'Price', 'required': True, 'value': defaults['price_dollars'], 'min': 0, 'pattern': r'^\d+(\.\d{1,2})?$'},
+            {'name': 'duration_minutes', 'type': 'number', 'label': 'Duration', 'required': True, 'value': defaults['duration_minutes'], 'min': 15, 'max': 480, 'suffix': 'min'},
         ],
     }
 

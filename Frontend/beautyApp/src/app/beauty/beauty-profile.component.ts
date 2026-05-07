@@ -120,6 +120,13 @@ import { BeautyConfirmModalComponent } from './beauty-confirm-modal.component';
           </svg>
           <span class="nav-label">Home</span>
         </button>
+        <button type="button" class="nav-tab" (click)="emit(links['chats'])" [disabled]="!links['chats']" data-testid="nav-chat">
+          <span class="nav-dot"></span>
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <span class="nav-label">Chat</span>
+        </button>
         <button type="button" class="nav-tab is-active" (click)="emit(links['self'])">
           <span class="nav-dot"></span>
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">

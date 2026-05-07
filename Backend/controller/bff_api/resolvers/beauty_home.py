@@ -35,6 +35,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             links['bookings'] = h.screen_link(
                 'bookings', 'beauty_bookings', prompt='My Bookings',
             )
+            links['chats'] = h.screen_link(
+                'chats', 'beauty_chats', prompt='Chat',
+            )
             links['profile'] = h.screen_link(
                 'profile', 'beauty_profile', prompt='Profile',
             )

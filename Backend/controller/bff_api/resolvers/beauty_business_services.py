@@ -15,6 +15,7 @@ from ..services.application_gate import (
     redirect_to_wizard_if_incomplete,
     resolve_business_or_redirect,
 )
+from ..services.price_format_service import dollars_or_from_cents as _dollars
 
 
 CATEGORY_LABELS = {
@@ -45,6 +46,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'category': svc.category,
             'category_label': CATEGORY_LABELS.get(svc.category, svc.category.title()),
             'price_cents': svc.price_cents,
+            'price_dollars': _dollars(svc.price_dollars, svc.price_cents),
             'duration_minutes': svc.duration_minutes,
             '_links': {
                 'edit': h.screen_link(

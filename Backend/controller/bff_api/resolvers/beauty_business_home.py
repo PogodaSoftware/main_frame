@@ -46,6 +46,15 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'bookings': h.screen_link(
             'bookings', 'beauty_business_bookings', prompt='View bookings',
         ),
+        'settings': h.screen_link(
+            'settings', 'beauty_business_settings', prompt='Settings',
+        ),
+        'chats': h.screen_link(
+            'chats', 'beauty_chats', prompt='Chat',
+        ),
+        'profile': h.screen_link(
+            'profile', 'beauty_business_profile', prompt='Profile',
+        ),
         'logout': h.link(
             rel='logout',
             href='/api/beauty/business/logout/',

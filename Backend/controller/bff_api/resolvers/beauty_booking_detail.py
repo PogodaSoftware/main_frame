@@ -66,6 +66,12 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             prompt='View provider', params={'id': b.service.provider.id},
         ),
         'home': h.screen_link('home', 'beauty_home', prompt='Home'),
+        'chats': h.screen_link('chats', 'beauty_chats', prompt='Chat'),
+        'profile': h.screen_link('profile', 'beauty_profile', prompt='Profile'),
+        'chat_thread': h.screen_link(
+            'chat_thread', 'beauty_chat_thread',
+            prompt='Open chat', params={'bookingId': b.id},
+        ),
     }
     if is_upcoming:
         links['reschedule'] = h.screen_link(

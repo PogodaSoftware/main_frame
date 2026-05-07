@@ -14,6 +14,7 @@ are signup and login.
 """
 
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
 from django.conf import settings
 from rest_framework import status
@@ -329,6 +330,11 @@ class MyBookingsView(APIView):
             # price/duration/name even if the business edits the service.
             service_name_at_booking=service.name,
             service_price_cents_at_booking=service.price_cents,
+            service_price_dollars_at_booking=(
+                service.price_dollars
+                if service.price_dollars is not None
+                else (Decimal(service.price_cents) / Decimal(100)).quantize(Decimal('0.01'))
+            ),
             service_duration_minutes_at_booking=service.duration_minutes,
             grace_period_ends_at=now + timedelta(minutes=grace_minutes),
         )

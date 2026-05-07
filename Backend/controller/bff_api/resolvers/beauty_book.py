@@ -87,5 +87,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 prompt='Back to provider', params={'id': svc.provider.id},
             ),
             'home': h.screen_link('home', 'beauty_home', prompt='Home'),
+            'chats': h.screen_link('chats', 'beauty_chats', prompt='Chat'),
+            'profile': h.screen_link('profile', 'beauty_profile', prompt='Profile'),
         },
     }
