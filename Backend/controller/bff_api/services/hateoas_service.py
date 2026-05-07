@@ -58,6 +58,8 @@ Field object shape
 import logging
 import os
 
+from django.conf import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -149,11 +151,15 @@ def _admin_principal_allowlist() -> set[tuple[str, int]]:
     """
     sources = [os.environ.get('BEAUTY_ADMIN_PRINCIPALS', '')]
 
-    try:
-        with open('/tmp/beauty_test_admin_principals') as _fh:
-            sources.append(_fh.read())
-    except FileNotFoundError:
-        pass
+    # Dev-only test override: allows Playwright tests to grant admin access
+    # without restarting the server.  Gated on settings.DEBUG so this code
+    # path is unreachable in production deployments (DEBUG=False).
+    if settings.DEBUG:
+        try:
+            with open('/tmp/beauty_test_admin_principals') as _fh:
+                sources.append(_fh.read())
+        except FileNotFoundError:
+            pass
 
     out: set[tuple[str, int]] = set()
     for raw in sources:
