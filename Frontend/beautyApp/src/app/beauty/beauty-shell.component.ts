@@ -50,7 +50,6 @@ import { BeautyRescheduleComponent } from './beauty-reschedule.component';
 import { BeautyProfileComponent } from './beauty-profile.component';
 import { BeautyChatsComponent } from './beauty-chats.component';
 import { BeautyChatThreadComponent } from './beauty-chat-thread.component';
-import { BeautyBusinessDashboardComponent } from './beauty-business-dashboard.component';
 import { BeautyBusinessServicesComponent } from './beauty-business-services.component';
 import { BeautyBusinessServiceFormComponent } from './beauty-business-service-form.component';
 import { BeautyBusinessAvailabilityComponent } from './beauty-business-availability.component';
@@ -95,7 +94,6 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyProfileComponent,
     BeautyChatsComponent,
     BeautyChatThreadComponent,
-    BeautyBusinessDashboardComponent,
     BeautyBusinessServicesComponent,
     BeautyBusinessServiceFormComponent,
     BeautyBusinessAvailabilityComponent,

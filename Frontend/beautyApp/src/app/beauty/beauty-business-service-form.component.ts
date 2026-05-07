@@ -193,7 +193,7 @@ interface BusinessForm {
     .biz-form { position: relative; }
     .form-card { /* stacks all fields by default */ }
     .field.field-grid { display: inline-block; width: calc(50% - 6px); vertical-align: top; }
-    .field.field-grid:nth-of-type(odd-grid) { margin-right: 12px; }
+    .field.field-grid:nth-of-type(odd) { margin-right: 12px; }
     .field.field-grid + .field.field-grid { margin-left: 12px; }
 
     /* Number with suffix */
