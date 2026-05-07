@@ -6,6 +6,8 @@ class BeautyUser(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_suspended = models.BooleanField(default=False)
+    suspended_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'beauty_users'
@@ -21,7 +23,12 @@ class BusinessProvider(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
     business_name = models.CharField(max_length=255)
+    public_email = models.EmailField(blank=True, default='')
+    contact_phone = models.CharField(max_length=32, blank=True, default='')
+    show_phone_publicly = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_suspended = models.BooleanField(default=False)
+    suspended_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         db_table = 'beauty_business_providers'
@@ -129,6 +136,13 @@ class BeautyService(models.Model):
     name = models.CharField(max_length=255)
     description = models.CharField(max_length=255, blank=True, default='')
     price_cents = models.IntegerField(default=0)
+    # Dollar-denominated mirror of price_cents. Source of truth for the new
+    # provider portal UI (see Business Provider Portal handoff). Stored as
+    # Decimal(10,2) so 49.99 round-trips exactly. Kept in sync with
+    # price_cents on save (cents = round(dollars * 100)).
+    price_dollars = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
     duration_minutes = models.IntegerField(default=60)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -217,6 +231,9 @@ class BeautyBooking(models.Model):
     # Snapshot of the BeautyService fields at booking time. See class docstring.
     service_name_at_booking = models.CharField(max_length=255, blank=True, default='')
     service_price_cents_at_booking = models.IntegerField(null=True, blank=True)
+    service_price_dollars_at_booking = models.DecimalField(
+        max_digits=10, decimal_places=2, null=True, blank=True
+    )
     service_duration_minutes_at_booking = models.IntegerField(null=True, blank=True)
 
     # When non-null and `now() < grace_period_ends_at`, the customer can
@@ -243,6 +260,13 @@ class BeautyBooking(models.Model):
         if self.service_price_cents_at_booking is not None:
             return self.service_price_cents_at_booking
         return self.service.price_cents
+
+    @property
+    def display_price_dollars(self) -> str:
+        from decimal import Decimal
+        if self.service_price_dollars_at_booking is not None:
+            return f"{self.service_price_dollars_at_booking:.2f}"
+        return f"{Decimal(self.display_price_cents) / Decimal(100):.2f}"
 
     @property
     def display_duration_minutes(self) -> int:
@@ -385,6 +409,50 @@ class BusinessProviderApplication(models.Model):
 
     def __str__(self):
         return f"{self.business_provider.email} [{self.status}]"
+
+
+class BeautyChatMessage(models.Model):
+    """Single message in a per-booking chat thread between the customer
+    and the business provider.
+
+    Eligibility
+    -----------
+    A message can only be created when the row's booking has a
+    non-cancelled status (``booked`` or ``completed``). The view layer
+    enforces this so chats never exist before an appointment is booked.
+
+    Retention
+    ---------
+    Messages are deleted 24 hours after the booking's service finishes
+    (``slot_at + duration``). Cleanup is best-effort and runs lazily on
+    every chat read via ``prune_expired_for(booking)`` plus a global
+    sweep helper.
+    """
+
+    SENDER_CUSTOMER = 'customer'
+    SENDER_BUSINESS = 'business'
+    SENDER_CHOICES = [
+        (SENDER_CUSTOMER, 'Customer'),
+        (SENDER_BUSINESS, 'Business Provider'),
+    ]
+
+    booking = models.ForeignKey(
+        BeautyBooking, on_delete=models.CASCADE, related_name='chat_messages',
+    )
+    sender_type = models.CharField(max_length=16, choices=SENDER_CHOICES)
+    sender_id = models.IntegerField()
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_chat_messages'
+        ordering = ['created_at', 'id']
+        indexes = [
+            models.Index(fields=['booking', 'created_at'], name='beauty_chat_bk_at_idx'),
+        ]
+
+    def __str__(self):
+        return f"chat#{self.booking_id} {self.sender_type}:{self.sender_id} @ {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class BeautyFlagAudit(models.Model):

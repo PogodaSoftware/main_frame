@@ -120,6 +120,12 @@ export const routes: Routes = [
     data: { screen: 'beauty_admin_flags' },
   },
   {
+    path: 'admin/crm',
+    component: BeautyShellComponent,
+    title: 'Beauty - CRM',
+    data: { screen: 'beauty_admin_crm' },
+  },
+  {
     path: 'category/:slug',
     component: BeautyShellComponent,
     title: 'Beauty - Category',
@@ -176,6 +182,20 @@ export const routes: Routes = [
     data: { screen: 'beauty_profile' },
   },
   {
+    path: 'chats',
+    component: BeautyShellComponent,
+    title: 'Beauty - Messages',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_chats' },
+  },
+  {
+    path: 'chats/:bookingId',
+    component: BeautyShellComponent,
+    title: 'Beauty - Chat',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_chat_thread' },
+  },
+  {
     path: 'business',
     component: BeautyShellComponent,
     title: 'Beauty - Business Portal',
@@ -216,6 +236,34 @@ export const routes: Routes = [
     title: 'Beauty - Incoming Bookings',
     canActivate: [beautyBusinessAuthGuard],
     data: { screen: 'beauty_business_bookings' },
+  },
+  {
+    path: 'business/settings',
+    component: BeautyShellComponent,
+    title: 'Beauty - Business Settings',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_settings' },
+  },
+  {
+    path: 'business/settings/password',
+    component: BeautyShellComponent,
+    title: 'Beauty - Change Password',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_change_password' },
+  },
+  {
+    path: 'business/settings/contact',
+    component: BeautyShellComponent,
+    title: 'Beauty - Email & Contact',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_email_contact' },
+  },
+  {
+    path: 'business/profile',
+    component: BeautyShellComponent,
+    title: 'Beauty - Business Profile',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_profile' },
   },
   {
     path: '**',

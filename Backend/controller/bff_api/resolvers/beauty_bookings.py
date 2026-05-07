@@ -119,6 +119,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         '_links': {
             'self': h.self_link('beauty_bookings'),
             'home': h.screen_link('home', 'beauty_home', prompt='Home'),
+            'chats': h.screen_link('chats', 'beauty_chats', prompt='Chat'),
             'profile': h.screen_link('profile', 'beauty_profile', prompt='Profile'),
         },
     }

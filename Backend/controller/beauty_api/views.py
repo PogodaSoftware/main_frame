@@ -119,6 +119,12 @@ class LoginView(APIView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        if getattr(user, 'is_suspended', False):
+            return Response(
+                {'detail': 'This account has been suspended. Contact support.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
         payload = _make_cookie_payload(user.id, BeautySession.USER_TYPE_CUSTOMER, device_id)
         signed_token = signing.dumps(payload)
 
@@ -191,6 +197,12 @@ class BusinessLoginView(APIView):
             return Response(
                 {'detail': 'Invalid email or password.'},
                 status=status.HTTP_401_UNAUTHORIZED,
+            )
+
+        if getattr(provider, 'is_suspended', False):
+            return Response(
+                {'detail': 'This business account has been suspended. Contact support.'},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         payload = _make_cookie_payload(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id)

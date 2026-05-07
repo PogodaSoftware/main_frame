@@ -48,6 +48,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'self': h.self_link('beauty_profile'),
             'home': h.screen_link('home', 'beauty_home', prompt='Home'),
             'bookings': h.screen_link('bookings', 'beauty_bookings', prompt='My Bookings'),
+            'chats': h.screen_link('chats', 'beauty_chats', prompt='Chat'),
             'logout': h.link(
                 'logout',
                 method='POST',

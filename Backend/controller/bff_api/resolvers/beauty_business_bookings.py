@@ -16,6 +16,7 @@ from ..services.application_gate import (
     redirect_to_wizard_if_incomplete,
     resolve_business_or_redirect,
 )
+from ..services.price_format_service import dollars_or_from_cents
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
@@ -44,9 +45,12 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'slot_label': b.slot_at.strftime('%a %b %-d · %-I:%M %p UTC'),
             'service': {
                 'id': b.service.id,
-                'name': b.service.name,
-                'duration_minutes': b.service.duration_minutes,
-                'price_cents': b.service.price_cents,
+                'name': b.display_service_name,
+                'duration_minutes': b.display_duration_minutes,
+                'price_cents': b.display_price_cents,
+                'price_dollars': dollars_or_from_cents(
+                    b.service_price_dollars_at_booking, b.display_price_cents,
+                ),
             },
             'customer_email': b.customer.email,
         }

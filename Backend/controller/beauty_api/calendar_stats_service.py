@@ -8,11 +8,16 @@ Shared by the REST view (``BusinessCalendarStatsView``) and the BFF
 """
 
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from .models import BeautyBooking, BeautyProvider
 
 
 DEFAULT_MONTHLY_TARGET_CENTS = 500_000
+
+
+def _cents_to_dollars_str(c: int) -> str:
+    return f"{(Decimal(int(c or 0)) / Decimal(100)).quantize(Decimal('0.01')):.2f}"
 
 
 def compute_month_payload(
@@ -57,6 +62,7 @@ def compute_month_payload(
             'slot_at': b.slot_at.isoformat(),
             'status': b.status,
             'price_cents': b.display_price_cents,
+            'price_dollars': b.display_price_dollars,
             'duration_minutes': b.display_duration_minutes,
         })
         if b.status in (BeautyBooking.STATUS_BOOKED, BeautyBooking.STATUS_COMPLETED):
@@ -83,6 +89,8 @@ def compute_month_payload(
         'stats': {
             'earnings_cents': earnings_cents,
             'earnings_target_cents': DEFAULT_MONTHLY_TARGET_CENTS,
+            'earnings_dollars': _cents_to_dollars_str(earnings_cents),
+            'earnings_target_dollars': _cents_to_dollars_str(DEFAULT_MONTHLY_TARGET_CENTS),
             'bookings_count': bookings_count,
             'by_category': by_category,
             'new_clients': new_clients,

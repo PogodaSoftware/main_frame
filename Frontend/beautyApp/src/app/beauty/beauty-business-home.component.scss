@@ -24,7 +24,15 @@
   background: var(--accent-blue); color: var(--text);
   font-size: 0.72rem; padding: 3px 8px; border-radius: 999px;
 }
-.header-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.header-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.icon-btn {
+  width: 36px; height: 36px; min-width: 36px;
+  display: inline-grid; place-items: center;
+  background: transparent; border: 1px solid var(--line);
+  border-radius: 8px; cursor: pointer; color: var(--text);
+}
+.icon-btn:hover { background: var(--surface-2); }
+.icon-btn:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; }
 
 .biz-section { padding: 16px 14px 80px; display: flex; flex-direction: column; gap: 18px; }
 .biz-title { font-family: var(--font-display); font-size: 1.7rem; margin: 0; font-weight: 500; }

@@ -8,5 +8,6 @@ day_cell = "css=div.business-shell.business-home button.cal-cell[data-date='{dat
 day_bookings = "css=div.business-shell.business-home div.day-bookings"
 gauge_earnings_value = "css=div.business-shell.business-home div.arc-value strong"
 gauge_volume_value = "css=div.business-shell.business-home div.big-num strong"
-sign_out_button = "css=div.business-shell.business-home button.btn-outline-danger"
 services_button = "css=div.business-shell.business-home button.btn-outline >> text=Services"
+gear_button = "css=div.business-shell.business-home [data-testid='biz-gear-btn']"
+profile_button = "css=div.business-shell.business-home [data-testid='biz-profile-btn']"

@@ -43,9 +43,10 @@ const CAROUSEL_START_DELAY_MS = 2000;
 // Auth-related links surface in the (now minimal) top header for signed-out users.
 const HEADER_ACTION_RELS = ['login', 'signup', 'business_login'];
 // Primary tabs sit in the bottom navigation pill.
-const NAV_TABS: { rel: 'bookings' | 'home' | 'profile'; label: string }[] = [
+const NAV_TABS: { rel: 'bookings' | 'home' | 'chats' | 'profile'; label: string }[] = [
   { rel: 'bookings', label: 'Bookings' },
   { rel: 'home', label: 'Home' },
+  { rel: 'chats', label: 'Chat' },
   { rel: 'profile', label: 'Profile' },
 ];
 
@@ -150,6 +151,9 @@ const NAV_TABS: { rel: 'bookings' | 'home' | 'profile'; label: string }[] = [
               <ng-container *ngSwitchCase="'home'">
                 <path d="M3 11l9-7 9 7v9a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9z"/>
               </ng-container>
+              <ng-container *ngSwitchCase="'chats'">
+                <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </ng-container>
               <ng-container *ngSwitchCase="'profile'">
                 <circle cx="12" cy="8.5" r="3.8"/>
                 <path d="M4.5 21c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"/>
@@ -203,7 +207,7 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
       .filter((l): l is BffLink => Boolean(l));
   }
 
-  navLink(rel: 'bookings' | 'home' | 'profile'): BffLink | null {
+  navLink(rel: 'bookings' | 'home' | 'chats' | 'profile'): BffLink | null {
     if (rel === 'home') return this.homeLink();
     return this.links[rel] || null;
   }
