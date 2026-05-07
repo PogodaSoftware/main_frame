@@ -16,6 +16,13 @@ _BEAUTY_ROUTES = {
     'beauty_business_signup',
     'beauty_business_home',
     'beauty_business_services',
+    'beauty_business_settings',
+    'beauty_business_change_password',
+    'beauty_business_profile',
+    'beauty_business_availability',
+    'beauty_admin_crm',
+    'beauty_chats',
+    'beauty_chat_thread',
     'beauty_business_apply_entity',
     'beauty_business_apply_services',
     'beauty_business_apply_stripe',
@@ -50,6 +57,10 @@ _ROUTE_PATHS = {
     'beauty_business_signup': f'{_BEAUTY_BASE}/business/signup',
     'beauty_business_home': f'{_BEAUTY_BASE}/business',
     'beauty_business_services': f'{_BEAUTY_BASE}/business/services',
+    'beauty_business_availability': f'{_BEAUTY_BASE}/business/availability',
+    'beauty_business_settings': f'{_BEAUTY_BASE}/business/settings',
+    'beauty_business_change_password': f'{_BEAUTY_BASE}/business/settings/password',
+    'beauty_business_profile': f'{_BEAUTY_BASE}/business/profile',
     'beauty_business_apply_entity':   f'{_BEAUTY_BASE}/business/apply/entity',
     'beauty_business_apply_services': f'{_BEAUTY_BASE}/business/apply/services',
     'beauty_business_apply_stripe':   f'{_BEAUTY_BASE}/business/apply/stripe',
@@ -69,6 +80,9 @@ _ROUTE_PATHS = {
     'beauty_booking_detail': f'{_BEAUTY_BASE}/bookings/{{id}}',
     'beauty_booking_success': f'{_BEAUTY_BASE}/bookings/{{id}}/success',
     'beauty_profile': f'{_BEAUTY_BASE}/profile',
+    'beauty_admin_crm': f'{_BEAUTY_BASE}/admin/crm',
+    'beauty_chats': f'{_BEAUTY_BASE}/chats',
+    'beauty_chat_thread': f'{_BEAUTY_BASE}/chats/{{bookingId}}',
 }
 
 
@@ -109,7 +123,7 @@ def selecting_different_routes(page: Page, route: str, *args, **params):
         # of {slug, id, serviceId}. Pick the first placeholder name from the
         # template if present.
         path = _ROUTE_PATHS.get(route, '')
-        for placeholder in ('slug', 'serviceId', 'id'):
+        for placeholder in ('slug', 'serviceId', 'bookingId', 'id'):
             if '{' + placeholder + '}' in path:
                 params = {placeholder: args[0]}
                 break

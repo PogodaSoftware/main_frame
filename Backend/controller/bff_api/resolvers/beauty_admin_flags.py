@@ -88,5 +88,6 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         '_links': {
             'self': h.self_link('beauty_admin_flags'),
             'home': h.screen_link('home', 'beauty_home', prompt='Home'),
+            'crm': h.screen_link('crm', 'beauty_admin_crm', prompt='CRM'),
         },
     }

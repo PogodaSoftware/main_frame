@@ -55,6 +55,12 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             prompt='View booking', params={'id': booking.id},
         ),
         'home': h.screen_link('home', 'beauty_home', prompt='Back to Home'),
+        'chats': h.screen_link('chats', 'beauty_chats', prompt='Chat'),
+        'profile': h.screen_link('profile', 'beauty_profile', prompt='Profile'),
+        'chat_thread': h.screen_link(
+            'chat_thread', 'beauty_chat_thread',
+            prompt='Message provider', params={'bookingId': booking.id},
+        ),
     }
     if in_grace_window:
         links['cancel_grace'] = h.link(

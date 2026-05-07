@@ -50,6 +50,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .resolvers import (
+    beauty_admin_crm,
     beauty_admin_flags,
     beauty_book,
     beauty_booking_detail,
@@ -63,13 +64,19 @@ from .resolvers import (
     beauty_business_application_tools,
     beauty_business_availability,
     beauty_business_bookings,
+    beauty_business_change_password,
+    beauty_business_email_contact,
     beauty_business_home,
+    beauty_business_profile,
+    beauty_business_settings,
     beauty_business_login,
     beauty_business_providers,
     beauty_business_service_form,
     beauty_business_services,
     beauty_business_signup,
     beauty_category,
+    beauty_chat_thread,
+    beauty_chats,
     beauty_home,
     beauty_login,
     beauty_profile,
@@ -102,6 +109,7 @@ SCREEN_RESOLVERS = {
     'beauty_business_providers': beauty_business_providers.resolve,
     'beauty_sessions': beauty_sessions.resolve,
     'beauty_admin_flags': beauty_admin_flags.resolve,
+    'beauty_admin_crm': beauty_admin_crm.resolve,
     # Customer marketplace screens
     'beauty_category': beauty_category.resolve,
     'beauty_provider_detail': beauty_provider_detail.resolve,
@@ -111,12 +119,18 @@ SCREEN_RESOLVERS = {
     'beauty_reschedule': beauty_reschedule.resolve,
     'beauty_bookings': beauty_bookings.resolve,
     'beauty_profile': beauty_profile.resolve,
+    'beauty_chats': beauty_chats.resolve,
+    'beauty_chat_thread': beauty_chat_thread.resolve,
     # Business portal screens
     'beauty_business_home': beauty_business_home.resolve,
     'beauty_business_services': beauty_business_services.resolve,
     'beauty_business_service_form': beauty_business_service_form.resolve,
     'beauty_business_availability': beauty_business_availability.resolve,
     'beauty_business_bookings': beauty_business_bookings.resolve,
+    'beauty_business_settings': beauty_business_settings.resolve,
+    'beauty_business_change_password': beauty_business_change_password.resolve,
+    'beauty_business_email_contact': beauty_business_email_contact.resolve,
+    'beauty_business_profile': beauty_business_profile.resolve,
 }
 
 VALID_SCREENS = frozenset(SCREEN_RESOLVERS.keys())

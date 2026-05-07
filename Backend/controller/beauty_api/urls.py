@@ -1,5 +1,6 @@
 from django.urls import path
 
+from .admin_crm_views import CrmListView, CrmSuspendView
 from .admin_views import FlagToggleView
 from .booking_views import (
     CancelBookingGraceView,
@@ -10,13 +11,23 @@ from .booking_views import (
     RescheduleBookingView,
     ServiceDetailView,
 )
+from .chat_views import (
+    BusinessChatListView,
+    ChatSendView,
+    ChatThreadView,
+    CustomerChatListView,
+)
 from .business_views import (
+    BusinessAccountContactView,
+    BusinessAccountDeleteView,
+    BusinessAccountPasswordView,
     BusinessApplicationSubmitView,
     BusinessApplicationView,
     BusinessAvailabilityView,
     BusinessBookingsView,
     BusinessCalendarStatsView,
     BusinessDashboardView,
+    BusinessEarningsView,
     BusinessServiceDetailView,
     BusinessServiceListView,
 )
@@ -45,6 +56,8 @@ urlpatterns = [
     # an expired-but-recoverable session at the middleware.
     path('session/refresh/', SessionRefreshView.as_view(), name='beauty-session-refresh'),
     path('admin/flags/toggle/', FlagToggleView.as_view(), name='beauty-admin-flag-toggle'),
+    path('admin/crm/', CrmListView.as_view(), name='beauty-admin-crm'),
+    path('admin/crm/suspend/', CrmSuspendView.as_view(), name='beauty-admin-crm-suspend'),
 
     # Customer marketplace (read-only, public)
     path('categories/<str:category>/', CategoryListView.as_view(), name='beauty-category'),
@@ -57,6 +70,12 @@ urlpatterns = [
     path('protected/bookings/<int:booking_id>/cancel-grace/', CancelBookingGraceView.as_view(), name='beauty-booking-cancel-grace'),
     path('protected/bookings/<int:booking_id>/reschedule/', RescheduleBookingView.as_view(), name='beauty-booking-reschedule'),
 
+    # Per-booking chat (customer + business; both auth gates handled in views).
+    path('protected/bookings/<int:booking_id>/chat/', ChatThreadView.as_view(), name='beauty-chat-thread'),
+    path('protected/bookings/<int:booking_id>/chat/send/', ChatSendView.as_view(), name='beauty-chat-send'),
+    path('protected/chats/', CustomerChatListView.as_view(), name='beauty-chats'),
+    path('protected/business/chats/', BusinessChatListView.as_view(), name='beauty-business-chats'),
+
     # Business portal (business auth required — same middleware enforces session,
     # the views additionally check user_type == 'business').
     path('protected/business/application/', BusinessApplicationView.as_view(), name='beauty-business-application'),
@@ -67,4 +86,8 @@ urlpatterns = [
     path('protected/business/services/<int:service_id>/', BusinessServiceDetailView.as_view(), name='beauty-business-service-detail'),
     path('protected/business/availability/', BusinessAvailabilityView.as_view(), name='beauty-business-availability'),
     path('protected/business/bookings/', BusinessBookingsView.as_view(), name='beauty-business-bookings'),
+    path('protected/business/earnings/', BusinessEarningsView.as_view(), name='beauty-business-earnings'),
+    path('protected/business/account/password/', BusinessAccountPasswordView.as_view(), name='beauty-business-account-password'),
+    path('protected/business/account/contact/', BusinessAccountContactView.as_view(), name='beauty-business-account-contact'),
+    path('protected/business/account/delete/', BusinessAccountDeleteView.as_view(), name='beauty-business-account-delete'),
 ]

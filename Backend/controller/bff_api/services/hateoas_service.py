@@ -248,6 +248,7 @@ SCREEN_ROUTES = {
     'beauty_business_providers': '/pogoda/beauty/admin/business-providers',
     'beauty_sessions': '/pogoda/beauty/admin/sessions',
     'beauty_admin_flags': '/pogoda/beauty/admin/flags',
+    'beauty_admin_crm': '/pogoda/beauty/admin/crm',
     # Customer marketplace screens. `:slug` / `:id` are substituted by the
     # Angular shell from BFF link `params`.
     'beauty_category': '/pogoda/beauty/category/:slug',
@@ -258,6 +259,8 @@ SCREEN_ROUTES = {
     'beauty_reschedule': '/pogoda/beauty/bookings/:bookingId/reschedule',
     'beauty_bookings': '/pogoda/beauty/bookings',
     'beauty_profile': '/pogoda/beauty/profile',
+    'beauty_chats': '/pogoda/beauty/chats',
+    'beauty_chat_thread': '/pogoda/beauty/chats/:bookingId',
     # Business portal screens.
     'beauty_business_home': '/pogoda/beauty/business',
     'beauty_business_services': '/pogoda/beauty/business/services',
@@ -265,6 +268,10 @@ SCREEN_ROUTES = {
     'beauty_business_service_new': '/pogoda/beauty/business/services/new',
     'beauty_business_availability': '/pogoda/beauty/business/availability',
     'beauty_business_bookings': '/pogoda/beauty/business/bookings',
+    'beauty_business_settings': '/pogoda/beauty/business/settings',
+    'beauty_business_change_password': '/pogoda/beauty/business/settings/password',
+    'beauty_business_email_contact': '/pogoda/beauty/business/settings/contact',
+    'beauty_business_profile': '/pogoda/beauty/business/profile',
 }
 
 
