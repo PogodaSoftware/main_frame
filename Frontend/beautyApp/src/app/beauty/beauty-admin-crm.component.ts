@@ -9,8 +9,8 @@
  *   - server-side pagination
  *   - per-row Suspend / Reinstate action
  *
- * Visual styling follows the existing flags admin screen so the two
- * surfaces feel like one product.
+ * Visual styling follows the existing customer / business-provider mobile-app
+ * shell so all admin surfaces share one coherent design language.
  */
 
 import {
@@ -27,6 +27,8 @@ import { FormsModule } from '@angular/forms';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { BeautyProviderSubHeaderComponent } from './provider/prov-sub-header.component';
+import { BeautyProviderCardComponent } from './provider/prov-card.component';
 
 interface CrmRow {
   id: number;
@@ -52,80 +54,93 @@ type CrmTab = 'all' | 'customer' | 'business';
 @Component({
   selector: 'app-beauty-admin-crm',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BeautyProviderSubHeaderComponent, BeautyProviderCardComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="crm-page">
-      <header class="crm-header">
-        <div class="crm-brand">
-          <button class="brand-name-btn" (click)="emit(links['home'])">Beauty</button>
-          <span class="crm-subtitle">CRM</span>
+    <div class="beauty-app prov-shell" data-testid="crm-page">
+      <app-prov-sub-header
+        back="Home"
+        title="CRM"
+        (backClick)="emit(links['home'])"
+      >
+        <div slot="right" class="admin-header-right">
+          <button
+            *ngIf="links['flags']"
+            type="button"
+            class="admin-nav-btn"
+            data-testid="crm-nav-flags"
+            (click)="emit(links['flags'])"
+          >Feature flags</button>
+          <span class="admin-badge" *ngIf="adminEmail" data-testid="crm-admin-badge">{{ adminEmail }}</span>
         </div>
-        <div class="crm-admin-badge" *ngIf="adminEmail">{{ adminEmail }}</div>
-      </header>
+      </app-prov-sub-header>
 
-      <main id="main" class="crm-main">
+      <main id="main" class="prov-body crm-body">
         <span class="sr-only" role="status" aria-live="polite">{{ announcement }}</span>
 
         <section class="crm-intro">
-          <h1>Customer relationship management</h1>
-          <p>
-            Search, filter, and suspend customer or business-provider
-            accounts. Suspending an account immediately invalidates every
-            active session and blocks future sign-ins until reinstated.
+          <p class="crm-intro-text">
+            Search, filter, and manage customer or business-provider accounts.
+            Suspending an account immediately invalidates every active session
+            and blocks sign-in until reinstated.
           </p>
         </section>
 
-        <section class="crm-controls" aria-label="Search and filter">
-          <form class="crm-search" (submit)="onSearch($event)">
-            <label class="sr-only" for="crm-q">Search accounts</label>
-            <input
-              id="crm-q"
-              data-testid="crm-search-input"
-              type="search"
-              autocomplete="off"
-              placeholder="Search by email or business name"
-              [(ngModel)]="query"
-              name="query"
-            />
-            <button
-              type="submit"
-              class="crm-search-btn"
-              data-testid="crm-search-submit"
-            >Search</button>
-          </form>
+        <!-- Search + Filter controls -->
+        <app-prov-card padding="0">
+          <div class="crm-controls" aria-label="Search and filter">
+            <form class="crm-search-row" (submit)="onSearch($event)">
+              <label class="sr-only" for="crm-q">Search accounts</label>
+              <input
+                id="crm-q"
+                data-testid="crm-search-input"
+                class="crm-search-input"
+                type="search"
+                autocomplete="off"
+                placeholder="Search by email or business name…"
+                [(ngModel)]="query"
+                name="query"
+              />
+              <button
+                type="submit"
+                class="crm-search-btn"
+                data-testid="crm-search-submit"
+              >Search</button>
+            </form>
 
-          <div class="crm-tabs" role="tablist" aria-label="Filter accounts">
-            <button
-              role="tab"
-              type="button"
-              class="crm-tab"
-              data-testid="crm-tab-all"
-              [class.is-active]="tab === 'all'"
-              [attr.aria-selected]="tab === 'all'"
-              (click)="setTab('all')"
-            >All</button>
-            <button
-              role="tab"
-              type="button"
-              class="crm-tab"
-              data-testid="crm-tab-customer"
-              [class.is-active]="tab === 'customer'"
-              [attr.aria-selected]="tab === 'customer'"
-              (click)="setTab('customer')"
-            >Customers</button>
-            <button
-              role="tab"
-              type="button"
-              class="crm-tab"
-              data-testid="crm-tab-business"
-              [class.is-active]="tab === 'business'"
-              [attr.aria-selected]="tab === 'business'"
-              (click)="setTab('business')"
-            >Businesses</button>
+            <div class="crm-tabs" role="tablist" aria-label="Filter accounts">
+              <button
+                role="tab"
+                type="button"
+                class="crm-tab"
+                data-testid="crm-tab-all"
+                [class.is-active]="tab === 'all'"
+                [attr.aria-selected]="tab === 'all'"
+                (click)="setTab('all')"
+              >All</button>
+              <button
+                role="tab"
+                type="button"
+                class="crm-tab"
+                data-testid="crm-tab-customer"
+                [class.is-active]="tab === 'customer'"
+                [attr.aria-selected]="tab === 'customer'"
+                (click)="setTab('customer')"
+              >Customers</button>
+              <button
+                role="tab"
+                type="button"
+                class="crm-tab"
+                data-testid="crm-tab-business"
+                [class.is-active]="tab === 'business'"
+                [attr.aria-selected]="tab === 'business'"
+                (click)="setTab('business')"
+              >Businesses</button>
+            </div>
           </div>
-        </section>
+        </app-prov-card>
 
+        <!-- Error banner -->
         <p
           *ngIf="error"
           class="crm-error"
@@ -133,42 +148,47 @@ type CrmTab = 'all' | 'customer' | 'business';
           data-testid="crm-error"
         >{{ error }}</p>
 
+        <!-- Account list -->
         <section class="crm-list" aria-label="Accounts">
           <div *ngIf="loading" class="crm-loading" data-testid="crm-loading">Loading…</div>
 
-          <article
+          <app-prov-card
             *ngFor="let row of items; trackBy: trackByRow"
-            class="crm-card"
+            padding="0"
             [attr.data-testid]="'crm-row-' + row.type + '-' + row.id"
-            [class.is-suspended]="row.is_suspended"
           >
-            <div class="crm-card-info">
-              <div class="crm-row-top">
-                <span
-                  class="crm-type"
-                  [class.crm-type--customer]="row.type === 'customer'"
-                  [class.crm-type--business]="row.type === 'business'"
-                >{{ row.type === 'business' ? 'Business' : 'Customer' }}</span>
-                <span class="crm-status" *ngIf="row.is_suspended" data-testid="crm-row-suspended">Suspended</span>
+            <article
+              class="crm-card"
+              [class.is-suspended]="row.is_suspended"
+            >
+              <div class="crm-card-info">
+                <div class="crm-row-top">
+                  <span
+                    class="crm-type"
+                    [class.crm-type--customer]="row.type === 'customer'"
+                    [class.crm-type--business]="row.type === 'business'"
+                  >{{ row.type === 'business' ? 'Business' : 'Customer' }}</span>
+                  <span class="crm-status" *ngIf="row.is_suspended" data-testid="crm-row-suspended">Suspended</span>
+                </div>
+                <h2 class="crm-name">{{ row.name || row.email }}</h2>
+                <code class="crm-email">{{ row.email }}</code>
+                <p class="crm-meta">Joined {{ formatDate(row.created_at) }}</p>
               </div>
-              <h2 class="crm-name">{{ row.name || row.email }}</h2>
-              <code class="crm-email">{{ row.email }}</code>
-              <p class="crm-meta">Joined {{ formatDate(row.created_at) }}</p>
-            </div>
-            <div class="crm-card-actions">
-              <button
-                type="button"
-                class="crm-action"
-                [class.is-danger]="!row.is_suspended"
-                [class.is-neutral]="row.is_suspended"
-                [disabled]="busyKey === rowKey(row)"
-                [attr.data-testid]="(row.is_suspended ? 'crm-reinstate-' : 'crm-suspend-') + row.type + '-' + row.id"
-                (click)="onSuspend(row)"
-              >
-                {{ row.is_suspended ? 'Reinstate' : 'Suspend' }}
-              </button>
-            </div>
-          </article>
+              <div class="crm-card-actions">
+                <button
+                  type="button"
+                  class="crm-action"
+                  [class.is-danger]="!row.is_suspended"
+                  [class.is-reinstate]="row.is_suspended"
+                  [disabled]="busyKey === rowKey(row)"
+                  [attr.data-testid]="(row.is_suspended ? 'crm-reinstate-' : 'crm-suspend-') + row.type + '-' + row.id"
+                  (click)="onSuspend(row)"
+                >
+                  {{ row.is_suspended ? 'Reinstate' : 'Suspend' }}
+                </button>
+              </div>
+            </article>
+          </app-prov-card>
 
           <p
             *ngIf="!loading && !items.length"
@@ -177,6 +197,7 @@ type CrmTab = 'all' | 'customer' | 'business';
           >No accounts match the current filters.</p>
         </section>
 
+        <!-- Pagination -->
         <nav class="crm-pagination" aria-label="Pagination" *ngIf="totalPages > 1">
           <button
             type="button"
@@ -200,85 +221,165 @@ type CrmTab = 'all' | 'customer' | 'business';
     </div>
   `,
   styles: [`
-    :host { display: block; min-height: 100dvh; background: #f7f7f8; color: #1c1c1e;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .crm-page { max-width: 960px; margin: 0 auto; padding: 24px 20px 64px; }
-    .crm-header { display: flex; justify-content: space-between; align-items: center;
-      padding-bottom: 16px; border-bottom: 1px solid #e5e5ea; margin-bottom: 24px; }
-    .crm-brand { display: flex; align-items: baseline; gap: 12px; }
-    .brand-name-btn { background: none; border: none; padding: 0; cursor: pointer;
-      font-size: 1.5rem; font-weight: 700; color: #1c1c1e; }
-    .crm-subtitle { color: #6b6b70; font-size: 0.95rem; }
-    .crm-admin-badge { font-size: 0.85rem; padding: 6px 12px; border-radius: 999px;
-      background: #1c1c1e; color: #fff; }
-    .crm-intro h1 { margin: 0 0 8px; font-size: 1.6rem; }
-    .crm-intro p { margin: 0 0 20px; color: #5b5b60; line-height: 1.4; }
+    :host {
+      display: block;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
 
-    .crm-controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
-    .crm-search { display: flex; gap: 8px; }
-    .crm-search input { flex: 1; min-height: 44px; padding: 10px 14px;
-      border: 1px solid #d6d6db; border-radius: 10px; font-size: 0.95rem; background: #fff; }
-    .crm-search-btn { min-height: 44px; padding: 0 18px; border-radius: 10px;
-      background: #1c1c1e; color: #fff; border: none; cursor: pointer; font-weight: 600; }
+    /* ── App shell (matches business-provider pages) ── */
+    .beauty-app {
+      display: flex; flex-direction: column;
+      min-height: 100dvh;
+      background: #F2F2F2;
+      color: #0F1115;
+    }
+    .prov-body {
+      flex: 1; overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── Header right slot ── */
+    .admin-header-right {
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .admin-nav-btn {
+      background: transparent; border: 1px solid #DCDCDF;
+      border-radius: 8px; padding: 0 12px;
+      min-height: 36px; cursor: pointer;
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      color: #0F1115;
+    }
+    .admin-nav-btn:hover { background: #EBEBEB; }
+    .admin-badge {
+      font-size: 12px; padding: 4px 10px; border-radius: 999px;
+      background: #0F1115; color: #fff; white-space: nowrap;
+    }
+
+    /* ── Intro text ── */
+    .crm-body { padding: 16px 14px 64px; display: flex; flex-direction: column; gap: 14px; }
+    .crm-intro-text {
+      margin: 0; color: #6B6F77; font-size: 13px; line-height: 1.5;
+    }
+
+    /* ── Controls card ── */
+    .crm-controls {
+      padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .crm-search-row { display: flex; gap: 8px; }
+    .crm-search-input {
+      flex: 1; min-height: 44px; padding: 10px 13px;
+      border: 1px solid #DCDCDF; border-radius: 10px;
+      font-size: 14px; font-family: inherit;
+      background: #fff; color: #0F1115;
+    }
+    .crm-search-input:focus { outline: 2px solid #1a3a52; outline-offset: 1px; }
+    .crm-search-btn {
+      min-height: 44px; padding: 0 16px; border-radius: 10px;
+      background: #0F1115; color: #fff; border: none;
+      cursor: pointer; font-weight: 600; font-size: 13px; font-family: inherit;
+      white-space: nowrap;
+    }
     .crm-search-btn:hover { background: #2a2a2c; }
-    .crm-tabs { display: inline-flex; gap: 4px; background: #ececef;
-      padding: 4px; border-radius: 12px; align-self: flex-start; flex-wrap: wrap; }
-    .crm-tab { background: transparent; border: none; padding: 8px 14px; min-height: 36px;
-      border-radius: 8px; cursor: pointer; color: #4a4a4f; font-weight: 500; }
-    .crm-tab:hover { color: #1c1c1e; }
-    .crm-tab.is-active { background: #fff; color: #1c1c1e; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
 
-    .crm-error { color: #94343b; background: #fbe9eb; border: 1px solid #f1c5c9;
-      border-radius: 10px; padding: 10px 14px; margin: 0 0 16px; font-size: 0.9rem; }
-    .crm-loading { color: #6b6b70; font-style: italic; padding: 12px 0; }
+    /* ── Filter tabs (pill chip style) ── */
+    .crm-tabs {
+      display: inline-flex; gap: 4px;
+      background: #EBEBEF; padding: 4px; border-radius: 12px;
+      align-self: flex-start; flex-wrap: wrap;
+    }
+    .crm-tab {
+      background: transparent; border: none;
+      padding: 7px 14px; min-height: 36px;
+      border-radius: 8px; cursor: pointer;
+      color: #6B6F77; font-weight: 500; font-size: 13px; font-family: inherit;
+    }
+    .crm-tab:hover { color: #0F1115; }
+    .crm-tab.is-active {
+      background: #fff; color: #0F1115;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
 
-    .crm-list { display: grid; gap: 12px; margin-bottom: 24px; }
-    .crm-card { display: flex; justify-content: space-between; gap: 16px;
-      background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 16px 18px; }
-    .crm-card.is-suspended { background: #fdf3f4; border-color: #f1c5c9; }
+    /* ── Error ── */
+    .crm-error {
+      color: #94343b; background: #fbe9eb;
+      border: 1px solid #f1c5c9; border-radius: 10px;
+      padding: 10px 14px; font-size: 13px; margin: 0;
+    }
+    .crm-loading { color: #6B6F77; font-style: italic; padding: 12px 0; font-size: 14px; }
+
+    /* ── Account cards ── */
+    .crm-list { display: flex; flex-direction: column; gap: 10px; }
+    .crm-card {
+      display: flex; justify-content: space-between; gap: 14px;
+      padding: 14px 16px; align-items: center;
+    }
+    .crm-card.is-suspended { background: #fdf3f4; border-radius: 14px; }
     .crm-card-info { flex: 1; min-width: 0; }
     .crm-row-top { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
-    .crm-type { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
-      padding: 2px 8px; border-radius: 999px; font-weight: 600; }
+
+    .crm-type {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 2px 8px; border-radius: 999px; font-weight: 600;
+    }
     .crm-type--customer { background: #e3f0fc; color: #1d4ed8; }
     .crm-type--business { background: #ecf6e7; color: #166534; }
-    .crm-status { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+
+    .crm-status {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em;
       padding: 2px 8px; border-radius: 999px; font-weight: 600;
-      background: #fbe9eb; color: #94343b; }
-    .crm-name { margin: 0 0 4px; font-size: 1.05rem; font-weight: 600;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .crm-email { display: inline-block; font-size: 0.78rem; color: #6b6b70;
-      background: #f1f1f3; padding: 2px 6px; border-radius: 6px; }
-    .crm-meta { margin: 8px 0 0; color: #6b6b70; font-size: 0.82rem; }
+      background: #fbe9eb; color: #94343b;
+    }
+    .crm-name {
+      margin: 0 0 4px; font-size: 15px; font-weight: 600;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      color: #0F1115;
+    }
+    .crm-email {
+      display: inline-block; font-size: 12px; color: #6B6F77;
+      background: #F2F2F2; padding: 2px 6px; border-radius: 6px;
+    }
+    .crm-meta { margin: 6px 0 0; color: #6B6F77; font-size: 12px; }
 
-    .crm-card-actions { display: flex; align-items: center; }
-    .crm-action { min-height: 44px; padding: 0 16px; border-radius: 10px;
-      cursor: pointer; font-weight: 600; border: 1px solid transparent; font-family: inherit; }
-    .crm-action.is-danger { background: #c0392b; color: #fff; border-color: #c0392b; }
+    /* ── Action buttons ── */
+    .crm-card-actions { display: flex; align-items: center; flex-shrink: 0; }
+    .crm-action {
+      min-height: 44px; padding: 0 14px; border-radius: 10px;
+      cursor: pointer; font-weight: 600; font-size: 13px; font-family: inherit;
+      border: 1px solid transparent; white-space: nowrap;
+    }
+    .crm-action.is-danger { background: #C0392B; color: #fff; border-color: #C0392B; }
     .crm-action.is-danger:hover:not(:disabled) { background: #9f2f23; border-color: #9f2f23; }
-    .crm-action.is-neutral { background: #fff; color: #1c1c1e; border-color: #1c1c1e; }
-    .crm-action.is-neutral:hover:not(:disabled) { background: #f1f1f3; }
-    .crm-action:disabled { opacity: 0.55; cursor: progress; }
+    .crm-action.is-reinstate { background: #fff; color: #0F1115; border-color: #DCDCDF; }
+    .crm-action.is-reinstate:hover:not(:disabled) { background: #F2F2F2; }
+    .crm-action:disabled { opacity: 0.5; cursor: progress; }
 
-    .crm-pagination { display: flex; justify-content: space-between; align-items: center;
-      gap: 12px; padding: 12px 0; border-top: 1px solid #e5e5ea; flex-wrap: wrap; }
-    .crm-page-btn { min-height: 44px; padding: 0 16px; border-radius: 10px;
-      background: #fff; color: #1c1c1e; border: 1px solid #d6d6db; cursor: pointer; font-weight: 500; }
-    .crm-page-btn:hover:not(:disabled) { background: #f1f1f3; }
+    /* ── Pagination ── */
+    .crm-pagination {
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 10px; padding: 12px 0; border-top: 1px solid #DCDCDF; flex-wrap: wrap;
+    }
+    .crm-page-btn {
+      min-height: 44px; padding: 0 16px; border-radius: 10px;
+      background: #fff; color: #0F1115; border: 1px solid #DCDCDF;
+      cursor: pointer; font-weight: 500; font-size: 13px; font-family: inherit;
+    }
+    .crm-page-btn:hover:not(:disabled) { background: #F2F2F2; }
     .crm-page-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .crm-page-info { color: #5b5b60; font-size: 0.9rem; }
+    .crm-page-info { color: #6B6F77; font-size: 13px; }
 
-    .crm-empty { color: #6b6b70; font-style: italic; padding: 12px 0; }
+    .crm-empty { color: #6B6F77; font-style: italic; font-size: 14px; padding: 12px 0; }
 
-    .sr-only { position: absolute !important; width: 1px !important; height: 1px !important;
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
       padding: 0 !important; margin: -1px !important; overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
-
+      clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important;
+    }
     :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
 
-    @media (min-width: 720px) {
+    @media (min-width: 600px) {
       .crm-controls { flex-direction: row; align-items: center; justify-content: space-between; }
-      .crm-search { flex: 1; max-width: 460px; }
+      .crm-search-row { flex: 1; max-width: 420px; }
     }
   `],
 })

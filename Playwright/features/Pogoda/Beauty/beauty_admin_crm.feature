@@ -6,6 +6,13 @@ Feature: Beauty Admin CRM
     Then the CRM directory should render
     And the page should show both customer and business rows
 
+  Scenario: CRM page uses the app shell layout
+    Given I am signed in as a beauty admin with seeded accounts
+    When I open the admin CRM page
+    Then the page should use the beauty-app shell
+    And the page should have a sub-header with the CRM title
+    And the page should have filter tabs
+
   Scenario: Filter tab shows only customer accounts
     Given I am signed in as a beauty admin with seeded accounts
     When I open the admin CRM page

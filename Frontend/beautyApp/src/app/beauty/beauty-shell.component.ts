@@ -163,7 +163,9 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         [audit]="adminAudit"
         [adminEmail]="adminEmail"
         [busyKey]="busyFlagKey"
+        [links]="bffResponse!._links ?? {}"
         (toggleFlag)="onFlagToggle($event)"
+        (followLink)="followLink($event)"
         (goHomeRequested)="goHome()"
       />
       <app-beauty-admin-crm

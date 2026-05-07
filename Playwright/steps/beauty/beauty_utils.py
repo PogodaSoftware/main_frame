@@ -7,7 +7,7 @@ import requests
 BACKEND_PORT = os.getenv('BACKEND_PORT', '8000')
 BACKEND_URL = f"http://localhost:{BACKEND_PORT}"
 TEST_DEVICE_ID = "test-device-playwright-beauty-001"
-BEAUTY_SESSION_COOKIE = "beauty_session"
+BEAUTY_SESSION_COOKIE = "beauty_auth"
 
 _MANAGE_PY_DIR = os.path.join(
     os.path.dirname(__file__), '..', '..', '..', 'Backend', 'controller'

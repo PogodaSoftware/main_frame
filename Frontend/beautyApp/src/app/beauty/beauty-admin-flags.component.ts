@@ -23,6 +23,7 @@ import {
 import { CommonModule } from '@angular/common';
 
 import { BffLink } from './beauty-bff.types';
+import { BeautyProviderSubHeaderComponent } from './provider/prov-sub-header.component';
 
 export interface AdminFlag {
   key: string;
@@ -49,19 +50,26 @@ export interface FlagToggleEvent {
 @Component({
   selector: 'app-beauty-admin-flags',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BeautyProviderSubHeaderComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="flags-page">
-      <header class="flags-header">
-        <div class="flags-brand">
-          <button class="brand-name-btn" (click)="goHome()">Beauty</button>
-          <span class="flags-subtitle">Feature flags</span>
+    <div class="beauty-app prov-shell flags-page">
+      <app-prov-sub-header
+        back="Home"
+        title="Feature flags"
+        (backClick)="goHome()"
+      >
+        <div slot="right" class="flags-header-right">
+          <button
+            *ngIf="links['crm']"
+            type="button"
+            class="flags-nav-btn"
+            data-testid="flags-nav-crm"
+            (click)="followLink.emit(links['crm'])"
+          >CRM</button>
+          <span class="flags-admin-badge" *ngIf="adminEmail">{{ adminEmail }}</span>
         </div>
-        <div class="flags-admin-badge" *ngIf="adminEmail">
-          {{ adminEmail }}
-        </div>
-      </header>
+      </app-prov-sub-header>
 
       <main id="main" class="flags-main">
         <span class="sr-only" role="status" aria-live="polite">{{ flagAnnouncement }}</span>
@@ -126,42 +134,54 @@ export interface FlagToggleEvent {
     </div>
   `,
   styles: [`
-    :host { display: block; min-height: 100dvh; background: #f7f7f8; color: #1c1c1e;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-    .flags-page { max-width: 860px; margin: 0 auto; padding: 24px 20px 64px; }
-    .flags-header { display: flex; justify-content: space-between; align-items: center;
-      padding-bottom: 16px; border-bottom: 1px solid #e5e5ea; margin-bottom: 24px; }
-    .flags-brand { display: flex; align-items: baseline; gap: 12px; }
-    .brand-name-btn { background: none; border: none; padding: 0; cursor: pointer;
-      font-size: 1.5rem; font-weight: 700; color: #1c1c1e; }
-    .flags-subtitle { color: #6b6b70; font-size: 0.95rem; }
-    .flags-admin-badge { font-size: 0.85rem; padding: 6px 12px; border-radius: 999px;
-      background: #1c1c1e; color: #fff; }
-    .flags-intro h1 { margin: 0 0 8px; font-size: 1.6rem; }
-    .flags-intro p { margin: 0 0 24px; color: #5b5b60; line-height: 1.4; }
-    .flags-list { display: grid; gap: 12px; margin-bottom: 32px; }
-    .flag-card { display: flex; justify-content: space-between; gap: 16px;
-      background: #fff; border: 1px solid #e5e5ea; border-radius: 12px; padding: 16px 18px; }
+    :host {
+      display: block;
+      font-family: 'Inter', system-ui, sans-serif;
+    }
+    .beauty-app {
+      display: flex; flex-direction: column;
+      min-height: 100dvh;
+      background: #F2F2F2;
+      color: #0F1115;
+    }
+    .flags-page {}
+    .flags-header-right {
+      display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .flags-nav-btn {
+      background: transparent; border: 1px solid #DCDCDF;
+      border-radius: 8px; padding: 0 12px;
+      min-height: 36px; cursor: pointer;
+      font-family: inherit; font-size: 13px; font-weight: 500;
+      color: #0F1115;
+    }
+    .flags-nav-btn:hover { background: #EBEBEB; }
+    .flags-admin-badge {
+      font-size: 12px; padding: 4px 10px; border-radius: 999px;
+      background: #0F1115; color: #fff; white-space: nowrap;
+    }
+    .flags-main {
+      flex: 1; overflow-y: auto;
+      padding: 16px 14px 64px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .flags-intro h1 { margin: 0 0 6px; font-size: 22px; font-family: 'Cormorant Garamond', Georgia, serif; font-weight: 500; }
+    .flags-intro p { margin: 0; color: #6B6F77; font-size: 13px; line-height: 1.5; }
+    .flags-list { display: grid; gap: 10px; }
+    .flag-card { display: flex; justify-content: space-between; gap: 16px; align-items: center;
+      background: #fff; border: 1px solid #DCDCDF; border-radius: 14px; padding: 16px 18px; }
     .flag-info { flex: 1; min-width: 0; }
-    .flag-label { margin: 0 0 4px; font-size: 1.05rem; }
-    .flag-key { display: inline-block; font-size: 0.78rem; color: #6b6b70;
-      background: #f1f1f3; padding: 2px 6px; border-radius: 6px; }
-    .flag-description { margin: 8px 0 0; color: #4a4a4f; font-size: 0.92rem; line-height: 1.4; }
-    .flag-control { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
-    .flag-state { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .flag-label { margin: 0 0 4px; font-size: 15px; font-weight: 600; color: #0F1115; }
+    .flag-key { display: inline-block; font-size: 12px; color: #6B6F77;
+      background: #F2F2F2; padding: 2px 6px; border-radius: 6px; }
+    .flag-description { margin: 8px 0 0; color: #6B6F77; font-size: 13px; line-height: 1.4; }
+    .flag-control { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; padding: 8px 0; min-height: 44px; }
+    .flag-state { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
     .flag-state--on { color: #0f7a3a; }
     .flag-state--off { color: #94343b; }
     .flag-toggle { position: relative; width: 52px; height: 30px; border-radius: 999px;
-      border: none; background: #8e8e93; cursor: pointer; padding: 0; transition: background 0.18s ease;
-      /* Keep visual track 30px but extend hit-target to 44px via padding-free margin block */
-    }
-    .flag-control { padding: 8px 0; min-height: 44px; }
+      border: none; background: #8e8e93; cursor: pointer; padding: 0; transition: background 0.18s ease; }
     .flag-toggle:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; }
-    .sr-only {
-      position: absolute !important; width: 1px !important; height: 1px !important;
-      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
-    }
     :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
     .flag-toggle:disabled { opacity: 0.55; cursor: progress; }
     .flag-toggle--on { background: #0f7a3a; }
@@ -169,17 +189,22 @@ export interface FlagToggleEvent {
       background: #fff; border-radius: 50%; transition: transform 0.18s ease;
       box-shadow: 0 1px 2px rgba(0,0,0,0.15); }
     .flag-toggle--on .flag-toggle__knob { transform: translateX(22px); }
-    .flags-empty, .audit-empty { color: #6b6b70; font-style: italic; }
-    .flags-audit h2 { margin: 0 0 12px; font-size: 1.2rem; }
+    .flags-empty, .audit-empty { color: #6B6F77; font-style: italic; font-size: 14px; }
+    .flags-audit h2 { margin: 0 0 12px; font-size: 17px; font-weight: 600; }
     .audit-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
     .audit-item { display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-      background: #fff; border: 1px solid #e5e5ea; border-radius: 10px; padding: 10px 14px;
-      font-size: 0.9rem; }
-    .audit-when { color: #6b6b70; font-variant-numeric: tabular-nums; min-width: 160px; }
-    .audit-key { background: #f1f1f3; padding: 2px 6px; border-radius: 6px; font-size: 0.78rem; }
-    .audit-change strong { color: #1c1c1e; }
-    .audit-who { color: #5b5b60; }
+      background: #fff; border: 1px solid #DCDCDF; border-radius: 10px; padding: 10px 14px;
+      font-size: 13px; }
+    .audit-when { color: #6B6F77; font-variant-numeric: tabular-nums; min-width: 160px; }
+    .audit-key { background: #F2F2F2; padding: 2px 6px; border-radius: 6px; font-size: 12px; }
+    .audit-change strong { color: #0F1115; }
+    .audit-who { color: #6B6F77; }
     .audit-who em { color: #8a8a8e; font-style: normal; }
+    .sr-only {
+      position: absolute !important; width: 1px !important; height: 1px !important;
+      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+    }
   `],
 })
 export class BeautyAdminFlagsComponent {
@@ -187,6 +212,7 @@ export class BeautyAdminFlagsComponent {
   @Input() audit: AdminFlagAuditEntry[] = [];
   @Input() adminEmail: string | null = null;
   @Input() busyKey: string | null = null;
+  @Input() links: Record<string, BffLink> = {};
 
   @Output() toggleFlag = new EventEmitter<FlagToggleEvent>();
   @Output() followLink = new EventEmitter<BffLink>();
