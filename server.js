@@ -15,7 +15,9 @@ app.use('/api', createProxyMiddleware({
   on: {
     error: (err, req, res) => {
       console.error('Proxy error:', err.message);
-      res.status(502).json({ error: 'Backend unavailable' });
+      if (!res.headersSent) {
+        res.status(502).end();
+      }
     }
   }
 }));
