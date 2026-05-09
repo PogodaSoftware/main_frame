@@ -4,7 +4,7 @@ from pytest_bdd import scenarios, given, when, then, parsers
 
 from .beauty_utils import BACKEND_URL, delete_test_users
 
-scenarios("../../features/Pogoda/Beauty/beauty_api_signup.feature")
+scenarios("../../features/Beauty/beauty_api_signup.feature")
 
 _signup_state = {}
 

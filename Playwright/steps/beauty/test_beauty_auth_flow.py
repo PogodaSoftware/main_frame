@@ -29,7 +29,7 @@ from Playwright.pages.pogoda.beauty.welcome_page import (
 
 from .beauty_utils import delete_test_users
 
-scenarios("../../features/Pogoda/Beauty/beauty_auth_flow.feature")
+scenarios("../../features/Beauty/beauty_auth_flow.feature")
 
 
 @given("I prepare fresh signup credentials", target_fixture="signup_credentials")

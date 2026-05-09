@@ -22,7 +22,7 @@ from .beauty_utils import (
     login_business_via_api,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_home.feature")
+scenarios("../../features/Beauty/beauty_business_home.feature")
 
 _MANAGE_PY_DIR = os.path.join(
     os.path.dirname(__file__), '..', '..', '..', 'Backend', 'controller'
@@ -48,8 +48,7 @@ def _seed_booking(email: str) -> None:
         "service_duration_minutes_at_booking=svc.duration_minutes)"
     )
     subprocess.run(
-        ["python", "manage.py", "shell", "-c", cmd],
-        cwd=os.path.abspath(_MANAGE_PY_DIR),
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
         timeout=30,
     )
@@ -85,6 +84,9 @@ def signed_in(page, accepted_business_with_booking):
 def open_home(page):
     goto_route(page, 'beauty_business_home')
     timeout_for_testing(page)
+    print("URL:", page.url)
+    with open("page_content.html", "w", encoding="utf-8") as f:
+        f.write(page.content())
     expect(page.locator(home_root)).to_be_visible()
 
 

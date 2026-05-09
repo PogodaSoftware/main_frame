@@ -12,7 +12,7 @@ from Playwright.pages.pogoda.beauty.welcome_page import (
 from Playwright.pages.pogoda.beauty.login_page import login_page_root
 from Playwright.pages.pogoda.beauty.signup_page import signup_page_root
 
-scenarios("../../features/Pogoda/Beauty/beauty_welcome_page.feature")
+scenarios("../../features/Beauty/beauty_welcome_page.feature")
 
 
 @given("I navigate to the beauty welcome page")

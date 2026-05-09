@@ -21,8 +21,7 @@ def delete_test_users(email: str) -> None:
         f"BusinessProvider.objects.filter(email='{email}').delete()"
     )
     subprocess.run(
-        ["python", "manage.py", "shell", "-c", cmd],
-        cwd=os.path.abspath(_MANAGE_PY_DIR),
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
         timeout=30,
     )
@@ -45,7 +44,8 @@ def login_business_via_api(email: str, password: str) -> str:
 
 def attach_business_session_cookie(page, cookie_value: str) -> None:
     """Set the auth cookie on the Playwright browser context for both the
-    backend and frontend ports so subsequent navigations include it."""
+    backend and frontend ports so subsequent navigations include it.
+    Also injects the device ID into localStorage."""
     frontend_ports: Iterable[str] = {os.getenv('BEAUTY_PORT', '4200'),
                                      os.getenv('FRONTEND_PORT', '5000')}
     cookies = []
@@ -58,6 +58,7 @@ def attach_business_session_cookie(page, cookie_value: str) -> None:
             "httpOnly": False,
         })
     page.context.add_cookies(cookies)
+    page.add_init_script(f"window.localStorage.setItem('beauty_device_id', '{TEST_DEVICE_ID}');")
 
 
 def accept_application_via_api(email: str) -> None:
@@ -81,8 +82,7 @@ def accept_application_via_api(email: str) -> None:
         "app.save()"
     )
     subprocess.run(
-        ["python", "manage.py", "shell", "-c", cmd],
-        cwd=os.path.abspath(_MANAGE_PY_DIR),
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
         timeout=30,
     )

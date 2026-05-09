@@ -18,7 +18,7 @@ from Playwright.pages.pogoda.beauty.welcome_page import (
 
 from ._auth_helpers import ui_login
 
-scenarios("../../features/Pogoda/Beauty/beauty_profile_page.feature")
+scenarios("../../features/Beauty/beauty_profile_page.feature")
 
 
 @given("an authenticated customer is on the profile page")

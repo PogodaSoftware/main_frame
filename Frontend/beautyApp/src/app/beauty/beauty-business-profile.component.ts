@@ -70,19 +70,19 @@ interface EarningsPayload {
           </div>
           <div class="earn-lifetime">
             <span class="lt-label">Lifetime total</span>
-            <span class="lt-value">\${{ totalDollars }}</span>
+            <span class="lt-value" data-testid="earnings-total">\${{ totalDollars }}</span>
           </div>
           <div class="earn-row">
             <span>This month</span>
-            <span class="mono">\${{ monthDollars }}</span>
+            <span class="mono" data-testid="earnings-month">\${{ monthDollars }}</span>
           </div>
           <div class="earn-row">
             <span>This year</span>
-            <span class="mono">\${{ yearDollars }}</span>
+            <span class="mono" data-testid="earnings-year">\${{ yearDollars }}</span>
           </div>
           <div class="earn-row last">
             <span>Paid bookings</span>
-            <span class="mono">{{ earnings.paid_bookings_count ?? 0 }}</span>
+            <span class="mono" data-testid="earnings-count">{{ earnings.paid_bookings_count ?? 0 }}</span>
           </div>
         </app-prov-card>
 

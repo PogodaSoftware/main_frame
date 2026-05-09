@@ -84,6 +84,7 @@ interface ChatThread {
 
         <ng-template #emptyState>
           <app-prov-empty-hint
+            data-testid="chats-empty"
             [title]="emptyTitle"
             [body]="emptyBody">
             <app-prov-btn variant="secondary" (clicked)="emit(links['home'])">{{ emptyCta }}</app-prov-btn>
