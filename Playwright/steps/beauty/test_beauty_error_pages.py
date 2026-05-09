@@ -13,7 +13,7 @@ from Playwright.pages.pogoda.beauty.error_page import (
     contact_support_link,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_error_pages.feature")
+scenarios("../../features/Beauty/beauty_error_pages.feature")
 
 
 @given(parsers.parse('I navigate to the beauty error route "{route}"'))

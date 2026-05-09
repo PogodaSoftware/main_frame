@@ -16,9 +16,9 @@ map_section = "css=div.beauty-app section.map-section"
 
 # Bottom nav (auth-only). Tabs in DOM order: bookings, home, profile.
 bottom_nav = "css=div.beauty-app nav.bottom-nav"
-nav_tab_bookings = "css=div.beauty-app nav.bottom-nav button.nav-tab >> nth=0"
-nav_tab_home = "css=div.beauty-app nav.bottom-nav button.nav-tab >> nth=1"
-nav_tab_profile = "css=div.beauty-app nav.bottom-nav button.nav-tab >> nth=2"
+nav_tab_bookings = "css=div.beauty-app nav.bottom-nav button.nav-tab >> text=Bookings"
+nav_tab_home = "css=div.beauty-app nav.bottom-nav button.nav-tab >> text=Home"
+nav_tab_profile = "css=div.beauty-app nav.bottom-nav button.nav-tab >> text=Profile"
 active_nav_tab = "css=div.beauty-app nav.bottom-nav button.nav-tab.is-active"
 
 # Header CTA buttons appear only when the home BFF resolver returns

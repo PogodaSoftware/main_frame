@@ -18,7 +18,7 @@ from Playwright.pages.pogoda.beauty.book_page import (
 
 from ._auth_helpers import ui_login
 
-scenarios("../../features/Pogoda/Beauty/beauty_book_page.feature")
+scenarios("../../features/Beauty/beauty_book_page.feature")
 
 
 # Service id 10 = "Signature Facial" (provider 5).

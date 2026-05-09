@@ -14,7 +14,7 @@ from Playwright.pages.pogoda.beauty.login_page import (
     submit_button as login_submit_button,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_home_page.feature")
+scenarios("../../features/Beauty/beauty_home_page.feature")
 
 
 @given("I navigate to the beauty home page as guest")

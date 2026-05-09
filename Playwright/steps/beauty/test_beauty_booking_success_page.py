@@ -21,7 +21,7 @@ from Playwright.pages.pogoda.beauty.booking_success_page import (
 
 from ._auth_helpers import ui_login
 
-scenarios("../../features/Pogoda/Beauty/beauty_booking_success_page.feature")
+scenarios("../../features/Beauty/beauty_booking_success_page.feature")
 
 
 _SERVICE_ID = 10  # Signature Facial

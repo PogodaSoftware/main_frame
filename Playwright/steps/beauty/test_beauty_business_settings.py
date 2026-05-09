@@ -5,7 +5,10 @@ from pytest_bdd import scenarios, given, when, then
 from playwright.sync_api import expect
 
 from Playwright.Hooks.hooks import goto_route, timeout_for_testing
-from Playwright.pages.pogoda.beauty.business_home_page import home_root, gear_button
+from Playwright.pages.pogoda.beauty.business_home_page import (
+    home_root,
+    profile_button,
+)
 from Playwright.pages.pogoda.beauty.business_settings_page import (
     change_password_link,
     schedule_link,
@@ -22,7 +25,7 @@ from .beauty_utils import (
     login_business_via_api,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_settings.feature")
+scenarios("../../features/Beauty/beauty_business_settings.feature")
 
 # Per-test mutable bag — avoids relying on Playwright's BrowserContext
 # accepting arbitrary attributes.
@@ -69,7 +72,10 @@ def open_home(page):
 
 @when("I click the business gear button")
 def click_gear(page):
-    page.locator(gear_button).click()
+    from Playwright.pages.pogoda.beauty.business_profile_page import settings_button
+    page.locator(profile_button).click()
+    page.wait_for_url("**/business/profile", timeout=10_000)
+    page.locator(settings_button).click()
     page.wait_for_url("**/business/settings", timeout=10_000)
 
 
@@ -113,7 +119,7 @@ def click_schedule(page):
 
 @then("I should land on the weekly hours editor")
 def lands_hours(page):
-    expect(page.locator("css=.day-list")).to_be_visible()
+    expect(page.locator("css=.hours-card")).to_be_visible()
 
 
 @when("I click the change-password setting")

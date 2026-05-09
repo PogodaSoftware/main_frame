@@ -47,7 +47,7 @@ from .beauty_utils import (
     delete_test_users,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_admin_crm.feature")
+scenarios("../../features/Beauty/beauty_admin_crm.feature")
 
 
 _MANAGE_PY_DIR = os.path.abspath(
@@ -71,8 +71,7 @@ def _shell(cmd: str) -> str:
     so DB-seeding failures surface explicitly instead of silently.
     """
     proc = subprocess.run(
-        ["python", "manage.py", "shell", "-c", cmd],
-        cwd=_MANAGE_PY_DIR,
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
         text=True,
         timeout=30,

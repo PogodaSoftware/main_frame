@@ -40,7 +40,7 @@ from .beauty_utils import (
 )
 from ._auth_helpers import ui_login
 
-scenarios("../../features/Pogoda/Beauty/beauty_chat.feature")
+scenarios("../../features/Beauty/beauty_chat.feature")
 
 
 _MANAGE_PY_DIR = os.path.join(
@@ -51,8 +51,7 @@ _MANAGE_PY_DIR = os.path.join(
 def _shell(cmd: str) -> str:
     """Run ``manage.py shell -c`` and return its stdout."""
     result = subprocess.run(
-        ["python", "manage.py", "shell", "-c", cmd],
-        cwd=os.path.abspath(_MANAGE_PY_DIR),
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
         timeout=60,
         text=True,

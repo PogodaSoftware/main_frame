@@ -25,7 +25,7 @@ from .beauty_utils import (
     login_business_via_api,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_services_setup.feature")
+scenarios("../../features/Beauty/beauty_business_services_setup.feature")
 
 
 @pytest.fixture(scope="function")
@@ -62,7 +62,7 @@ def add_service(page, name, category):
     timeout_for_testing(page)
     page.locator(service_name_input).fill(name)
     page.locator(service_category_select).select_option(category)
-    page.locator(service_price_input).fill("5000")
+    page.locator(service_price_input).fill("50.00")
     page.locator(service_duration_input).fill("60")
     page.locator(service_form_submit).click()
     timeout_for_testing(page)

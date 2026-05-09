@@ -31,7 +31,7 @@ from .beauty_utils import (
     login_business_via_api,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_application.feature")
+scenarios("../../features/Beauty/beauty_business_application.feature")
 
 
 @pytest.fixture(scope="function")
@@ -148,7 +148,8 @@ def submit_app(page):
 @then("I should land on the business home page")
 def land_on_dashboard(page):
     assert "/business" in page.url
-    expect(page.locator(shell_root.replace('business-shell', 'business-shell.business-home'))).to_be_visible()
+    from Playwright.pages.pogoda.beauty.business_home_page import home_root
+    expect(page.locator(home_root)).to_be_visible()
 
 
 @when("I choose the business entity option")

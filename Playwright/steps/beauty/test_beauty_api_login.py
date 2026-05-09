@@ -3,7 +3,7 @@ from pytest_bdd import scenarios, given, when, then
 
 from .beauty_utils import BACKEND_URL, TEST_DEVICE_ID
 
-scenarios("../../features/Pogoda/Beauty/beauty_api_login.feature")
+scenarios("../../features/Beauty/beauty_api_login.feature")
 
 _login_state = {}
 

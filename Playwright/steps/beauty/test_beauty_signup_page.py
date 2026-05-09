@@ -12,7 +12,7 @@ from Playwright.pages.pogoda.beauty.signup_page import (
     signin_link_button,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_signup_page.feature")
+scenarios("../../features/Beauty/beauty_signup_page.feature")
 
 
 @pytest.fixture

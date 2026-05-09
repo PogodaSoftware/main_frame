@@ -3,7 +3,7 @@ from pytest_bdd import scenarios, given, when, then, parsers
 
 from .beauty_utils import BACKEND_URL, TEST_DEVICE_ID
 
-scenarios("../../features/Pogoda/Beauty/beauty_bff_resolve.feature")
+scenarios("../../features/Beauty/beauty_bff_resolve.feature")
 
 _bff_state = {}
 

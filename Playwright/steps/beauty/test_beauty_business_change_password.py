@@ -20,7 +20,7 @@ from .beauty_utils import (
     login_business_via_api,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_change_password.feature")
+scenarios("../../features/Beauty/beauty_business_change_password.feature")
 
 ORIGINAL_PASSWORD = "ChPwPass123!"
 NEW_PASSWORD = "NewStrongPass456!"
