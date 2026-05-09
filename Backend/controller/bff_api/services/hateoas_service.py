@@ -58,6 +58,8 @@ Field object shape
 import logging
 import os
 
+from django.conf import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -147,21 +149,33 @@ def _admin_principal_allowlist() -> set[tuple[str, int]]:
     An empty/missing value means no one is authorised — the admin
     surface is locked down by default.
     """
-    raw = os.environ.get('BEAUTY_ADMIN_PRINCIPALS', '')
-    out: set[tuple[str, int]] = set()
-    for part in raw.split(','):
-        token = part.strip()
-        if not token or ':' not in token:
-            continue
-        user_type, _, user_id_str = token.partition(':')
-        user_type = user_type.strip().lower()
-        if user_type not in _VALID_ADMIN_USER_TYPES:
-            continue
+    sources = [os.environ.get('BEAUTY_ADMIN_PRINCIPALS', '')]
+
+    # Dev-only test override: allows Playwright tests to grant admin access
+    # without restarting the server.  Gated on settings.DEBUG so this code
+    # path is unreachable in production deployments (DEBUG=False).
+    if settings.DEBUG:
         try:
-            user_id = int(user_id_str.strip())
-        except (TypeError, ValueError):
-            continue
-        out.add((user_type, user_id))
+            with open('/tmp/beauty_test_admin_principals') as _fh:
+                sources.append(_fh.read())
+        except FileNotFoundError:
+            pass
+
+    out: set[tuple[str, int]] = set()
+    for raw in sources:
+        for part in raw.split(','):
+            token = part.strip()
+            if not token or ':' not in token:
+                continue
+            user_type, _, user_id_str = token.partition(':')
+            user_type = user_type.strip().lower()
+            if user_type not in _VALID_ADMIN_USER_TYPES:
+                continue
+            try:
+                user_id = int(user_id_str.strip())
+            except (TypeError, ValueError):
+                continue
+            out.add((user_type, user_id))
     return out
 
 
