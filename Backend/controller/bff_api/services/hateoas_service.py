@@ -58,8 +58,6 @@ Field object shape
 import logging
 import os
 
-from django.conf import settings
-
 
 logger = logging.getLogger(__name__)
 
@@ -149,33 +147,35 @@ def _admin_principal_allowlist() -> set[tuple[str, int]]:
     An empty/missing value means no one is authorised — the admin
     surface is locked down by default.
     """
-    sources = [os.environ.get('BEAUTY_ADMIN_PRINCIPALS', '')]
-
-    # Dev-only test override: Playwright admin CRM tests write a principal pair
-    # to this file to gain admin access mid-test without a server restart.
-    # Gated on settings.DEBUG — unreachable in production (DEBUG=False).
-    if settings.DEBUG:
-        try:
-            with open('/tmp/beauty_test_admin_principals') as _fh:
-                sources.append(_fh.read())
-        except FileNotFoundError:
-            pass
-
     out: set[tuple[str, int]] = set()
-    for raw in sources:
-        for part in raw.split(','):
-            token = part.strip()
-            if not token or ':' not in token:
-                continue
-            user_type, _, user_id_str = token.partition(':')
-            user_type = user_type.strip().lower()
-            if user_type not in _VALID_ADMIN_USER_TYPES:
-                continue
-            try:
-                user_id = int(user_id_str.strip())
-            except (TypeError, ValueError):
-                continue
-            out.add((user_type, user_id))
+
+    # Source 1: env var (BEAUTY_ADMIN_PRINCIPALS="customer:1,business:7")
+    for part in os.environ.get('BEAUTY_ADMIN_PRINCIPALS', '').split(','):
+        token = part.strip()
+        if not token or ':' not in token:
+            continue
+        user_type, _, user_id_str = token.partition(':')
+        user_type = user_type.strip().lower()
+        if user_type not in _VALID_ADMIN_USER_TYPES:
+            continue
+        try:
+            out.add((user_type, int(user_id_str.strip())))
+        except (TypeError, ValueError):
+            continue
+
+    # Source 2: beauty_admin_principals DB table — inserted by tests and
+    # operators without requiring a server restart.
+    try:
+        from beauty_api.models import BeautyAdminPrincipal
+        for row in BeautyAdminPrincipal.objects.only('user_type', 'user_id'):
+            if row.user_type in _VALID_ADMIN_USER_TYPES:
+                out.add((row.user_type, row.user_id))
+    except Exception:
+        logger.warning(
+            'Failed to read beauty_admin_principals from DB; relying on env var only.',
+            exc_info=True,
+        )
+
     return out
 
 

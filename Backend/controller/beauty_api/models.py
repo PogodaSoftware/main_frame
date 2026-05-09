@@ -455,6 +455,44 @@ class BeautyChatMessage(models.Model):
         return f"chat#{self.booking_id} {self.sender_type}:{self.sender_id} @ {self.created_at:%Y-%m-%d %H:%M}"
 
 
+class BeautyAdminPrincipal(models.Model):
+    """
+    Grants admin access to the Beauty CRM/admin surfaces.
+
+    A row here is equivalent to listing `<user_type>:<user_id>` in the
+    BEAUTY_ADMIN_PRINCIPALS env var.  Both sources are consulted on every
+    request by `hateoas_service._admin_principal_allowlist()`.
+
+    We bind to (user_type, user_id) — the stable PK identity — rather than
+    email because BeautyUser and BusinessProvider are independent tables with
+    no cross-table email uniqueness, so the same email could identify two
+    different principals.
+    """
+
+    USER_TYPE_CUSTOMER = 'customer'
+    USER_TYPE_BUSINESS = 'business'
+    USER_TYPE_CHOICES = [
+        (USER_TYPE_CUSTOMER, 'Customer'),
+        (USER_TYPE_BUSINESS, 'Business Provider'),
+    ]
+
+    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
+    user_id = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_admin_principals'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user_type', 'user_id'],
+                name='beauty_admin_principal_unique',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user_type}:{self.user_id}"
+
+
 class BeautyFlagAudit(models.Model):
     """Append-only audit trail for every feature-flag change."""
 

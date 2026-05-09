@@ -2,12 +2,13 @@
 
 Setup notes
 -----------
-The CRM admin surface is gated by the `BEAUTY_ADMIN_PRINCIPALS` env var on
-the Django backend. These tests:
+The CRM admin surface is gated by the `BEAUTY_ADMIN_PRINCIPALS` env var and
+the `beauty_admin_principals` DB table on the Django backend. These tests:
 
 1. Create a fresh customer account via the REST signup endpoint.
-2. Promote that account to admin by monkey-patching the in-process
-   allowlist (same approach as the feature-flags admin tests).
+2. Promote that account to admin by inserting a BeautyAdminPrincipal row via
+   `_set_admin_principal()`.  The DB row is read on every BFF request so no
+   server restart is required.
 3. Sign in via the REST login endpoint to obtain a session cookie.
 4. Inject that cookie into the Playwright browser context and navigate.
 
@@ -64,7 +65,11 @@ def _clear_state():
 
 
 def _shell(cmd: str) -> str:
-    """Run a one-liner in the Django management shell (local, no Docker)."""
+    """Run a one-liner in the Django management shell (local, no Docker).
+
+    Raises RuntimeError if the process exits non-zero or writes to stderr,
+    so DB-seeding failures surface explicitly instead of silently.
+    """
     proc = subprocess.run(
         ["python", "manage.py", "shell", "-c", cmd],
         cwd=_MANAGE_PY_DIR,
@@ -72,27 +77,38 @@ def _shell(cmd: str) -> str:
         text=True,
         timeout=30,
     )
+    if proc.returncode != 0 or proc.stderr.strip():
+        raise RuntimeError(
+            f"_shell() failed (rc={proc.returncode}):\n"
+            f"stdout: {proc.stdout!r}\nstderr: {proc.stderr!r}"
+        )
     return (proc.stdout or "").strip()
 
 
-_ADMIN_OVERRIDE_FILE = '/tmp/beauty_test_admin_principals'
-
-
 def _set_admin_principal(user_type: str, user_id: int) -> None:
-    """Grant admin access by writing to the dev-only override file.
+    """Grant admin access by inserting a BeautyAdminPrincipal DB row.
 
-    hateoas_service._admin_principal_allowlist() reads this file on every
-    request when DEBUG=True, so no server restart is required.
+    hateoas_service._admin_principal_allowlist() reads this table on every
+    request so no server restart is required.
     """
-    with open(_ADMIN_OVERRIDE_FILE, 'w') as fh:
-        fh.write(f'{user_type}:{user_id}')
+    out = _shell(
+        f"from beauty_api.models import BeautyAdminPrincipal; "
+        f"BeautyAdminPrincipal.objects.get_or_create("
+        f"    user_type='{user_type}', user_id={user_id}); "
+        f"print('ok')"
+    )
+    assert out == 'ok', f"_set_admin_principal failed: {out!r}"
 
 
-def _clear_admin_principal() -> None:
-    try:
-        os.remove(_ADMIN_OVERRIDE_FILE)
-    except FileNotFoundError:
-        pass
+def _clear_admin_principal(user_type: str, user_id: int) -> None:
+    """Remove the BeautyAdminPrincipal DB row for the given principal."""
+    out = _shell(
+        f"from beauty_api.models import BeautyAdminPrincipal; "
+        f"BeautyAdminPrincipal.objects.filter("
+        f"    user_type='{user_type}', user_id={user_id}).delete(); "
+        f"print('ok')"
+    )
+    assert out == 'ok', f"_clear_admin_principal failed: {out!r}"
 
 
 @pytest.fixture(scope="function")
@@ -113,7 +129,7 @@ def beauty_admin():
     user_id = int(user_id_raw)
     _set_admin_principal("customer", user_id)
     yield {"email": email, "password": password, "user_id": user_id}
-    _clear_admin_principal()
+    _clear_admin_principal("customer", user_id)
     delete_test_users(email)
 
 
