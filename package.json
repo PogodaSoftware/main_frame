@@ -1,0 +1,13 @@
+{
+  "name": "pogoda-unified-server",
+  "version": "1.0.0",
+  "description": "Unified static + proxy server for Replit deployment",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "http-proxy-middleware": "^2.0.6"
+  }
+}

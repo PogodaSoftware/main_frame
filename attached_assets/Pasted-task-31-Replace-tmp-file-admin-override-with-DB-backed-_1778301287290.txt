@@ -1,0 +1,43 @@
+task-31: Replace /tmp file admin override with DB-backed BeautyAdminPrincipal
+Original task: Make admin CRM Playwright tests still pass after the
+DEBUG-gated /tmp/beauty_test_admin_principals file-read block was
+removed from hateoas_service.py.
+
+## Backend changes
+
+- Added BeautyAdminPrincipal model to beauty_api/models.py:
+unique (user_type, user_id) rows stored in beauty_admin_principals
+table; same pattern as BeautyFeatureFlag — queried per-request.
+- Created migration 0014_beauty_admin_principal.
+- Updated hateoas_service._admin_principal_allowlist():
+removed DEBUG-gated /tmp file-read block; now reads from both
+BEAUTY_ADMIN_PRINCIPALS env var AND the new DB table.
+DB-read exceptions are now logged via logger.warning (not silently
+swallowed) so failures are diagnosable.
+Removed unused from django.conf import settings import.
+
+## Playwright test changes
+
+- test_beauty_admin_crm.py:
+- _shell() now raises RuntimeError on non-zero exit code or stderr
+output so DB-seeding failures surface explicitly instead of silently.
+- _set_admin_principal() inserts a BeautyAdminPrincipal row via
+_shell() and asserts the "ok" sentinel from stdout.
+- _clear_admin_principal() deletes the row via _shell() with same
+assertion; now takes (user_type, user_id) instead of no args.
+- beauty_admin fixture updated to pass both args to _clear_admin_principal.
+- Docstring updated to describe DB-backed mechanism.
+- No /tmp file references remain anywhere.
+
+## Beauty dev server fix (bonus — required for tests to run at all)
+
+- Added servePath: "/pogoda/beauty/" to Frontend/beautyApp/angular.json
+serve options. Without this the Vite dev server served assets at the
+root (/styles.css) but the browser requested /pogoda/beauty/styles.css
+per the tag, causing 404s and Angular
+failing to bootstrap. All 7 CRM browser tests were blocked by this.
+This is intentional and required for Playwright tests to work in dev.
+
+## Result
+All 7 tests in test_beauty_admin_crm.py pass (7 passed in 83.64s).
+No /tmp file approach remains in production code or tests.

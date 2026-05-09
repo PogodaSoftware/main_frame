@@ -147,9 +147,10 @@ def _admin_principal_allowlist() -> set[tuple[str, int]]:
     An empty/missing value means no one is authorised — the admin
     surface is locked down by default.
     """
-    raw = os.environ.get('BEAUTY_ADMIN_PRINCIPALS', '')
     out: set[tuple[str, int]] = set()
-    for part in raw.split(','):
+
+    # Source 1: env var (BEAUTY_ADMIN_PRINCIPALS="customer:1,business:7")
+    for part in os.environ.get('BEAUTY_ADMIN_PRINCIPALS', '').split(','):
         token = part.strip()
         if not token or ':' not in token:
             continue
@@ -158,10 +159,23 @@ def _admin_principal_allowlist() -> set[tuple[str, int]]:
         if user_type not in _VALID_ADMIN_USER_TYPES:
             continue
         try:
-            user_id = int(user_id_str.strip())
+            out.add((user_type, int(user_id_str.strip())))
         except (TypeError, ValueError):
             continue
-        out.add((user_type, user_id))
+
+    # Source 2: beauty_admin_principals DB table — inserted by tests and
+    # operators without requiring a server restart.
+    try:
+        from beauty_api.models import BeautyAdminPrincipal
+        for row in BeautyAdminPrincipal.objects.only('user_type', 'user_id'):
+            if row.user_type in _VALID_ADMIN_USER_TYPES:
+                out.add((row.user_type, row.user_id))
+    except Exception:
+        logger.warning(
+            'Failed to read beauty_admin_principals from DB; relying on env var only.',
+            exc_info=True,
+        )
+
     return out
 
 
