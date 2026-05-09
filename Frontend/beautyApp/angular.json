@@ -62,7 +62,8 @@
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "servePath": "/pogoda/beauty/"
+            "servePath": "/pogoda/beauty/",
+            "allowedHosts": ["all"]
           },
           "configurations": {
             "production": {

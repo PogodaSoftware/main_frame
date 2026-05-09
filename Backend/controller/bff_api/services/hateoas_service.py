@@ -152,8 +152,9 @@ def _admin_principal_allowlist() -> set[tuple[str, int]]:
     sources = [os.environ.get('BEAUTY_ADMIN_PRINCIPALS', '')]
 
     # Dev-only test override: allows Playwright tests to grant admin access
-    # without restarting the server.  Gated on settings.DEBUG so this code
-    # path is unreachable in production deployments (DEBUG=False).
+    # without restarting the server (used by Admin CRM tests, Task #22).
+    # Gated on settings.DEBUG so this code path is unreachable in production
+    # deployments (DEBUG=False). Preserved from local branch in Task #30.
     if settings.DEBUG:
         try:
             with open('/tmp/beauty_test_admin_principals') as _fh:
