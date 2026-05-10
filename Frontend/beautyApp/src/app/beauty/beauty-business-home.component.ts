@@ -181,6 +181,24 @@ interface DashboardStats {
               <path d="M9 18l6-6-6-6"/>
             </svg>
           </button>
+          <button type="button" class="qa-tile"
+                  data-testid="business-reviews-tile"
+                  (click)="goToReviews()">
+            <span class="qa-icon-wrap">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="#F5C36B" stroke="#F5C36B"
+                   stroke-width="1" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2z"/>
+              </svg>
+            </span>
+            <span class="qa-text">
+              <span class="qa-label">Reviews</span>
+              <span class="qa-sub">See what customers said</span>
+            </span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </button>
         </div>
 
         <!-- Earnings + Volume -->
@@ -825,6 +843,17 @@ export class BeautyBusinessHomeComponent implements OnChanges {
       route: '/business/availability',
       prompt: 'Hours',
     };
+  }
+
+  goToReviews(): void {
+    this.emit({
+      rel: 'business_reviews',
+      href: null,
+      method: 'NAV',
+      screen: 'beauty_business_reviews',
+      route: '/business/reviews',
+      prompt: 'Reviews',
+    });
   }
 
   get servicesCount(): number {

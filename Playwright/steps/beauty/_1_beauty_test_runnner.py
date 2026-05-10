@@ -53,22 +53,10 @@ def main() -> int:
 
     # ── Build the pytest argument list
     pytest_args = [
-        # ── Headed Playwright (visible browser window) ──
         "--headed",
-
-        # ── Use Chromium (default, but explicit) ──
         "--browser", "chromium",
-
-        # ── Verbose output so you can see each scenario ──
-        "-v",
-
-        # ── Show short test summary for failures ──
-        "--tb=short",
-
-        # ── Collect & run only the beauty test files ──
+        "--tracing", "on",  
         "Playwright/steps/beauty",
-
-        # ── Forward any extra CLI args the user passed ──
         *sys.argv[1:],
     ]
 

@@ -1,0 +1,10 @@
+"""Locators for the Beauty saved (favorites) page (`/pogoda/beauty/saved`)."""
+
+favorites_root = "css=[data-testid='favorites-root']"
+favorites_loading = "css=[data-testid='favorites-loading']"
+favorites_list = "css=[data-testid='favorites-list']"
+favorites_card = "css=[data-testid='favorites-card']"
+favorites_business = "css=[data-testid='favorites-business']"
+favorites_remove_btn = "css=[data-testid='favorites-remove-btn']"
+favorites_empty = "css=[data-testid='favorites-empty']"
+favorites_error = "css=[data-testid='favorites-error']"

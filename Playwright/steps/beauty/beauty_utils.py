@@ -61,6 +61,28 @@ def attach_business_session_cookie(page, cookie_value: str) -> None:
     page.add_init_script(f"window.localStorage.setItem('beauty_device_id', '{TEST_DEVICE_ID}');")
 
 
+def advance_to_schedule_step_via_api(email: str) -> None:
+    """Mark entity/services/stripe wizard steps complete so /apply/schedule
+    is reachable. Used by tests that only need to exercise the schedule UI."""
+    cmd = (
+        "from beauty_api.models import BusinessProvider, BusinessProviderApplication; "
+        f"bp = BusinessProvider.objects.get(email='{email}'); "
+        "app, _ = BusinessProviderApplication.objects.get_or_create(business_provider=bp); "
+        "app.entity_type = 'person'; "
+        "app.applicant_first_name = 'Pat'; "
+        "app.applicant_last_name = 'Owner'; "
+        "app.business_name = bp.business_name; "
+        "app.selected_categories = ['nails']; "
+        "app.completed_steps = ['entity','services','stripe']; "
+        "app.save()"
+    )
+    subprocess.run(
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
+        capture_output=True,
+        timeout=30,
+    )
+
+
 def accept_application_via_api(email: str) -> None:
     """Auto-accept a business's application by writing all required fields
     via the Django shell. Used to skip the wizard during home-page tests."""

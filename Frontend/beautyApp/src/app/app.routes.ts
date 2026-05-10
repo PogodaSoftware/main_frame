@@ -3,6 +3,10 @@ import { BeautyShellComponent } from './beauty/beauty-shell.component';
 import { BeautyWelcomeComponent } from './beauty/beauty-welcome.component';
 import { BeautyForgotComponent } from './beauty/beauty-forgot.component';
 import { BeautyErrorComponent } from './beauty/beauty-error.component';
+import { BeautySearchComponent } from './beauty/beauty-search.component';
+import { BeautyReviewWriteComponent } from './beauty/beauty-review-write.component';
+import { BeautyBusinessReviewsComponent } from './beauty/beauty-business-reviews.component';
+import { BeautyFavoritesComponent } from './beauty/beauty-favorites.component';
 import { beautyAuthGuard, beautyBusinessAuthGuard } from './beauty/beauty-auth.guard';
 
 export const routes: Routes = [
@@ -126,6 +130,20 @@ export const routes: Routes = [
     data: { screen: 'beauty_admin_crm' },
   },
   {
+    path: 'search',
+    component: BeautySearchComponent,
+    title: 'Beauty - Search',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_search' },
+  },
+  {
+    path: 'saved',
+    component: BeautyFavoritesComponent,
+    title: 'Beauty - Saved',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_favorites' },
+  },
+  {
     path: 'category/:slug',
     component: BeautyShellComponent,
     title: 'Beauty - Category',
@@ -145,6 +163,13 @@ export const routes: Routes = [
     title: 'Beauty - Book',
     canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_book' },
+  },
+  {
+    path: 'bookings/:bookingId/review',
+    component: BeautyReviewWriteComponent,
+    title: 'Beauty - Leave Review',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_review_write' },
   },
   {
     path: 'bookings',
@@ -264,6 +289,13 @@ export const routes: Routes = [
     title: 'Beauty - Business Profile',
     canActivate: [beautyBusinessAuthGuard],
     data: { screen: 'beauty_business_profile' },
+  },
+  {
+    path: 'business/reviews',
+    component: BeautyBusinessReviewsComponent,
+    title: 'Beauty - Customer Reviews',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_reviews' },
   },
   {
     path: '**',

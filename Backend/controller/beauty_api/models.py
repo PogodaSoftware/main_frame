@@ -144,6 +144,13 @@ class BeautyService(models.Model):
         max_digits=10, decimal_places=2, null=True, blank=True
     )
     duration_minutes = models.IntegerField(default=60)
+    # Customer search support. ``service_locations`` is a list of city /
+    # postal-code strings the service is offered in (empty list = "global"
+    # — match every location). ``is_future`` flags scheduled-but-not-active
+    # offerings so customers can discover upcoming services in the same
+    # search index.
+    service_locations = models.JSONField(default=list, blank=True)
+    is_future = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -152,6 +159,7 @@ class BeautyService(models.Model):
         indexes = [
             models.Index(fields=['category'], name='beauty_svc_cat_idx'),
             models.Index(fields=['provider', 'category'], name='beauty_svc_prov_cat_idx'),
+            models.Index(fields=['is_future'], name='beauty_svc_future_idx'),
         ]
 
     def __str__(self):
@@ -411,6 +419,85 @@ class BusinessProviderApplication(models.Model):
         return f"{self.business_provider.email} [{self.status}]"
 
 
+class BeautyReview(models.Model):
+    """Customer review of a `BeautyService`.
+
+    Eligibility (enforced in views, not at the DB level): a customer can
+    only post a review for a service if they have at least one
+    `BeautyBooking` for that service with `status = 'completed'`.
+
+    Replies: the business that owns the service can post one
+    `business_reply`. The reply may be edited by the business but the
+    business cannot edit or delete the customer's underlying review.
+    """
+
+    customer = models.ForeignKey(
+        BeautyUser, on_delete=models.CASCADE, related_name='reviews',
+    )
+    service = models.ForeignKey(
+        BeautyService, on_delete=models.CASCADE, related_name='reviews',
+    )
+    booking = models.ForeignKey(
+        BeautyBooking, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='reviews',
+    )
+    rating = models.IntegerField()
+    body = models.TextField(blank=True, default='')
+    business_reply = models.TextField(blank=True, default='')
+    business_reply_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'beauty_reviews'
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['customer', 'service'],
+                name='beauty_review_unique_per_svc',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['service', '-created_at'], name='beauty_review_svc_idx'),
+        ]
+
+    def __str__(self):
+        return f"review#{self.id} {self.customer.email} -> {self.service.name} ({self.rating})"
+
+
+class BeautyFavorite(models.Model):
+    """Customer-saved (favorited) `BeautyService`.
+
+    One row per (customer, service) pair, enforced by a unique
+    constraint. Customer-only — business accounts cannot favorite (the
+    view layer rejects them at `_require_customer`).
+    """
+
+    customer = models.ForeignKey(
+        BeautyUser, on_delete=models.CASCADE, related_name='favorites',
+    )
+    service = models.ForeignKey(
+        BeautyService, on_delete=models.CASCADE, related_name='favorited_by',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_favorites'
+        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['customer', 'service'],
+                name='beauty_favorite_unique',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['customer', '-created_at'], name='beauty_fav_cust_at_idx'),
+        ]
+
+    def __str__(self):
+        return f"fav#{self.id} {self.customer.email} -> {self.service.name}"
+
+
 class BeautyChatMessage(models.Model):
     """Single message in a per-booking chat thread between the customer
     and the business provider.
@@ -491,6 +578,48 @@ class BeautyAdminPrincipal(models.Model):
 
     def __str__(self):
         return f"{self.user_type}:{self.user_id}"
+
+
+class BeautyAuthAuditLog(models.Model):
+    """
+    Append-only audit trail for blocked cross-role auth attempts.
+
+    A row is written every time the auth layer rejects a request because
+    the email's stored role does not match the portal being accessed
+    (e.g. a provider trying the customer login form, a customer trying
+    to register on the business signup form). Same store also captures
+    rate-limited (`429`) attempts so security can correlate bursts.
+
+    Identity is recorded as a *masked* email (``a***@example.com``) so
+    the log itself does not become a credential-enumeration vector.
+    """
+
+    EVENT_CROSS_ROLE_SIGNUP = 'cross_role_signup'
+    EVENT_CROSS_ROLE_LOGIN = 'cross_role_login'
+    EVENT_RATE_LIMITED = 'rate_limited'
+    EVENT_CHOICES = [
+        (EVENT_CROSS_ROLE_SIGNUP, 'Cross-role signup blocked'),
+        (EVENT_CROSS_ROLE_LOGIN, 'Cross-role login blocked'),
+        (EVENT_RATE_LIMITED, 'Rate limit triggered'),
+    ]
+
+    event_type = models.CharField(max_length=32, choices=EVENT_CHOICES)
+    masked_email = models.CharField(max_length=255, blank=True, default='')
+    request_ip = models.CharField(max_length=64, blank=True, default='')
+    attempted_role = models.CharField(max_length=20, blank=True, default='')
+    existing_role = models.CharField(max_length=20, blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_auth_audit'
+        indexes = [
+            models.Index(fields=['-created_at'], name='beauty_auth_aud_at_idx'),
+            models.Index(fields=['request_ip', '-created_at'], name='beauty_auth_aud_ip_idx'),
+        ]
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.event_type} {self.masked_email} from {self.request_ip} @ {self.created_at:%Y-%m-%d %H:%M}"
 
 
 class BeautyFlagAudit(models.Model):

@@ -2,14 +2,25 @@ from rest_framework import serializers
 from .models import BeautyUser, BusinessProvider
 
 
+# Generic message used for any cross-role / duplicate-email signup
+# rejection. Identical wording across both portals so the response
+# cannot be used to enumerate which role an email already belongs to.
+DUPLICATE_EMAIL_MESSAGE = 'An account with this email already exists.'
+
+
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8, write_only=True)
 
     def validate_email(self, value):
         value = value.lower().strip()
-        if BeautyUser.objects.filter(email=value).exists():
-            raise serializers.ValidationError('An account with this email already exists.')
+        # Globally unique email: reject if the address exists in either
+        # the customer (BeautyUser) or business (BusinessProvider) table.
+        if (
+            BeautyUser.objects.filter(email=value).exists()
+            or BusinessProvider.objects.filter(email=value).exists()
+        ):
+            raise serializers.ValidationError(DUPLICATE_EMAIL_MESSAGE)
         return value
 
     def validate_password(self, value):
@@ -46,8 +57,11 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
 
     def validate_email(self, value):
         value = value.lower().strip()
-        if BusinessProvider.objects.filter(email=value).exists():
-            raise serializers.ValidationError('An account with this email already exists.')
+        if (
+            BusinessProvider.objects.filter(email=value).exists()
+            or BeautyUser.objects.filter(email=value).exists()
+        ):
+            raise serializers.ValidationError(DUPLICATE_EMAIL_MESSAGE)
         return value
 
     def validate_password(self, value):

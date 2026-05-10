@@ -1,0 +1,11 @@
+"""Locators for the Beauty review-write page (`/pogoda/beauty/bookings/<id>/review`)."""
+
+review_write_root = "css=[data-testid='review-write-root']"
+service_name = "css=[data-testid='rw-service-name']"
+provider_name = "css=[data-testid='rw-provider-name']"
+stars_group = "css=[data-testid='rw-stars']"
+star_button_n = "css=[data-testid='rw-star-{n}']"
+body_textarea = "css=[data-testid='rw-body']"
+submit_button = "css=[data-testid='rw-submit']"
+error_toast = "css=[data-testid='rw-error']"
+load_error = "css=[data-testid='rw-load-error']"

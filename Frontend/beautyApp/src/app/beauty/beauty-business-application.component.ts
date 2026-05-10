@@ -38,13 +38,14 @@ import {
   WizardData,
 } from './beauty-business-application.types';
 import { BffLink } from './beauty-bff.types';
+import { BeautyWeeklyHoursEditorComponent } from './beauty-weekly-hours-editor.component';
 
 interface DayRow extends WeeklyHourRow {}
 
 @Component({
   selector: 'app-beauty-business-application',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BeautyWeeklyHoursEditorComponent],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
     <div class="business-shell" [attr.data-step]="step">
@@ -190,37 +191,7 @@ interface DayRow extends WeeklyHourRow {}
         <!-- ─── SCHEDULE ─────────────────────────────────────────── -->
         <form *ngIf="step === 'schedule'" class="biz-form" (ngSubmit)="submitSchedule()" novalidate>
           <p class="biz-copy">When are you open? Customers can only book during these hours.</p>
-          <ul class="day-list">
-            <li *ngFor="let row of rows" class="day-row" [class.closed]="row.is_closed">
-              <span class="day-name">{{ row.day_label }}</span>
-              <label class="closed-toggle">
-                <input type="checkbox" [(ngModel)]="row.is_closed"
-                       [name]="'closed-' + row.day_of_week"
-                       (ngModelChange)="onClosedChange(row)" />
-                Closed
-              </label>
-              <label class="closed-toggle">
-                <input type="checkbox" [(ngModel)]="row.is_24h"
-                       [name]="'24h-' + row.day_of_week"
-                       [disabled]="row.is_closed"
-                       (ngModelChange)="onTwentyFourChange(row)" />
-                Open 24h
-              </label>
-              <label class="sr-only" [attr.for]="'start-' + row.day_of_week">{{ row.day_label }} start</label>
-              <input type="time" class="time-input"
-                     [id]="'start-' + row.day_of_week"
-                     [name]="'start-' + row.day_of_week"
-                     [(ngModel)]="row.start_time"
-                     [disabled]="row.is_closed || row.is_24h" />
-              <span class="dash" aria-hidden="true">–</span>
-              <label class="sr-only" [attr.for]="'end-' + row.day_of_week">{{ row.day_label }} end</label>
-              <input type="time" class="time-input"
-                     [id]="'end-' + row.day_of_week"
-                     [name]="'end-' + row.day_of_week"
-                     [(ngModel)]="row.end_time"
-                     [disabled]="row.is_closed || row.is_24h" />
-            </li>
-          </ul>
+          <app-beauty-weekly-hours-editor [rows]="rows"></app-beauty-weekly-hours-editor>
           <p *ngIf="serverError" class="server-error" role="alert">{{ serverError }}</p>
           <div class="form-actions">
             <button type="button" class="btn btn-outline"
@@ -430,13 +401,6 @@ export class BeautyBusinessApplicationComponent implements OnChanges {
     const checked = (e.target as HTMLInputElement).checked;
     if (checked) this.selectedTools.add(value);
     else this.selectedTools.delete(value);
-  }
-
-  onClosedChange(row: DayRow): void {
-    if (row.is_closed) row.is_24h = false;
-  }
-  onTwentyFourChange(row: DayRow): void {
-    if (row.is_24h) row.is_closed = false;
   }
 
   // ─── submitters ─────────────────────────────────────────────────

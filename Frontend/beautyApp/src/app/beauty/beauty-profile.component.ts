@@ -61,6 +61,13 @@ import { BeautyConfirmModalComponent } from './beauty-confirm-modal.component';
             </div>
             <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
           </button>
+          <button type="button" class="action-row" data-testid="profile-saved-link" (click)="goToSaved()">
+            <div class="action-text">
+              <div class="action-label">Saved Services</div>
+              <div class="action-sub">Hearts you've tapped</div>
+            </div>
+            <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+          </button>
           <button type="button" class="action-row" disabled>
             <div class="action-text">
               <div class="action-label">Notifications</div>
@@ -209,6 +216,17 @@ export class BeautyProfileComponent {
   askSignOut(): void {
     if (this.loggingOut) return;
     this.showSignOutConfirm = true;
+  }
+
+  goToSaved(): void {
+    this.followLink.emit({
+      rel: 'saved',
+      href: null,
+      method: 'NAV',
+      screen: 'beauty_favorites',
+      route: '/saved',
+      prompt: 'Saved',
+    });
   }
 
   get user(): { email?: string; name?: string } | null {

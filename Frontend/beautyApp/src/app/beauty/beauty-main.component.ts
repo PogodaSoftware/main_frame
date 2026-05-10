@@ -26,6 +26,7 @@ import {
 } from '@angular/core';
 import { isPlatformBrowser, DOCUMENT, CommonModule } from '@angular/common';
 
+import { BeautyHomeSearchComponent } from './beauty-home-search.component';
 import { BffLink } from './beauty-bff.types';
 
 declare const google: any;
@@ -53,7 +54,7 @@ const NAV_TABS: { rel: 'bookings' | 'home' | 'chats' | 'profile'; label: string 
 @Component({
   selector: 'app-beauty-main',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, BeautyHomeSearchComponent],
   template: `
     <div class="beauty-app">
       <header class="beauty-header" *ngIf="headerActions.length">
@@ -68,7 +69,8 @@ const NAV_TABS: { rel: 'bookings' | 'home' | 'chats' | 'profile'; label: string 
 
       <h1 class="sr-only">Beauty</h1>
       <main id="main">
-      <section class="services-section">
+      <app-beauty-home-search *ngIf="isAuthenticated"></app-beauty-home-search>
+      <section class="services-section" data-testid="home-carousel">
         <div class="services-section-header">
           <h2 class="services-section-title">Services</h2>
           <button

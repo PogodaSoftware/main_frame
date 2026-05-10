@@ -31,6 +31,15 @@ from .business_views import (
     BusinessServiceDetailView,
     BusinessServiceListView,
 )
+from .favorite_views import FavoriteListView, ServiceFavoriteView
+from .review_views import (
+    BusinessReviewReplyView,
+    BusinessReviewsListView,
+    ReviewMineView,
+    ServiceReviewCreateView,
+    ServiceReviewsListView,
+)
+from .search_views import ServiceSearchView
 from .views import (
     BusinessLoginView,
     BusinessLogoutView,
@@ -62,7 +71,17 @@ urlpatterns = [
     # Customer marketplace (read-only, public)
     path('categories/<str:category>/', CategoryListView.as_view(), name='beauty-category'),
     path('providers/<int:provider_id>/', ProviderDetailView.as_view(), name='beauty-provider-detail'),
+    path('services/search/', ServiceSearchView.as_view(), name='beauty-service-search'),
     path('services/<int:service_id>/', ServiceDetailView.as_view(), name='beauty-service-detail'),
+    path('services/<int:service_id>/reviews/', ServiceReviewsListView.as_view(), name='beauty-service-reviews'),
+    path('protected/services/<int:service_id>/reviews/', ServiceReviewCreateView.as_view(), name='beauty-service-review-create'),
+    path('protected/reviews/<int:review_id>/', ReviewMineView.as_view(), name='beauty-review-mine'),
+    path('protected/business/reviews/', BusinessReviewsListView.as_view(), name='beauty-business-reviews-list'),
+    path('protected/business/reviews/<int:review_id>/reply/', BusinessReviewReplyView.as_view(), name='beauty-business-review-reply'),
+
+    # Favorites (customer)
+    path('protected/favorites/', FavoriteListView.as_view(), name='beauty-favorites-list'),
+    path('protected/services/<int:service_id>/favorite/', ServiceFavoriteView.as_view(), name='beauty-service-favorite'),
 
     # Bookings (customer auth required — sits behind BeautyAuthMiddleware)
     path('protected/bookings/', MyBookingsView.as_view(), name='beauty-bookings'),

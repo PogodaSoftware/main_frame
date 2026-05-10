@@ -467,6 +467,7 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_bookings: '/bookings',
     beauty_profile: '/profile',
     beauty_chats: '/chats',
+    beauty_favorites: '/saved',
     // beauty_reschedule and beauty_booking_detail are param routes — the
     // BFF always supplies a substituted `route`, so no fallback entry.
     beauty_business_home: '/business',
