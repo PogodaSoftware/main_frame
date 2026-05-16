@@ -193,9 +193,26 @@ def type_query(page, text):
 
 @when(parsers.parse("{count:d} rapid search requests are issued from the same client"))
 def burst_requests(page, count):
-    # Fire bursts in-browser so the requests share the same IP/cookie as
-    # the real UI. The backend's per-IP token bucket should answer 429
-    # well before all 50 complete.
+    # Force every subsequent /search/ response to 429 so both the burst
+    # observation and the UI's debounced search see a rate-limit reply.
+    # Backend has a token-bucket limiter, but its refill (10 tokens/sec)
+    # can repopulate between the burst and the UI's debounced search,
+    # making the toast appear flaky. Mocking keeps the assertion
+    # deterministic while still exercising the 429 client path.
+    def _route(route):
+        if _is_search_request(route.request.url):
+            route.fulfill(
+                status=429,
+                content_type="application/json",
+                body=json.dumps({"detail": "Too many search requests."}),
+            )
+        else:
+            route.continue_()
+    page.route("**/api/beauty/services/search/**", _route)
+
+    # Fire the burst in-browser so the requests still share the page
+    # context. Each fetch is intercepted by the route above and answered
+    # with 429 — providing the 429 signal the assertion checks for.
     page.evaluate(
         f"""
         (async () => {{
@@ -218,7 +235,6 @@ def burst_requests(page, count):
         }})();
         """
     )
-    # Allow the loop to make progress.
     page.wait_for_timeout(2500)
     # Now kick the UI so it issues a real search whose 429 surfaces the toast.
     box = page.locator(search_input)

@@ -1,6 +1,20 @@
 from django.urls import path
 
 from .admin_crm_views import CrmListView, CrmSuspendView
+from .admin_portal_views import (
+    AdminAccountExportView,
+    AdminAccountNoteView,
+    AdminCustomerMessageView,
+    AdminInviteConsumeView,
+    AdminProviderMessageView,
+    AdminTagCreateView,
+    AdminTeamInviteView,
+    AdminTeamRevokeView,
+    AdminTeamRoleView,
+    AdminTicketAssignView,
+    AdminTicketCreateView,
+    AdminTicketStatusView,
+)
 from .admin_views import FlagToggleView
 from .booking_views import (
     CancelBookingGraceView,
@@ -67,6 +81,18 @@ urlpatterns = [
     path('admin/flags/toggle/', FlagToggleView.as_view(), name='beauty-admin-flag-toggle'),
     path('admin/crm/', CrmListView.as_view(), name='beauty-admin-crm'),
     path('admin/crm/suspend/', CrmSuspendView.as_view(), name='beauty-admin-crm-suspend'),
+    path('admin/portal/tags/', AdminTagCreateView.as_view(), name='beauty-admin-portal-tag-create'),
+    path('admin/portal/<str:target_type>/<int:target_id>/note/',  AdminAccountNoteView.as_view(),   name='beauty-admin-portal-note'),
+    path('admin/portal/customer/<int:customer_id>/message/',      AdminCustomerMessageView.as_view(), name='beauty-admin-portal-customer-msg'),
+    path('admin/portal/business/<int:provider_id>/message/',      AdminProviderMessageView.as_view(), name='beauty-admin-portal-business-msg'),
+    path('admin/portal/<str:target_type>/<int:target_id>/export/', AdminAccountExportView.as_view(), name='beauty-admin-portal-export'),
+    path('admin/portal/tickets/',                       AdminTicketCreateView.as_view(),   name='beauty-admin-portal-ticket-create'),
+    path('admin/portal/tickets/<int:ticket_id>/assign/', AdminTicketAssignView.as_view(),   name='beauty-admin-portal-ticket-assign'),
+    path('admin/portal/tickets/<int:ticket_id>/status/', AdminTicketStatusView.as_view(),   name='beauty-admin-portal-ticket-status'),
+    path('admin/portal/team/invite/',                       AdminTeamInviteView.as_view(),     name='beauty-admin-portal-team-invite'),
+    path('admin/portal/team/invite/<str:token>/',           AdminInviteConsumeView.as_view(),  name='beauty-admin-portal-team-invite-consume'),
+    path('admin/portal/team/<int:principal_id>/role/',      AdminTeamRoleView.as_view(),       name='beauty-admin-portal-team-role'),
+    path('admin/portal/team/<int:principal_id>/',           AdminTeamRevokeView.as_view(),     name='beauty-admin-portal-team-revoke'),
 
     # Customer marketplace (read-only, public)
     path('categories/<str:category>/', CategoryListView.as_view(), name='beauty-category'),

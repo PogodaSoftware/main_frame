@@ -61,9 +61,10 @@ interface BusinessForm {
 
       <main id="main" class="prov-body">
         <form class="biz-form" (ngSubmit)="onSubmit()" novalidate *ngIf="form">
-          <app-prov-card [padding]="16" class="form-card">
+          <div class="form-card prov-card">
             <ng-container *ngFor="let f of form.fields">
-              <div class="field" [class.field-grid]="f.name === 'price_dollars' || f.name === 'duration_minutes'">
+              <div class="field" *ngIf="f.name !== 'duration_minutes'"
+                   [class.in-pair]="f.name === 'price_dollars'">
                 <label class="field-label" [for]="f.name">
                   {{ f.label }}<span class="req" *ngIf="f.required">*</span>
                 </label>
@@ -103,22 +104,29 @@ interface BusinessForm {
                   [inputId]="f.name"
                   [(ngModel)]="values[f.name]"
                   [name]="f.name"></app-prov-price-input>
-
-                <div *ngIf="f.type === 'number'" class="num-wrap">
-                  <input
-                    type="text"
-                    inputmode="numeric"
-                    [id]="f.name" [name]="f.name"
-                    class="form-input num-input"
-                    [(ngModel)]="values[f.name]"
-                    [required]="f.required ?? false"
-                    (blur)="touched[f.name] = true"
-                    autocomplete="off"/>
-                  <span class="num-suffix" *ngIf="f.suffix">{{ f.suffix }}</span>
-                </div>
               </div>
+
+              <ng-container *ngIf="f.name === 'price_dollars' && durationField as df">
+                <div class="field in-pair duration-field">
+                  <label class="field-label" [for]="df.name">
+                    {{ df.label }}<span class="req" *ngIf="df.required">*</span>
+                  </label>
+                  <div class="num-wrap">
+                    <input
+                      type="text"
+                      inputmode="numeric"
+                      [id]="df.name" [name]="df.name"
+                      class="form-input num-input"
+                      [(ngModel)]="values[df.name]"
+                      [required]="df.required ?? false"
+                      (blur)="touched[df.name] = true"
+                      autocomplete="off"/>
+                    <span class="num-suffix" *ngIf="df.suffix">{{ df.suffix }}</span>
+                  </div>
+                </div>
+              </ng-container>
             </ng-container>
-          </app-prov-card>
+          </div>
 
           <p *ngIf="serverError" class="server-error" role="alert" aria-live="assertive">{{ serverError }}</p>
 
@@ -191,10 +199,18 @@ interface BusinessForm {
 
     /* Two-up grid for Price + Duration */
     .biz-form { position: relative; }
-    .form-card { /* stacks all fields by default */ }
-    .field.field-grid { display: inline-block; width: calc(50% - 6px); vertical-align: top; }
-    .field.field-grid:nth-of-type(odd) { margin-right: 12px; }
-    .field.field-grid + .field.field-grid { margin-left: 12px; }
+    .form-card {
+      background: #FFFFFF;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 14px 10px;
+    }
+    .field { grid-column: 1 / -1; margin-bottom: 0; }
+    .field.in-pair { grid-column: span 1; }
 
     /* Number with suffix */
     .num-wrap {
@@ -219,7 +235,9 @@ interface BusinessForm {
 
     .footer-actions {
       display: flex; gap: 8px;
+      justify-content: center;
     }
+    .footer-actions app-prov-btn { width: 100%; max-width: 280px; }
     .footnote {
       font-size: 11px;
       color: var(--text-muted);
@@ -268,6 +286,10 @@ export class BeautyBusinessServiceFormComponent implements OnChanges {
       v[field.name] = field.value ?? '';
     }
     this.values = v;
+  }
+
+  get durationField(): FormField | null {
+    return this.form?.fields.find(f => f.name === 'duration_minutes') || null;
   }
 
   placeholderFor(f: FormField): string {

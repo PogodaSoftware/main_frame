@@ -5,6 +5,7 @@
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
@@ -40,6 +41,7 @@ const CATEGORY_HUE: Record<string, string> = {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     BeautyConfirmModalComponent,
     BeautyProviderSubHeaderComponent,
     BeautyProviderTabBarComponent,
@@ -54,10 +56,6 @@ const CATEGORY_HUE: Record<string, string> = {
         <app-prov-btn slot="right" variant="primary" size="sm"
                       (clicked)="emit(links['add'])"
                       [disabled]="!links['add']">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 5v14M5 12h14"/>
-          </svg>
           Add service
         </app-prov-btn>
       </app-prov-sub-header>
@@ -66,7 +64,17 @@ const CATEGORY_HUE: Record<string, string> = {
         <ng-container *ngIf="services.length; else emptyState">
           <div class="list-head">
             <span class="count-eyebrow">{{ services.length }} {{ services.length === 1 ? 'SERVICE' : 'SERVICES' }}</span>
-            <span class="sort-mono">Sorted A → Z</span>
+            <label class="sort-select" aria-label="Sort services">
+              <span class="sort-eyebrow">Sort:</span>
+              <select [(ngModel)]="sortKey" name="sort-key">
+                <option value="name-asc">Name A → Z</option>
+                <option value="name-desc">Name Z → A</option>
+                <option value="price-asc">Price low → high</option>
+                <option value="price-desc">Price high → low</option>
+                <option value="time-asc">Time short → long</option>
+                <option value="time-desc">Time long → short</option>
+              </select>
+            </label>
           </div>
           <app-prov-card padding="0 14px">
             <div *ngFor="let s of sortedServices; let last = last" class="svc-row" [class.last]="last">
@@ -76,7 +84,7 @@ const CATEGORY_HUE: Record<string, string> = {
                 <div class="svc-meta">
                   <span class="cat-eyebrow">{{ s.category_label }}</span>
                   <span class="dot">·</span>
-                  <span class="mono">{{ s.duration_minutes }} min</span>
+                  <span class="mono">{{ s.duration_minutes }} min(s)</span>
                   <span class="dot">·</span>
                   <span class="mono price">\${{ formatPrice(s) }}</span>
                 </div>
@@ -101,7 +109,7 @@ const CATEGORY_HUE: Record<string, string> = {
             body="Add your first service so customers can book. You can edit price, duration, and description anytime.">
             <app-prov-btn variant="primary" (clicked)="emit(links['add'])"
                           [disabled]="!links['add']">
-              + Add your first service
+              Add your first service
             </app-prov-btn>
           </app-prov-empty-hint>
         </ng-template>
@@ -158,10 +166,27 @@ const CATEGORY_HUE: Record<string, string> = {
       color: var(--text-muted);
       letter-spacing: 0.6px; text-transform: uppercase;
     }
-    .sort-mono {
-      font-family: var(--font-mono);
+    .sort-select {
+      display: inline-flex; align-items: center; gap: 6px;
       font-size: 11px;
       color: var(--text-muted);
+    }
+    .sort-eyebrow {
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+    }
+    .sort-select select {
+      font-family: var(--font-body);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text);
+      background: #FFFFFF;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 5px 8px;
+      cursor: pointer;
+      min-height: 32px;
     }
     .svc-row {
       display: flex; align-items: center; gap: 12px;
@@ -224,6 +249,7 @@ export class BeautyBusinessServicesComponent {
   busyId: number | null = null;
   errorMsg = '';
   pendingDelete: ServiceRow | null = null;
+  sortKey: 'name-asc' | 'name-desc' | 'price-asc' | 'price-desc' | 'time-asc' | 'time-desc' = 'name-asc';
 
   constructor(private authService: BeautyAuthService) {}
 
@@ -232,7 +258,17 @@ export class BeautyBusinessServicesComponent {
   }
 
   get sortedServices(): ServiceRow[] {
-    return [...this.services].sort((a, b) => a.name.localeCompare(b.name));
+    const list = [...this.services];
+    const cents = (s: ServiceRow) => s.price_dollars ? Math.round(parseFloat(s.price_dollars) * 100) : (s.price_cents || 0);
+    switch (this.sortKey) {
+      case 'name-desc':  return list.sort((a, b) => b.name.localeCompare(a.name));
+      case 'price-asc':  return list.sort((a, b) => cents(a) - cents(b));
+      case 'price-desc': return list.sort((a, b) => cents(b) - cents(a));
+      case 'time-asc':   return list.sort((a, b) => (a.duration_minutes || 0) - (b.duration_minutes || 0));
+      case 'time-desc':  return list.sort((a, b) => (b.duration_minutes || 0) - (a.duration_minutes || 0));
+      case 'name-asc':
+      default:           return list.sort((a, b) => a.name.localeCompare(b.name));
+    }
   }
 
   get tabBadges(): { bookings?: number; messages?: number } {

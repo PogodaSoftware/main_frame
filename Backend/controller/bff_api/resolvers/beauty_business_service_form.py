@@ -84,7 +84,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             {'name': 'category', 'type': 'select', 'label': 'Category', 'required': True, 'value': defaults['category'], 'options': CATEGORY_OPTIONS},
             {'name': 'description', 'type': 'text', 'label': 'Description', 'required': False, 'value': defaults['description']},
             {'name': 'price_dollars', 'type': 'price_dollars', 'label': 'Price', 'required': True, 'value': defaults['price_dollars'], 'min': 0, 'pattern': r'^\d+(\.\d{1,2})?$'},
-            {'name': 'duration_minutes', 'type': 'number', 'label': 'Duration', 'required': True, 'value': defaults['duration_minutes'], 'min': 15, 'max': 480, 'suffix': 'min'},
+            {'name': 'duration_minutes', 'type': 'number', 'label': 'Duration', 'required': True, 'value': defaults['duration_minutes'], 'min': 15, 'max': 480, 'suffix': 'min(s)'},
         ],
     }
 

@@ -148,7 +148,7 @@ interface DashboardStats {
           <button type="button" class="qa-tile primary"
                   (click)="emit(resolveTab('services'))">
             <span class="qa-icon-wrap primary">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4L12 3z"/>
                 <path d="M18.5 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8.8-2z"/>
@@ -156,17 +156,13 @@ interface DashboardStats {
             </span>
             <span class="qa-text">
               <span class="qa-label">Services</span>
-              <span class="qa-sub">{{ servicesCount ? (servicesCount + ' active · tap to add') : 'Add your first' }}</span>
+              <span class="qa-sub">{{ servicesCount }} active</span>
             </span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
           </button>
           <button type="button" class="qa-tile"
                   (click)="emit(resolveAvailability())">
             <span class="qa-icon-wrap">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                    stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="12" cy="12" r="9"/>
                 <path d="M12 7v5l3 2"/>
@@ -176,28 +172,20 @@ interface DashboardStats {
               <span class="qa-label">Hours</span>
               <span class="qa-sub">{{ hoursLabel }}</span>
             </span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
           </button>
           <button type="button" class="qa-tile"
                   data-testid="business-reviews-tile"
                   (click)="goToReviews()">
             <span class="qa-icon-wrap">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="#F5C36B" stroke="#F5C36B"
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#F5C36B" stroke="#F5C36B"
                    stroke-width="1" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2z"/>
               </svg>
             </span>
             <span class="qa-text">
               <span class="qa-label">Reviews</span>
-              <span class="qa-sub">See what customers said</span>
+              <span class="qa-sub">View ratings</span>
             </span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M9 18l6-6-6-6"/>
-            </svg>
           </button>
         </div>
 
@@ -277,7 +265,7 @@ interface DashboardStats {
         <div class="empty-cta">
           <div class="empty-cta-hint">Customers will see your storefront once you add a service &amp; set hours.</div>
           <app-prov-btn variant="primary" [full]="true" (clicked)="emit(links['services'])">
-            + Add your first service
+            Add your first service
           </app-prov-btn>
         </div>
       </main>
@@ -466,11 +454,11 @@ interface DashboardStats {
     .day-booking .cust { color: var(--text-muted); font-size: 10px; }
 
     /* Quick action tiles */
-    .qa-row { display: flex; gap: 10px; margin-bottom: 10px; }
+    .qa-row { display: flex; gap: 8px; margin-bottom: 12px; }
     .qa-tile {
       flex: 1;
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
+      padding: 12px;
       border-radius: 14px;
       background: #FFFFFF;
       color: var(--text);
@@ -486,33 +474,31 @@ interface DashboardStats {
       border-color: var(--text);
     }
     .qa-icon-wrap {
-      width: 42px; height: 42px;
+      width: 32px; height: 32px;
       flex-shrink: 0;
-      border-radius: 12px;
+      border-radius: 10px;
       background: var(--accent-blue);
       color: #1a3a52;
       display: grid; place-items: center;
     }
     .qa-icon-wrap.primary {
-      background: rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.14);
       color: #FFFFFF;
     }
-    .qa-text { flex: 1; min-width: 0; display: block; }
+    .qa-text { width: 100%; min-width: 0; display: block; }
     .qa-label {
       display: block;
-      font-size: 15px; font-weight: 600;
+      font-size: 13px; font-weight: 600;
       line-height: 1.15;
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .qa-sub {
       display: block;
-      font-size: 11px; margin-top: 3px;
+      font-size: 10px; margin-top: 2px;
       color: var(--text-muted);
       overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     .qa-tile.primary .qa-sub { color: rgba(255,255,255,0.7); }
-    .qa-tile.primary > svg:last-child { color: rgba(255,255,255,0.7); }
-    .qa-tile > svg:last-child { color: var(--text-muted); flex-shrink: 0; }
 
     /* Stats row */
     .stats-row {
@@ -534,8 +520,8 @@ interface DashboardStats {
     }
 
     /* Earnings arc */
-    .arc-wrap { position: relative; margin-top: 8px; }
-    .arc { display: block; width: 100%; height: auto; }
+    .arc-wrap { position: relative; margin-top: 8px; padding: 0 12px; }
+    .arc { display: block; width: 100%; height: auto; max-width: 180px; margin: 0 auto; }
     .arc-track { fill: none; stroke: var(--line); stroke-width: 12; stroke-linecap: round; }
     .arc-fill { fill: none; stroke: var(--accent-blue-deep); stroke-width: 12; stroke-linecap: round; }
     .arc-dot-outer { fill: #fff; stroke: var(--accent-blue-deep); stroke-width: 2; }
@@ -546,8 +532,9 @@ interface DashboardStats {
     }
     .arc-value strong {
       display: block;
-      font-family: var(--font-display);
-      font-size: 22px; font-weight: 500;
+      font-family: var(--font-body);
+      font-size: 22px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
       color: var(--text);
       line-height: 1;
     }
@@ -565,8 +552,9 @@ interface DashboardStats {
       margin: 8px 0 12px;
     }
     .vol-total strong {
-      font-family: var(--font-display);
-      font-size: 32px; font-weight: 500;
+      font-family: var(--font-body);
+      font-size: 32px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
       line-height: 1;
       color: var(--text);
     }
@@ -581,8 +569,9 @@ interface DashboardStats {
       border: 1px solid var(--line);
     }
     .vol-num {
-      font-family: var(--font-display);
-      font-size: 22px; font-weight: 500;
+      font-family: var(--font-body);
+      font-size: 20px; font-weight: 700;
+      font-variant-numeric: tabular-nums;
       line-height: 1;
       color: var(--text);
     }

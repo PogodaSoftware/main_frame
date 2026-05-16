@@ -62,6 +62,7 @@ export interface BffFormPresentation {
   hide_top_header?: boolean;
   show_back_bar?: boolean;
   show_brand_block?: boolean;
+  brand_block_badge?: string;
   show_forgot_link?: boolean;
   show_terms_checkbox?: boolean;
   show_or_divider?: boolean;

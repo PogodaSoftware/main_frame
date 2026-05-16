@@ -24,6 +24,7 @@ from rest_framework.views import APIView
 from bff_api.services.auth_service import get_authenticated_user
 from bff_api.services.hateoas_service import is_beauty_admin
 
+from . import audit
 from .middleware import SESSION_COOKIE_NAME
 from .models import BeautySession, BeautyUser, BusinessProvider
 
@@ -148,6 +149,9 @@ class CrmSuspendView(APIView):
         err = _require_admin(request)
         if err:
             return err
+        device_id = request.headers.get('X-Device-ID', '').strip()
+        cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
+        user = get_authenticated_user(cookie, device_id) or {}
 
         data = request.data or {}
         kind = (data.get('type') or '').strip().lower()
@@ -185,6 +189,13 @@ class CrmSuspendView(APIView):
             BeautySession.objects.filter(
                 user_id=target_id, user_type=session_user_type, is_active=True,
             ).update(is_active=False)
+
+        audit.log_event(
+            request=request, user=user,
+            action='account.suspend' if suspended else 'account.reinstate',
+            target_type=kind, target_id=target_id,
+            meta={'reason': (data.get('reason') or '')[:255]},
+        )
 
         return Response(
             {

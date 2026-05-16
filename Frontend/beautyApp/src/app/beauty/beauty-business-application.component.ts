@@ -50,10 +50,15 @@ interface DayRow extends WeeklyHourRow {}
   template: `
     <div class="business-shell" [attr.data-step]="step">
       <header class="biz-header">
-        <button class="brand-name-btn" (click)="emitFollow(links['logout'])" type="button">
-          <span class="brand-icon" aria-hidden="true">🏢</span>
-          <span class="badge">Application</span>
+        <button class="brand-name-btn" (click)="emitFollow(links['logout'])" type="button" aria-label="Beauty">
+          <span class="brand-icon" aria-hidden="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="#fff" aria-hidden="true">
+              <path d="M12 2l2.4 6.6L21 11l-6.6 2.4L12 20l-2.4-6.6L3 11l6.6-2.4L12 2z"/>
+            </svg>
+          </span>
+          <span class="brand-name">Beauty</span>
         </button>
+        <span class="badge">Application</span>
         <span class="step-counter" aria-live="polite">
           Step {{ data?.step_index }} of {{ data?.total_steps }}
         </span>
@@ -65,162 +70,237 @@ interface DayRow extends WeeklyHourRow {}
               class="step-pill"
               [class.is-current]="data?.step === s.key"
               [class.is-done]="isStepDone(s.key)">
-            <span class="step-num" aria-hidden="true">{{ i + 1 }}</span>
+            <span class="step-num" aria-hidden="true">
+              <ng-container *ngIf="isStepDone(s.key); else stepNum">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M5 12l4 4L19 7"/>
+                </svg>
+              </ng-container>
+              <ng-template #stepNum>{{ i + 1 }}</ng-template>
+            </span>
             <span class="step-name">{{ s.label }}</span>
           </li>
         </ol>
       </nav>
 
       <main id="main" class="biz-section">
-        <h1 class="biz-title">{{ data?.step_title }}</h1>
+        <div class="biz-title-block">
+          <h1 class="biz-title">{{ data?.step_title }}</h1>
+          <p class="biz-subtitle" *ngIf="stepSubtitle">{{ stepSubtitle }}</p>
+        </div>
 
         <!-- ─── ENTITY ───────────────────────────────────────────── -->
         <form *ngIf="step === 'entity'" class="biz-form" (ngSubmit)="submitEntity()" novalidate>
-          <fieldset class="biz-fieldset">
-            <legend>Are you applying as…</legend>
-            <label class="radio-row">
-              <input type="radio" name="entity_type" value="person" [(ngModel)]="entityForm.entity_type" />
-              <span>An individual / sole practitioner</span>
-            </label>
-            <label class="radio-row">
-              <input type="radio" name="entity_type" value="business" [(ngModel)]="entityForm.entity_type" />
-              <span>A registered business</span>
-            </label>
-          </fieldset>
+          <section class="prov-headed-card">
+            <div class="ph-head">Are you applying as…</div>
+            <div class="ph-body">
+              <label class="radio-row">
+                <input type="radio" name="entity_type" value="person" [(ngModel)]="entityForm.entity_type" />
+                <span class="row-text">
+                  <span class="row-label">An individual / sole practitioner</span>
+                  <span class="row-sub">You'll work under your own name.</span>
+                </span>
+              </label>
+              <label class="radio-row">
+                <input type="radio" name="entity_type" value="business" [(ngModel)]="entityForm.entity_type" />
+                <span class="row-text">
+                  <span class="row-label">A registered business</span>
+                  <span class="row-sub">LLC, S-corp, or other registered entity.</span>
+                </span>
+              </label>
+            </div>
+          </section>
 
-          <div class="biz-field" *ngIf="entityForm.entity_type === 'business'">
-            <label for="itin">ITIN <span class="req">*</span></label>
-            <input id="itin" name="itin" type="text" maxlength="11"
-                   inputmode="numeric" autocomplete="off"
-                   [(ngModel)]="entityForm.itin"
-                   [attr.aria-required]="true"
-                   [attr.aria-invalid]="entityFormError === 'itin' ? 'true' : null"
-                   placeholder="9 digits" />
-            <small>Required when applying as a business. We mask this on display.</small>
-          </div>
-
-          <div class="biz-row">
+          <section class="prov-card" *ngIf="entityForm.entity_type === 'business'">
             <div class="biz-field">
-              <label for="first">First name <span class="req">*</span></label>
-              <input id="first" name="first" type="text" autocomplete="given-name"
-                     [(ngModel)]="entityForm.applicant_first_name"
+              <label for="itin">ITIN / EIN <span class="req">*</span></label>
+              <input id="itin" name="itin" type="text" maxlength="11"
+                     inputmode="numeric" autocomplete="off"
+                     class="mono-input"
+                     [(ngModel)]="entityForm.itin"
+                     [attr.aria-required]="true"
+                     [attr.aria-invalid]="entityFormError === 'itin' ? 'true' : null"
+                     placeholder="9 digits" />
+              <small>Required when applying as a registered business. We mask this on display and store it encrypted.</small>
+            </div>
+          </section>
+
+          <section class="prov-card">
+            <div class="biz-row">
+              <div class="biz-field">
+                <label for="first">First name <span class="req">*</span></label>
+                <input id="first" name="first" type="text" autocomplete="given-name"
+                       [(ngModel)]="entityForm.applicant_first_name"
+                       placeholder="Maya"
+                       [attr.aria-required]="true" />
+              </div>
+              <div class="biz-field">
+                <label for="last">Last name <span class="req">*</span></label>
+                <input id="last" name="last" type="text" autocomplete="family-name"
+                       [(ngModel)]="entityForm.applicant_last_name"
+                       placeholder="Rivera"
+                       [attr.aria-required]="true" />
+              </div>
+            </div>
+
+            <div class="biz-field" *ngIf="entityForm.entity_type === 'business'">
+              <label for="biz-name">Business name <span class="req">*</span></label>
+              <input id="biz-name" name="biz-name" type="text" autocomplete="organization"
+                     [(ngModel)]="entityForm.business_name"
+                     placeholder="Your storefront's name"
                      [attr.aria-required]="true" />
             </div>
+          </section>
+
+          <section class="prov-card">
             <div class="biz-field">
-              <label for="last">Last name <span class="req">*</span></label>
-              <input id="last" name="last" type="text" autocomplete="family-name"
-                     [(ngModel)]="entityForm.applicant_last_name"
-                     [attr.aria-required]="true" />
+              <label for="addr1">Address line 1</label>
+              <input id="addr1" name="addr1" type="text" autocomplete="address-line1"
+                     [(ngModel)]="entityForm.address_line1"
+                     placeholder="Street address" />
             </div>
-          </div>
-
-          <div class="biz-field">
-            <label for="biz-name">Business name <span class="req">*</span></label>
-            <input id="biz-name" name="biz-name" type="text" autocomplete="organization"
-                   [(ngModel)]="entityForm.business_name"
-                   [attr.aria-required]="true" />
-          </div>
-
-          <div class="biz-field">
-            <label for="addr1">Address line 1</label>
-            <input id="addr1" name="addr1" type="text" autocomplete="address-line1"
-                   [(ngModel)]="entityForm.address_line1" />
-          </div>
-          <div class="biz-field">
-            <label for="addr2">Address line 2</label>
-            <input id="addr2" name="addr2" type="text" autocomplete="address-line2"
-                   [(ngModel)]="entityForm.address_line2" />
-          </div>
-          <div class="biz-row">
+            <div class="biz-field">
+              <label for="addr2">Address line 2</label>
+              <input id="addr2" name="addr2" type="text" autocomplete="address-line2"
+                     [(ngModel)]="entityForm.address_line2"
+                     placeholder="Suite, floor (optional)" />
+            </div>
             <div class="biz-field">
               <label for="city">City</label>
               <input id="city" name="city" type="text" autocomplete="address-level2"
-                     [(ngModel)]="entityForm.city" />
+                     [(ngModel)]="entityForm.city"
+                     placeholder="San Francisco" />
             </div>
-            <div class="biz-field">
-              <label for="state">State</label>
-              <input id="state" name="state" type="text" autocomplete="address-level1"
-                     [(ngModel)]="entityForm.state" />
+            <div class="biz-row">
+              <div class="biz-field">
+                <label for="state">State</label>
+                <input id="state" name="state" type="text" autocomplete="address-level1"
+                       [(ngModel)]="entityForm.state"
+                       placeholder="CA" />
+              </div>
+              <div class="biz-field">
+                <label for="zip">ZIP</label>
+                <input id="zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric"
+                       class="mono-input"
+                       [(ngModel)]="entityForm.postal_code"
+                       placeholder="94105" />
+              </div>
             </div>
-            <div class="biz-field">
-              <label for="zip">ZIP</label>
-              <input id="zip" name="zip" type="text" autocomplete="postal-code" inputmode="numeric"
-                     [(ngModel)]="entityForm.postal_code" />
-            </div>
-          </div>
+          </section>
 
           <p *ngIf="serverError" class="server-error" role="alert">{{ serverError }}</p>
-          <button type="submit" class="btn btn-confirm" [class.is-loading]="isLoading"
-                  [disabled]="isLoading">Save & continue</button>
+          <div class="form-actions solo-confirm">
+            <button type="submit" class="btn btn-confirm" [class.is-loading]="isLoading"
+                    [disabled]="isLoading">Save &amp; Continue</button>
+          </div>
         </form>
 
         <!-- ─── SERVICES ─────────────────────────────────────────── -->
         <form *ngIf="step === 'services'" class="biz-form" (ngSubmit)="submitServices()" novalidate>
-          <fieldset class="biz-fieldset">
-            <legend>Pick at least one</legend>
-            <label *ngFor="let cat of categoryOptions" class="check-row" [attr.data-category]="cat.value">
-              <input type="checkbox" [name]="'cat-' + cat.value"
-                     [checked]="selectedCategories.has(cat.value)"
-                     (change)="toggleCategory(cat.value, $event)" />
-              <span>{{ cat.label }}</span>
-            </label>
-          </fieldset>
+          <section class="prov-headed-card">
+            <div class="ph-head">Pick at least one</div>
+            <div class="ph-body">
+              <label *ngFor="let cat of categoryOptions" class="check-row" [attr.data-category]="cat.value">
+                <input type="checkbox" [name]="'cat-' + cat.value"
+                       [checked]="selectedCategories.has(cat.value)"
+                       (change)="toggleCategory(cat.value, $event)" />
+                <span class="row-text">
+                  <span class="row-label">{{ cat.label }}</span>
+                  <span class="row-sub" *ngIf="cat.description">{{ cat.description }}</span>
+                </span>
+              </label>
+            </div>
+          </section>
+
+          <div class="info-strip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 17v.01"/></svg>
+            <span>You can list specific services with pricing in the next stages of onboarding.</span>
+          </div>
+
           <p *ngIf="serverError" class="server-error" role="alert">{{ serverError }}</p>
           <div class="form-actions">
             <button type="button" class="btn btn-outline"
                     (click)="emitFollow(links['prev'])"
                     *ngIf="links['prev']">Back</button>
             <button type="submit" class="btn btn-confirm" [class.is-loading]="isLoading"
-                    [disabled]="isLoading || selectedCategories.size === 0">Save & continue</button>
+                    [disabled]="isLoading || selectedCategories.size === 0">Save &amp; Continue</button>
           </div>
         </form>
 
         <!-- ─── STRIPE ───────────────────────────────────────────── -->
         <form *ngIf="step === 'stripe'" class="biz-form" (ngSubmit)="submitStripe()" novalidate>
-          <p class="biz-copy">{{ data?.stripe_copy }}</p>
+          <section class="stripe-card">
+            <div class="stripe-head">
+              <span class="stripe-logo" aria-hidden="true">S</span>
+              <div class="stripe-title">
+                <span class="stripe-name">Stripe Connect</span>
+                <span class="stripe-sub">Direct payouts to your bank account</span>
+              </div>
+              <span class="coming-soon">Coming soon</span>
+            </div>
+            <div class="stripe-body">
+              {{ data?.stripe_copy || 'Stripe Connect lets us send payouts straight to your bank account when customers pay for bookings. The full flow is coming soon — for now, mark this step complete and continue your application.' }}
+            </div>
+          </section>
+
+          <div class="info-strip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 17v.01"/></svg>
+            <span>No fees during the application phase. We'll prompt you to connect Stripe before your storefront goes live.</span>
+          </div>
+
           <p *ngIf="serverError" class="server-error" role="alert">{{ serverError }}</p>
           <div class="form-actions">
             <button type="button" class="btn btn-outline"
                     (click)="emitFollow(links['prev'])"
                     *ngIf="links['prev']">Back</button>
             <button type="submit" class="btn btn-confirm" [class.is-loading]="isLoading"
-                    [disabled]="isLoading">Connect Stripe (coming soon)</button>
+                    [disabled]="isLoading">Mark complete · Continue</button>
           </div>
         </form>
 
         <!-- ─── SCHEDULE ─────────────────────────────────────────── -->
         <form *ngIf="step === 'schedule'" class="biz-form" (ngSubmit)="submitSchedule()" novalidate>
-          <p class="biz-copy">When are you open? Customers can only book during these hours.</p>
           <app-beauty-weekly-hours-editor [rows]="rows"></app-beauty-weekly-hours-editor>
+
           <p *ngIf="serverError" class="server-error" role="alert">{{ serverError }}</p>
           <div class="form-actions">
             <button type="button" class="btn btn-outline"
                     (click)="emitFollow(links['prev'])"
                     *ngIf="links['prev']">Back</button>
             <button type="submit" class="btn btn-confirm" [class.is-loading]="isLoading"
-                    [disabled]="isLoading">Save & continue</button>
+                    [disabled]="isLoading">Save &amp; Continue</button>
           </div>
         </form>
 
         <!-- ─── TOOLS ────────────────────────────────────────────── -->
         <form *ngIf="step === 'tools'" class="biz-form" (ngSubmit)="submitTools()" novalidate>
-          <fieldset class="biz-fieldset">
-            <legend>Optional integrations</legend>
-            <label *ngFor="let tool of toolOptions" class="check-row" [attr.data-tool]="tool.value">
-              <input type="checkbox" [name]="'tool-' + tool.value"
-                     [checked]="selectedTools.has(tool.value)"
-                     (change)="toggleTool(tool.value, $event)" />
-              <span>{{ tool.label }}</span>
-            </label>
-          </fieldset>
-          <p class="biz-copy">Selections are saved with your application — real syncing comes later.</p>
+          <section class="prov-headed-card">
+            <div class="ph-head">Optional integrations</div>
+            <div class="ph-body">
+              <label *ngFor="let tool of toolOptions" class="check-row" [attr.data-tool]="tool.value">
+                <input type="checkbox" [name]="'tool-' + tool.value"
+                       [checked]="selectedTools.has(tool.value)"
+                       (change)="toggleTool(tool.value, $event)" />
+                <span class="row-text">
+                  <span class="row-label">{{ tool.label }}</span>
+                  <span class="row-sub" *ngIf="tool.description">{{ tool.description }}</span>
+                </span>
+              </label>
+            </div>
+          </section>
+
+          <div class="info-strip">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 17v.01"/></svg>
+            <span>Selections are saved with your application — real syncing comes later.</span>
+          </div>
+
           <p *ngIf="serverError" class="server-error" role="alert">{{ serverError }}</p>
           <div class="form-actions">
             <button type="button" class="btn btn-outline"
                     (click)="emitFollow(links['prev'])"
                     *ngIf="links['prev']">Back</button>
             <button type="submit" class="btn btn-confirm" [class.is-loading]="isLoading"
-                    [disabled]="isLoading">Save & continue</button>
+                    [disabled]="isLoading">Save &amp; Continue</button>
           </div>
         </form>
 
@@ -230,11 +310,13 @@ interface DayRow extends WeeklyHourRow {}
             <h2 id="rv-applicant">Applicant</h2>
             <dl>
               <dt>Name</dt><dd>{{ application?.applicant_first_name }} {{ application?.applicant_last_name }}</dd>
-              <dt>Entity</dt><dd>{{ application?.entity_type | titlecase }}</dd>
-              <dt *ngIf="application?.has_itin">ITIN</dt>
-              <dd *ngIf="application?.has_itin">{{ application?.itin_masked }}</dd>
+              <dt>Entity</dt><dd>{{ application?.entity_type === 'business' ? 'Registered business' : 'Individual / sole practitioner' }}</dd>
+              <ng-container *ngIf="application?.has_itin">
+                <dt>ITIN</dt><dd>{{ application?.itin_masked }}</dd>
+              </ng-container>
             </dl>
           </section>
+
           <section class="review-section" aria-labelledby="rv-business">
             <h2 id="rv-business">Business</h2>
             <dl>
@@ -249,23 +331,26 @@ interface DayRow extends WeeklyHourRow {}
               </dd>
             </dl>
           </section>
-          <section class="review-section" aria-labelledby="rv-svc">
+
+          <section class="review-section" aria-labelledby="rv-svc" *ngIf="(data?.category_labels || []).length">
             <h2 id="rv-svc">Services</h2>
-            <ul>
+            <ul class="svc-chips">
               <li *ngFor="let label of data?.category_labels || []">{{ label }}</li>
             </ul>
           </section>
-          <section class="review-section" aria-labelledby="rv-hours">
+
+          <section class="review-section" aria-labelledby="rv-hours" *ngIf="(data?.weekly_hours || []).length">
             <h2 id="rv-hours">Weekly hours</h2>
-            <ul>
+            <ul class="hours-grid">
               <li *ngFor="let row of data?.weekly_hours || []">
-                <strong>{{ row.day_label }}:</strong>
-                <span *ngIf="row.is_closed">Closed</span>
-                <span *ngIf="row.is_24h && !row.is_closed">Open 24h</span>
-                <span *ngIf="!row.is_closed && !row.is_24h">{{ row.start_time }} – {{ row.end_time }}</span>
+                <span class="hg-day">{{ row.day_label }}</span>
+                <span class="hg-time" *ngIf="row.is_closed">Closed</span>
+                <span class="hg-time" *ngIf="row.is_24h && !row.is_closed">Open 24h</span>
+                <span class="hg-time" *ngIf="!row.is_closed && !row.is_24h">{{ row.start_time }} – {{ row.end_time }}</span>
               </li>
             </ul>
           </section>
+
           <section class="review-section" aria-labelledby="rv-tools" *ngIf="(data?.tool_labels || []).length">
             <h2 id="rv-tools">Third-party tools</h2>
             <ul>
@@ -278,7 +363,9 @@ interface DayRow extends WeeklyHourRow {}
             <p class="tos-text">{{ data?.tos_text }}</p>
             <label class="check-row tos-check">
               <input type="checkbox" name="accept_tos" [(ngModel)]="acceptTos" />
-              <span>I have read and accept the Terms of Service.</span>
+              <span class="row-text">
+                <span class="row-label">I have read and accept the Terms of Service.</span>
+              </span>
             </label>
           </section>
 
@@ -316,6 +403,28 @@ export class BeautyBusinessApplicationComponent implements OnChanges {
   isLoading = false;
   serverError = '';
   entityFormError: string | null = null;
+  quickSetSelected: string | null = null;
+
+  readonly quickSets: { key: string; label: string; open: string; close: string; days: number[] }[] = [
+    { key: 'wd-10-6', label: 'Weekdays 10–6', open: '10:00', close: '18:00', days: [1,2,3,4,5] },
+    { key: 'mf-9-5',  label: 'Mon–Fri 9–5',   open: '09:00', close: '17:00', days: [1,2,3,4,5] },
+    { key: '7day',    label: '7 days 10–8',    open: '10:00', close: '20:00', days: [0,1,2,3,4,5,6] },
+    { key: 'wknd',    label: 'Weekends only',  open: '10:00', close: '18:00', days: [0,6] },
+    { key: 'closed',  label: 'Closed all week',open: '',      close: '',      days: [] },
+  ];
+
+  readonly stepSubtitles: Record<ApplicationStep, string> = {
+    entity:   'A few details so customers can find and trust your business.',
+    services: 'What categories will you offer? You can add specific services later.',
+    stripe:   'Where customer payments land when bookings are paid.',
+    schedule: 'When are you open? Customers can only book during these hours.',
+    tools:    'Connect calendars or point-of-sale tools you already use.',
+    review:   'Double-check the details — you can edit any section before submitting.',
+  };
+
+  get stepSubtitle(): string {
+    return this.stepSubtitles[this.step] || '';
+  }
 
   // Step 1 — entity
   entityForm = {
@@ -403,6 +512,22 @@ export class BeautyBusinessApplicationComponent implements OnChanges {
     else this.selectedTools.delete(value);
   }
 
+  applyQuickSet(key: string): void {
+    const preset = this.quickSets.find(q => q.key === key);
+    if (!preset) return;
+    this.quickSetSelected = key;
+    this.rows = this.rows.map((r) => {
+      const open = preset.days.includes(r.day_of_week);
+      return {
+        ...r,
+        is_closed: !open,
+        is_24h: false,
+        start_time: open ? preset.open : r.start_time,
+        end_time: open ? preset.close : r.end_time,
+      };
+    });
+  }
+
   // ─── submitters ─────────────────────────────────────────────────
   private patch(body: Record<string, unknown>): void {
     if (!this.data || this.isLoading) return;
@@ -443,7 +568,12 @@ export class BeautyBusinessApplicationComponent implements OnChanges {
       this.serverError = 'First and last name are required.';
       return;
     }
-    if (!this.entityForm.business_name.trim()) {
+    if (this.entityForm.entity_type === 'person') {
+      // Sole practitioners work under their own name — derive business_name.
+      const first = this.entityForm.applicant_first_name.trim();
+      const last = this.entityForm.applicant_last_name.trim();
+      this.entityForm.business_name = `${first} ${last}`.trim();
+    } else if (!this.entityForm.business_name.trim()) {
       this.serverError = 'Business name is required.';
       return;
     }

@@ -396,6 +396,20 @@
   color: var(--text);
 }
 
+.auth-brand-badge {
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+  color: #1a3a52;
+  background: var(--accent-blue);
+  border: 1px solid rgba(125, 168, 207, 0.4);
+  padding: 3px 10px;
+  border-radius: 999px;
+  margin-top: 2px;
+}
+
 .forgot-row {
   display: flex;
   justify-content: flex-end;
@@ -445,11 +459,17 @@
 }
 
 .terms-link {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   color: #1a3a52;
+  font-family: var(--font-body);
+  font-size: inherit;
   font-weight: 600;
   text-decoration: none;
 
-  &:hover { text-decoration: underline; }
+  &:hover { text-decoration: underline; text-underline-offset: 2px; }
 }
 
 /* Real checkbox visually hidden; styled box rendered as a sibling span */

@@ -518,9 +518,11 @@ class BeautyChatMessage(models.Model):
 
     SENDER_CUSTOMER = 'customer'
     SENDER_BUSINESS = 'business'
+    SENDER_ADMIN = 'admin'
     SENDER_CHOICES = [
         (SENDER_CUSTOMER, 'Customer'),
         (SENDER_BUSINESS, 'Business Provider'),
+        (SENDER_ADMIN, 'Admin'),
     ]
 
     booking = models.ForeignKey(
@@ -563,8 +565,22 @@ class BeautyAdminPrincipal(models.Model):
         (USER_TYPE_BUSINESS, 'Business Provider'),
     ]
 
+    ROLE_OWNER = 'owner'
+    ROLE_SUPPORT_LEAD = 'support_lead'
+    ROLE_RISK_ANALYST = 'risk_analyst'
+    ROLE_SUPPORT_AGENT = 'support_agent'
+    ROLE_CHOICES = [
+        (ROLE_OWNER, 'Owner'),
+        (ROLE_SUPPORT_LEAD, 'Support lead'),
+        (ROLE_RISK_ANALYST, 'Risk analyst'),
+        (ROLE_SUPPORT_AGENT, 'Support agent'),
+    ]
+
     user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
     user_id = models.IntegerField()
+    role = models.CharField(max_length=24, choices=ROLE_CHOICES, default=ROLE_SUPPORT_AGENT)
+    display_name = models.CharField(max_length=128, blank=True, default='')
+    last_active_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -578,6 +594,194 @@ class BeautyAdminPrincipal(models.Model):
 
     def __str__(self):
         return f"{self.user_type}:{self.user_id}"
+
+
+class BeautyAdminInvite(models.Model):
+    """
+    Pending admin invite. A row exists from the moment an Owner sends the
+    invite until the target user signs up + consumes the token. On consume
+    we delete the invite and create a BeautyAdminPrincipal with the
+    invited role.
+    """
+
+    email = models.EmailField()
+    role = models.CharField(max_length=24, choices=BeautyAdminPrincipal.ROLE_CHOICES,
+                            default=BeautyAdminPrincipal.ROLE_SUPPORT_AGENT)
+    token_hash = models.CharField(max_length=128, unique=True)
+    created_by_user_type = models.CharField(max_length=16, blank=True, default='')
+    created_by_user_id = models.IntegerField(null=True, blank=True)
+    created_by_email = models.EmailField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    consumed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = 'beauty_admin_invites'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['email'], name='beauty_adm_inv_email_idx'),
+        ]
+
+    def __str__(self):
+        return f'invite#{self.id} {self.email} as {self.role}'
+
+
+class BeautyAdminAuditEvent(models.Model):
+    """
+    Immutable record of an admin action. Append-only — no update or delete
+    API. Actor identity is snapshotted (email, role) so the row survives
+    later principal deletion.
+    """
+
+    actor_user_type = models.CharField(max_length=16, blank=True, default='')
+    actor_user_id = models.IntegerField(null=True, blank=True)
+    actor_email = models.EmailField(blank=True, default='')
+    actor_role = models.CharField(max_length=24, blank=True, default='')
+    action = models.CharField(max_length=64)
+    target_type = models.CharField(max_length=32, blank=True, default='')
+    target_id = models.CharField(max_length=64, blank=True, default='')
+    target_label = models.CharField(max_length=255, blank=True, default='')
+    meta = models.JSONField(default=dict, blank=True)
+    ip = models.GenericIPAddressField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        db_table = 'beauty_admin_audit_events'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['action', '-created_at'], name='beauty_adm_aud_act_idx'),
+            models.Index(fields=['actor_email'], name='beauty_adm_aud_actor_idx'),
+        ]
+
+    def __str__(self):
+        return f'audit#{self.id} {self.action} by {self.actor_email} @ {self.created_at:%Y-%m-%d %H:%M}'
+
+
+class BeautyAdminNote(models.Model):
+    """
+    Internal admin note attached to a customer or business provider. Append-
+    only — visible only to admin principals on the account detail screen.
+    """
+
+    TARGET_CUSTOMER = 'customer'
+    TARGET_BUSINESS = 'business'
+    TARGET_CHOICES = [
+        (TARGET_CUSTOMER, 'Customer'),
+        (TARGET_BUSINESS, 'Business Provider'),
+    ]
+
+    target_type = models.CharField(max_length=16, choices=TARGET_CHOICES)
+    target_id = models.IntegerField()
+    author_email = models.EmailField(blank=True, default='')
+    author_user_type = models.CharField(max_length=16, blank=True, default='')
+    author_user_id = models.IntegerField(null=True, blank=True)
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_admin_notes'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['target_type', 'target_id', '-created_at'], name='beauty_adm_note_tgt_idx'),
+        ]
+
+    def __str__(self):
+        return f'note#{self.id} {self.target_type}:{self.target_id} by {self.author_email}'
+
+
+class BeautyAdminTicket(models.Model):
+    """
+    Support ticket raised by a customer, provider, or system process and
+    routed to an admin team member.
+    """
+
+    PRIORITY_HIGH = 'high'
+    PRIORITY_MED = 'med'
+    PRIORITY_LOW = 'low'
+    PRIORITY_CHOICES = [
+        (PRIORITY_HIGH, 'High'),
+        (PRIORITY_MED, 'Medium'),
+        (PRIORITY_LOW, 'Low'),
+    ]
+
+    CATEGORY_CHOICES = [
+        ('refund',  'Refund'),
+        ('no-show', 'No-show'),
+        ('payment', 'Payment'),
+        ('payouts', 'Payouts'),
+        ('account', 'Account'),
+        ('fraud',   'Fraud'),
+        ('booking', 'Booking'),
+        ('other',   'Other'),
+    ]
+
+    STATUS_NEW = 'new'
+    STATUS_IN_PROGRESS = 'in_progress'
+    STATUS_WAITING = 'waiting'
+    STATUS_RESOLVED = 'resolved'
+    STATUS_CHOICES = [
+        (STATUS_NEW,         'New'),
+        (STATUS_IN_PROGRESS, 'In progress'),
+        (STATUS_WAITING,     'Waiting on user'),
+        (STATUS_RESOLVED,    'Resolved'),
+    ]
+
+    SOURCE_IN_APP = 'in_app'
+    SOURCE_EMAIL = 'email'
+    SOURCE_SYSTEM = 'system'
+    SOURCE_CHOICES = [
+        (SOURCE_IN_APP, 'In-app'),
+        (SOURCE_EMAIL,  'Email'),
+        (SOURCE_SYSTEM, 'System'),
+    ]
+
+    FROM_CUSTOMER = 'customer'
+    FROM_BUSINESS = 'business'
+    FROM_SYSTEM = 'system'
+
+    priority = models.CharField(max_length=8, choices=PRIORITY_CHOICES, default=PRIORITY_MED)
+    category = models.CharField(max_length=16, choices=CATEGORY_CHOICES, default='other')
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_NEW)
+    source = models.CharField(max_length=12, choices=SOURCE_CHOICES, default=SOURCE_IN_APP)
+    subject = models.CharField(max_length=255)
+    body = models.TextField(blank=True, default='')
+    from_principal_type = models.CharField(max_length=12, blank=True, default='')
+    from_principal_id = models.IntegerField(null=True, blank=True)
+    from_label = models.CharField(max_length=128, blank=True, default='')
+    sla_breach_at = models.DateTimeField(null=True, blank=True)
+    assignee_email = models.EmailField(blank=True, default='')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'beauty_admin_tickets'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status', '-created_at'], name='beauty_adm_ticket_st_idx'),
+            models.Index(fields=['category'], name='beauty_adm_ticket_cat_idx'),
+        ]
+
+    def __str__(self):
+        return f'#{self.id} {self.priority}/{self.category} {self.subject[:40]}'
+
+
+class BeautyAdminTag(models.Model):
+    """
+    Admin-managed CRM tag. Attached to customers/providers via
+    BeautyAdminTagAssignment so the same tag can apply to either kind.
+    """
+
+    slug = models.SlugField(max_length=64, unique=True)
+    label = models.CharField(max_length=64)
+    color = models.CharField(max_length=9)    # e.g. '#A06B2C'
+    tone = models.CharField(max_length=9)     # softer fill for chip background
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_admin_tags'
+
+    def __str__(self):
+        return self.label
 
 
 class BeautyAuthAuditLog(models.Model):

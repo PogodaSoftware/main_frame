@@ -2,3 +2,4 @@ services:
   backend:
     environment:
       - BEAUTY_ADMIN_PRINCIPALS=customer:4
+    ports: !reset []

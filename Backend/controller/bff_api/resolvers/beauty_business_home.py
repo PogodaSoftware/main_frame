@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from beauty_api.availability_service import ensure_storefront
 from beauty_api.calendar_stats_service import compute_month_payload
+from beauty_api.models import BeautyService
 
 from ..services import hateoas_service as h
 from ..services.application_gate import (
@@ -33,6 +34,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         year, month = None, None
     payload = compute_month_payload(storefront, year=year, month=month)
     now = datetime.now(timezone.utc)
+    services_count = BeautyService.objects.filter(provider=storefront).count()
 
     links = {
         'self': h.self_link('beauty_business_home'),
@@ -82,6 +84,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'month': payload['month'],
             'month_bookings': payload['month_bookings'],
             'stats': payload['stats'],
+            'services_count': services_count,
+            'has_services': services_count > 0,
         },
         'meta': {'title': 'Business Portal'},
         '_links': links,

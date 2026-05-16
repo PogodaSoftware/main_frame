@@ -17,12 +17,19 @@ _PRESENTATION = {
     'title_class': 'login-title',
     'subtitle_class': 'login-subtitle',
     'form_class': 'login-form',
-    'submit_class': 'btn-login btn-business',
-    'header_brand_icon': '🏢',
+    'submit_class': 'btn-login',
+    'header_brand_icon': '✨',
     'header_brand_label': 'Beauty',
-    'header_badge_text': 'Business Portal',
-    'header_badge_class': 'business-badge',
     'footer_label': 'Not a business provider?',
+    # Design-system visual flags consumed by BeautyDynamicFormComponent.
+    'hide_top_header': True,
+    'show_back_bar': True,
+    'show_brand_block': True,
+    'brand_block_badge': 'Business Portal',
+    'show_forgot_link': True,
+    'show_or_divider': True,
+    'show_social': True,
+    'social_button_label': 'Continue with Google',
 }
 
 
@@ -45,6 +52,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     links = {
         'self': h.self_link('beauty_business_login'),
         'home': h.screen_link('home', 'beauty_home', prompt='Beauty'),
+        'back': h.screen_link('back', 'beauty_welcome', prompt='Back'),
+        'forgot': h.screen_link('forgot', 'beauty_forgot', prompt='Forgot password?'),
         'customer_login': h.screen_link(
             'customer_login', 'beauty_login', prompt='Customer sign in',
         ),
@@ -54,8 +63,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     }
 
     form = h.login_form(
-        title='Business Sign In',
-        subtitle='Access your business provider account',
+        title='Welcome back',
+        subtitle='Sign in to your business provider account',
         submit_href='/api/beauty/business/login/',
         submit_prompt='Sign in',
         success_screen='beauty_business_home',
@@ -65,12 +74,12 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 rel='business_signup',
                 cta_class='link-btn link-signup',
                 group_class='login-footer',
-                label_prefix='New here?',
+                label_prefix="Don't have an account?",
             ),
             h.footer_link(
                 rel='customer_login',
                 cta_class='link-btn link-business',
-                group_class='login-footer',
+                group_class='login-footer business-link',
                 label_prefix='Not a business provider?',
             ),
         ],

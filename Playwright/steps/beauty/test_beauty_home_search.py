@@ -179,15 +179,50 @@ def mock_single_service(page, sid):
         "has_more": False,
     }
     _mock_response(page, payload, 200)
+    # Also short-circuit the BFF resolve for beauty_book screen so the
+    # mocked (and thus non-existent) service id does not redirect back to
+    # the home page. We only intercept resolve calls whose payload targets
+    # this screen + service id; everything else passes through.
+    book_envelope = {
+        "action": "render",
+        "screen": "beauty_book",
+        "data": {
+            "service": {"id": sid, "name": "Nail Spa Mock"},
+            "provider": {"id": 1, "name": "Mock Provider"},
+            "form": {"fields": [], "submit_label": "Confirm booking"},
+        },
+        "meta": {"title": "Book"},
+        "_links": {},
+    }
+    book_body = json.dumps(book_envelope)
+
+    def _bff_route(route):
+        req = route.request
+        try:
+            body = req.post_data_json or {}
+        except Exception:
+            body = {}
+        if body.get("screen") == "beauty_book" and \
+           str((body.get("params") or {}).get("serviceId")) == str(sid):
+            route.fulfill(
+                status=200,
+                content_type="application/json",
+                body=book_body,
+            )
+        else:
+            route.continue_()
+
+    page.route("**/api/bff/beauty/resolve/**", _bff_route)
 
 
 # ---------------------------------------------------------------------------
 # Whens
 # ---------------------------------------------------------------------------
 
-@when(parsers.parse('the customer types "{first}" then "{rest}" in the home search input'))
+@when(parsers.re(r'the customer types "(?P<first>[^"]+)" then "(?P<rest>[^"]+)" in the home search input'))
 def type_in_two_bursts(page, first, rest):
     box = page.locator(home_search_input)
+    expect(box).to_be_visible()
     box.click()
     box.fill("")
     box.type(first, delay=10)
@@ -196,7 +231,7 @@ def type_in_two_bursts(page, first, rest):
     page.wait_for_timeout(900)
 
 
-@when(parsers.parse('the customer types "{text}" in the home search input'))
+@when(parsers.re(r'the customer types "(?P<text>[^"]+)" in the home search input'))
 def type_query(page, text):
     box = page.locator(home_search_input)
     box.click()
