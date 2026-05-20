@@ -16,6 +16,7 @@ import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { useSession } from '@/hooks/useSession';
 import { BeautyShell } from '@/components/BeautyShell';
 import { BottomNav } from '@/components/BottomNav';
+import { HomeSearch } from '@/components/HomeSearch';
 import { beautyTokens } from '../../tamagui.config';
 
 interface HomeService {
@@ -39,6 +40,7 @@ export default function CustomerHome() {
   const { clear } = useSession();
   const [env, setEnv] = useState<BffEnvelope<HomeData> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,18 +105,50 @@ export default function CustomerHome() {
             live on the Profile tab. Matches Angular `.beauty-header` which
             renders only the search bar + nav actions, no account row. */}
         <ScrollView flex={1}>
+          {/* Search bar — mirrors Angular `app-beauty-home-search` */}
+          <HomeSearch />
+
           {/* Services carousel panel */}
           <YStack bg={beautyTokens.accentBlue} py="$4">
-            <H2
-              fontFamily="$heading"
-              fontSize={24}
-              fontWeight="500"
-              color={beautyTokens.text}
-              px="$4"
-              mb="$3"
-            >
-              Services
-            </H2>
+            <XStack px="$4" justify="space-between" items="center" mb="$3">
+              <H2
+                fontFamily="$heading"
+                fontSize={24}
+                fontWeight="500"
+                color={beautyTokens.text}
+              >
+                Services
+              </H2>
+              <Pressable
+                accessibilityLabel={(paused ? 'Play' : 'Pause') + ' services carousel'}
+                accessibilityRole="button"
+                testID="home-carousel-pause"
+                onPress={() => setPaused((p) => !p)}
+              >
+                <XStack
+                  bg={beautyTokens.white}
+                  borderWidth={1}
+                  borderColor={beautyTokens.line}
+                  rounded={999}
+                  px={12}
+                  height={32}
+                  items="center"
+                  gap={6}
+                >
+                  <SizableText fontSize={11} color={beautyTokens.accentBlueText}>
+                    {paused ? '▶' : '❚❚'}
+                  </SizableText>
+                  <SizableText
+                    fontSize={11}
+                    fontWeight="600"
+                    color={beautyTokens.accentBlueText}
+                    letterSpacing={0.4}
+                  >
+                    {paused ? 'Play' : 'Pause'}
+                  </SizableText>
+                </XStack>
+              </Pressable>
+            </XStack>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
               <XStack gap="$3" px="$4">

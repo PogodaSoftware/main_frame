@@ -12,7 +12,7 @@ import { SizableText, XStack, YStack } from 'tamagui';
 
 import { beautyTokens } from '../../tamagui.config';
 
-export type TabKey = 'bookings' | 'home' | 'profile' | 'messages';
+export type TabKey = 'bookings' | 'home' | 'chat' | 'profile' | 'messages';
 export type NavVariant = 'default' | 'messages';
 
 export interface BottomNavProps {
@@ -30,6 +30,7 @@ type TabDef = {
 const DEFAULT_TABS: TabDef[] = [
   { key: 'bookings', label: 'Bookings', icon: 'calendar-outline', path: '/(customer)/bookings' },
   { key: 'home', label: 'Home', icon: 'home-outline', path: '/(customer)/home' },
+  { key: 'chat', label: 'Chat', icon: 'chatbubble-outline', path: '/(customer)/chats' },
   { key: 'profile', label: 'Profile', icon: 'person-outline', path: '/(customer)/profile' },
 ];
 
