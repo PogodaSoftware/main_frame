@@ -377,6 +377,7 @@ interface DetailTag { id: string; label: string; color: string; tone: string; }
   `],
 })
 export class AdminPortalCustomerDetailComponent {
+  get notifCount(): number { return (this.data['notif_count'] as number) ?? 0; }
   @Input() data: Record<string, unknown> = {};
   @Input() links: Record<string, BffLink> = {};
   @Output() followLink = new EventEmitter<BffLink>();

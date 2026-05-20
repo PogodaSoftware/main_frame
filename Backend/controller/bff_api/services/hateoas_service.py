@@ -335,7 +335,6 @@ SCREEN_ROUTES = {
     'beauty_business_providers': '/pogoda/beauty/admin/business-providers',
     'beauty_sessions': '/pogoda/beauty/admin/sessions',
     'beauty_admin_flags': '/pogoda/beauty/admin/flags',
-    'beauty_admin_crm': '/pogoda/beauty/admin/crm',
     # Admin Portal (slate redesign — handoff May 2026). All routes mobile-only.
     'beauty_admin_portal_signin':      '/pogoda/beauty/admin/portal/signin',
     'beauty_admin_portal_2fa':         '/pogoda/beauty/admin/portal/2fa',
@@ -375,6 +374,7 @@ SCREEN_ROUTES = {
     'beauty_business_change_password': '/pogoda/beauty/business/settings/password',
     'beauty_business_email_contact': '/pogoda/beauty/business/settings/contact',
     'beauty_business_profile': '/pogoda/beauty/business/profile',
+    'beauty_business_reviews': '/pogoda/beauty/business/reviews',
 }
 
 
@@ -560,6 +560,55 @@ def name_field(*, label: str = 'Name', placeholder: str = 'What should we call y
         autocomplete='given-name',
         autocapitalize='words',
     )
+
+
+def forgot_form(
+    *,
+    title: str = 'Reset password',
+    subtitle: str = (
+        "Enter the email tied to your account. "
+        "We'll send a link to reset your password."
+    ),
+    submit_href: str = '/api/beauty/auth/forgot/',
+    submit_prompt: str = 'Send reset link',
+    success_screen: str = 'beauty_login',
+    presentation: dict | None = None,
+    footer_links: list | None = None,
+) -> dict:
+    """Form schema for the customer Reset-Password screen."""
+    return {
+        'title': title,
+        'subtitle': subtitle,
+        'fields': [email_field(placeholder='you@example.com')],
+        'submit': link(
+            rel='submit',
+            href=submit_href,
+            method='POST',
+            prompt=submit_prompt,
+        ),
+        'success': screen_link('success', success_screen),
+        'presentation': presentation or {
+            'page_class': 'forgot-page',
+            'main_class': 'forgot-main',
+            'title_class': 'forgot-title',
+            'subtitle_class': 'forgot-subtitle',
+            'form_class': 'forgot-form',
+            'submit_class': 'btn-submit',
+            'header_brand_icon': '✨',
+            'header_brand_label': 'Beauty',
+            'hide_top_header': True,
+            'show_back_bar': True,
+            'show_brand_block': True,
+        },
+        'footer_links': footer_links or [],
+        # 404 = email not on file. Treated as silent success by the
+        # legacy Angular client to avoid leaking enumeration; the RN
+        # client mirrors that behavior. Surfacing 4xx here would defeat
+        # the purpose, so map only 5xx to a generic error.
+        'error_status_map': {500: 'Something went wrong. Please try again.'},
+        'error_default': 'Something went wrong. Please try again.',
+        'include_device_id': False,
+    }
 
 
 def signup_form(

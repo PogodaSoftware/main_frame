@@ -50,7 +50,6 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .resolvers import (
-    beauty_admin_crm,
     beauty_admin_flags,
     beauty_admin_portal_signin,
     beauty_admin_portal_2fa,
@@ -83,6 +82,7 @@ from .resolvers import (
     beauty_business_email_contact,
     beauty_business_home,
     beauty_business_profile,
+    beauty_business_reviews,
     beauty_business_settings,
     beauty_business_login,
     beauty_business_providers,
@@ -92,6 +92,7 @@ from .resolvers import (
     beauty_category,
     beauty_chat_thread,
     beauty_chats,
+    beauty_forgot,
     beauty_home,
     beauty_login,
     beauty_profile,
@@ -111,6 +112,7 @@ SCREEN_RESOLVERS = {
     'beauty_home': beauty_home.resolve,
     'beauty_login': beauty_login.resolve,
     'beauty_signup': beauty_signup.resolve,
+    'beauty_forgot': beauty_forgot.resolve,
     'beauty_business_login': beauty_business_login.resolve,
     'beauty_business_signup': beauty_business_signup.resolve,
     'beauty_business_application_entity':   beauty_business_application_entity.resolve,
@@ -124,7 +126,6 @@ SCREEN_RESOLVERS = {
     'beauty_business_providers': beauty_business_providers.resolve,
     'beauty_sessions': beauty_sessions.resolve,
     'beauty_admin_flags': beauty_admin_flags.resolve,
-    'beauty_admin_crm': beauty_admin_crm.resolve,
     'beauty_admin_portal_signin': beauty_admin_portal_signin.resolve,
     'beauty_admin_portal_2fa': beauty_admin_portal_2fa.resolve,
     'beauty_admin_portal_magic': beauty_admin_portal_magic.resolve,
@@ -161,6 +162,7 @@ SCREEN_RESOLVERS = {
     'beauty_business_change_password': beauty_business_change_password.resolve,
     'beauty_business_email_contact': beauty_business_email_contact.resolve,
     'beauty_business_profile': beauty_business_profile.resolve,
+    'beauty_business_reviews': beauty_business_reviews.resolve,
 }
 
 VALID_SCREENS = frozenset(SCREEN_RESOLVERS.keys())

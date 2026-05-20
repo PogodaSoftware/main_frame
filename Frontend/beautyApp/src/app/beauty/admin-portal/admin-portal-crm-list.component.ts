@@ -269,6 +269,7 @@ interface StatusBucket { id: 'All' | 'Active' | 'Pending' | 'Suspended' | 'Flagg
   `],
 })
 export class AdminPortalCrmListComponent {
+  get notifCount(): number { return (this.data['notif_count'] as number) ?? 0; }
   @Input() data: Record<string, unknown> = {};
   @Input() links: Record<string, BffLink> = {};
   @Input() type: 'customers' | 'providers' = 'customers';

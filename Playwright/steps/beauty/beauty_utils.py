@@ -5,7 +5,8 @@ from typing import Iterable
 import requests
 
 BACKEND_PORT = os.getenv('BACKEND_PORT', '8000')
-BACKEND_URL = f"http://localhost:{BACKEND_PORT}"
+BEAUTY_PORT = os.getenv('BEAUTY_PORT', '4300')
+BACKEND_URL = f"http://localhost:{BEAUTY_PORT}"
 TEST_DEVICE_ID = "test-device-playwright-beauty-001"
 BEAUTY_SESSION_COOKIE = "beauty_auth"
 

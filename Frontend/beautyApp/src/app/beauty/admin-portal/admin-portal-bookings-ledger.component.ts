@@ -165,6 +165,7 @@ interface StatusBucket { id: 'All' | 'Upcoming' | 'Pending' | 'Past' | 'Cancelle
   `],
 })
 export class AdminPortalBookingsLedgerComponent {
+  get notifCount(): number { return (this.data['notif_count'] as number) ?? 0; }
   @Input() data: Record<string, unknown> = {};
   @Input() links: Record<string, BffLink> = {};
   @Output() followLink = new EventEmitter<BffLink>();

@@ -330,6 +330,7 @@ export class AdminPortalProviderDetailComponent {
   noteSaved = false;
 
   constructor(private location: Location) {}
+  get notifCount(): number { return (this.data['notif_count'] as number) ?? 0; }
 
   get businessName(): string { return (this.data['business_name'] as string) ?? 'Provider'; }
   get initials(): string {

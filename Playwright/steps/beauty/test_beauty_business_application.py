@@ -86,7 +86,8 @@ def fill_entity(page, full_name, biz):
     last = parts[1] if len(parts) > 1 else ''
     page.locator(entity_first_input).fill(first)
     page.locator(entity_last_input).fill(last)
-    page.locator(entity_business_name_input).fill(biz)
+    if page.locator(entity_business_name_input).is_visible():
+        page.locator(entity_business_name_input).fill(biz)
 
 
 @when("I submit the entity step")

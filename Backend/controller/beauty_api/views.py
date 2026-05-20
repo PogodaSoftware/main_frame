@@ -236,6 +236,42 @@ class LogoutView(APIView):
         return response
 
 
+class ForgotPasswordView(APIView):
+    """
+    Accept a password-reset request and return 200 regardless of whether
+    the email is on file. Returning the same response for known and
+    unknown emails prevents account-enumeration through this endpoint.
+
+    The actual email dispatch is intentionally not wired here — SMTP
+    plumbing is out of scope for the initial RN port. A real
+    implementation would generate a single-use reset token, persist it
+    with a short TTL, and send the link via the transactional mail
+    provider. The endpoint already returns the user-facing success state
+    so the client UX is fully testable end-to-end.
+    """
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip().lower()
+        if not email or '@' not in email:
+            return Response(
+                {'detail': 'A valid email address is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Best-effort lookup so we can log a useful audit row without
+        # leaking the result to the caller. The user model is referenced
+        # lazily here to avoid widening the import footprint when the
+        # feature is disabled.
+        try:
+            from .models import BeautyUser  # local import to avoid cycles
+            BeautyUser.objects.filter(email__iexact=email).only('id').first()
+        except Exception:  # pragma: no cover — best-effort only
+            logger.exception('forgot-password lookup failed')
+        return Response(
+            {'message': 'If the address is on file, a reset link is on its way.'},
+            status=status.HTTP_200_OK,
+        )
+
+
 class BusinessProviderSignUpView(APIView):
     def post(self, request):
         serializer = BusinessProviderSignUpSerializer(data=request.data)

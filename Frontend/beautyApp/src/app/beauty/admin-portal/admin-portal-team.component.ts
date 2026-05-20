@@ -358,6 +358,7 @@ export class AdminPortalTeamComponent {
     };
   }
   get isOwner(): boolean { return Boolean(this.data['is_owner']); }
+  get notifCount(): number { return (this.data['notif_count'] as number) ?? 0; }
 
   get canSendInvite(): boolean {
     const e = (this.inviteEmail || '').trim();

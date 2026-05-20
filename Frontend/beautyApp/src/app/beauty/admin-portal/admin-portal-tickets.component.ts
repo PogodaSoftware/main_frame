@@ -319,6 +319,7 @@ export class AdminPortalTicketsComponent {
   get openCount(): number { return (this.data['open_count'] as number) ?? 0; }
   get slaCount(): number { return (this.data['sla_count'] as number) ?? 0; }
   get adminEmail(): string { return (this.data['admin_email'] as string) ?? ''; }
+  get notifCount(): number { return (this.data['notif_count'] as number) ?? 0; }
 
   priorityColor(p: string): string {
     return p === 'high' ? '#C0392B' : p === 'med' ? '#8A6A1F' : '#6B6F77';

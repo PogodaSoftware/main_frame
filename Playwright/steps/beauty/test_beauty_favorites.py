@@ -66,7 +66,7 @@ def _shell(cmd: str, *, timeout: int = 30) -> str:
 def _get_provider_id(name: str) -> int:
     out = _shell(
         "from beauty_api.models import BeautyProvider; "
-        f"print(BeautyProvider.objects.get(name='{name}').id)"
+        f"print(BeautyProvider.objects.filter(name='{name}').order_by('id').first().id)"
     )
     for line in out.splitlines():
         line = line.strip()
@@ -78,8 +78,8 @@ def _get_provider_id(name: str) -> int:
 def _get_service_id(provider_name: str, service_name: str) -> int:
     out = _shell(
         "from beauty_api.models import BeautyService, BeautyProvider; "
-        f"p = BeautyProvider.objects.get(name='{provider_name}'); "
-        f"print(BeautyService.objects.get(provider=p, name='{service_name}').id)"
+        f"p = BeautyProvider.objects.filter(name='{provider_name}').order_by('id').first(); "
+        f"print(BeautyService.objects.filter(provider=p, name='{service_name}').first().id)"
     )
     for line in out.splitlines():
         line = line.strip()

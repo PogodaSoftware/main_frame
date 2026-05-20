@@ -63,8 +63,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     }
 
     form = h.login_form(
-        title='Welcome back',
-        subtitle='Sign in to your business provider account',
+        title='Business Sign In',
+        subtitle='Access your business provider account',
         submit_href='/api/beauty/business/login/',
         submit_prompt='Sign in',
         success_screen='beauty_business_home',

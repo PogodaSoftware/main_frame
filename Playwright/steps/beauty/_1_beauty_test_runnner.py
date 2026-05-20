@@ -40,9 +40,16 @@ def main() -> int:
         print("ERROR: No test_beauty_*.py files found in", beauty_steps_dir)
         return 1
 
+    # ── Check if parallel execution (-n) or headless mode is requested
+    is_parallel = any(arg.startswith("-n") for arg in sys.argv)
+    is_headless = "--headless" in sys.argv or is_parallel
+
     print(f"\n{'='*60}")
     print(f"  Beauty Test Suite — {len(test_modules)} test modules")
-    print(f"  Mode: HEADED (visible browser)")
+    if is_headless:
+        print(f"  Mode: HEADLESS (fast, parallel/optimized)")
+    else:
+        print(f"  Mode: HEADED (visible browser)")
     print(f"{'='*60}")
     for i, mod in enumerate(test_modules, 1):
         print(f"  {i:>2}. {os.path.basename(mod)}")
@@ -53,12 +60,18 @@ def main() -> int:
 
     # ── Build the pytest argument list
     pytest_args = [
-        "--headed",
         "--browser", "chromium",
-        "--tracing", "on",  
         "Playwright/steps/beauty",
-        *sys.argv[1:],
     ]
+
+    if not is_headless:
+        pytest_args.append("--headed")
+        pytest_args.append("--tracing")
+        pytest_args.append("on")
+
+    # Filter out --headless from arguments so pytest does not complain
+    user_args = [arg for arg in sys.argv[1:] if arg != "--headless"]
+    pytest_args.extend(user_args)
 
     return pytest.main(pytest_args)
 

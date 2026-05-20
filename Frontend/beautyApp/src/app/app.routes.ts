@@ -124,12 +124,6 @@ export const routes: Routes = [
     data: { screen: 'beauty_admin_flags' },
   },
   {
-    path: 'admin/crm',
-    component: BeautyShellComponent,
-    title: 'Beauty - CRM',
-    data: { screen: 'beauty_admin_crm' },
-  },
-  {
     path: 'admin/portal/signin',
     component: BeautyShellComponent,
     title: 'Beauty - Admin sign-in',

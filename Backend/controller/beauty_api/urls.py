@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .admin_crm_views import CrmListView, CrmSuspendView
+from .admin_crm_views import CrmSuspendView
 from .admin_portal_views import (
     AdminAccountExportView,
     AdminAccountNoteView,
@@ -58,6 +58,7 @@ from .views import (
     BusinessLoginView,
     BusinessLogoutView,
     BusinessProviderSignUpView,
+    ForgotPasswordView,
     LoginView,
     LogoutView,
     MeView,
@@ -69,6 +70,7 @@ urlpatterns = [
     path('signup/', SignUpView.as_view(), name='beauty-signup'),
     path('login/', LoginView.as_view(), name='beauty-login'),
     path('logout/', LogoutView.as_view(), name='beauty-logout'),
+    path('auth/forgot/', ForgotPasswordView.as_view(), name='beauty-auth-forgot'),
     path('business/signup/', BusinessProviderSignUpView.as_view(), name='beauty-business-signup'),
     path('business/login/', BusinessLoginView.as_view(), name='beauty-business-login'),
     path('business/logout/', BusinessLogoutView.as_view(), name='beauty-business-logout'),
@@ -79,7 +81,6 @@ urlpatterns = [
     # an expired-but-recoverable session at the middleware.
     path('session/refresh/', SessionRefreshView.as_view(), name='beauty-session-refresh'),
     path('admin/flags/toggle/', FlagToggleView.as_view(), name='beauty-admin-flag-toggle'),
-    path('admin/crm/', CrmListView.as_view(), name='beauty-admin-crm'),
     path('admin/crm/suspend/', CrmSuspendView.as_view(), name='beauty-admin-crm-suspend'),
     path('admin/portal/tags/', AdminTagCreateView.as_view(), name='beauty-admin-portal-tag-create'),
     path('admin/portal/<str:target_type>/<int:target_id>/note/',  AdminAccountNoteView.as_view(),   name='beauty-admin-portal-note'),
