@@ -2,11 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, Switch } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import {
-  Input,
-  Paragraph,
   ScrollView,
   SizableText,
-  Spinner,
   XStack,
   YStack,
 } from 'tamagui';
@@ -16,6 +13,7 @@ import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope } from '@/bff/types';
 import { api } from '@/services/api';
 import { BeautyShell } from '@/components/BeautyShell';
+import { BeautyButton, BeautyInput, InfoStrip, LoadingScreen } from '@/components/ui';
 import { beautyTokens } from '../../../tamagui.config';
 
 interface ContactData {
@@ -102,9 +100,7 @@ export default function EmailContactScreen() {
         </YStack>
 
         {!env && !error ? (
-          <YStack flex={1} items="center" justify="center">
-            <Spinner color={beautyTokens.successHover} />
-          </YStack>
+          <LoadingScreen />
         ) : (
           <ScrollView flex={1} bg={beautyTokens.surface2} keyboardShouldPersistTaps="handled">
             <YStack p="$4" gap="$4">
@@ -113,61 +109,55 @@ export default function EmailContactScreen() {
               </SizableText>
 
               {/* Login email — read only */}
-              <YStack gap="$1">
-                <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>ACCOUNT EMAIL</SizableText>
+              <YStack gap={6}>
+                <SizableText
+                  fontSize={11}
+                  fontWeight="700"
+                  color={beautyTokens.textMuted}
+                  letterSpacing={1.2}
+                  textTransform="uppercase"
+                >
+                  Account email
+                </SizableText>
                 <YStack
                   borderWidth={1}
                   borderColor={beautyTokens.line}
-                  rounded={8}
+                  rounded={10}
                   height={44}
                   justify="center"
-                  px="$3"
+                  px={14}
                   bg="#f9fafb"
                 >
                   <SizableText fontSize={14} color={beautyTokens.textMuted}>
                     {data?.contact.email}
                   </SizableText>
                 </YStack>
-                <SizableText fontSize={11} color={beautyTokens.textMuted}>
+                <SizableText fontSize={12} color={beautyTokens.textMuted}>
                   Login email — contact support to change.
                 </SizableText>
               </YStack>
 
-              {error ? <Paragraph color={beautyTokens.danger}>{error}</Paragraph> : null}
-              {success ? (
-                <YStack bg="#d1fae5" rounded={10} px="$4" py="$2">
-                  <SizableText fontSize={13} color="#065f46">Contact info saved ✓</SizableText>
-                </YStack>
-              ) : null}
+              {error ? <InfoStrip tone="danger">{error}</InfoStrip> : null}
+              {success ? <InfoStrip tone="success">Contact info saved ✓</InfoStrip> : null}
 
-              {/* Public email */}
-              <YStack gap="$1">
-                <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>PUBLIC EMAIL (SHOWN TO CLIENTS)</SizableText>
-                <Input
-                  value={publicEmail}
-                  onChangeText={setPublicEmail}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  placeholder="contact@mybusiness.com"
-                  borderColor={beautyTokens.line}
-                  color={beautyTokens.text}
-                  testID="form-field-public_email"
-                />
-              </YStack>
+              <BeautyInput
+                label="PUBLIC EMAIL (SHOWN TO CLIENTS)"
+                value={publicEmail}
+                onChangeText={setPublicEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                placeholder="contact@mybusiness.com"
+                testID="form-field-public_email"
+              />
 
-              {/* Phone */}
-              <YStack gap="$1">
-                <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>CONTACT PHONE</SizableText>
-                <Input
-                  value={phone}
-                  onChangeText={setPhone}
-                  keyboardType="phone-pad"
-                  placeholder="+1 555 000 0000"
-                  borderColor={beautyTokens.line}
-                  color={beautyTokens.text}
-                  testID="form-field-contact_phone"
-                />
-              </YStack>
+              <BeautyInput
+                label="CONTACT PHONE"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+                placeholder="+1 555 000 0000"
+                testID="form-field-contact_phone"
+              />
 
               {/* Show phone toggle */}
               <XStack justify="space-between" items="center">
@@ -181,21 +171,17 @@ export default function EmailContactScreen() {
                 />
               </XStack>
 
-              {submitError ? <Paragraph color={beautyTokens.danger} fontSize={13}>{submitError}</Paragraph> : null}
+              {submitError ? <InfoStrip tone="danger">{submitError}</InfoStrip> : null}
 
-              <Pressable disabled={submitting} onPress={onSubmit} testID="form-submit">
-                <YStack
-                  height={48}
-                  rounded={12}
-                  bg={submitting ? beautyTokens.textMuted : beautyTokens.successHover}
-                  justify="center"
-                  items="center"
-                >
-                  {submitting
-                    ? <Spinner color={beautyTokens.white} />
-                    : <SizableText fontWeight="700" color={beautyTokens.white}>Save changes</SizableText>}
-                </YStack>
-              </Pressable>
+              <BeautyButton
+                fullWidth
+                size="lg"
+                loading={submitting}
+                onPress={onSubmit}
+                testID="form-submit"
+              >
+                Save changes
+              </BeautyButton>
             </YStack>
           </ScrollView>
         )}

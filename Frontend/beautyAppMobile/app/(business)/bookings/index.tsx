@@ -7,7 +7,6 @@ import {
   ScrollView,
   Separator,
   SizableText,
-  Spinner,
   YStack,
 } from 'tamagui';
 
@@ -17,6 +16,7 @@ import { isRedirect, type BffEnvelope } from '@/bff/types';
 import { formatStatus } from '@/services/bookings';
 import { BeautyShell } from '@/components/BeautyShell';
 import { BusinessBottomNav } from '@/components/BusinessBottomNav';
+import { BeautyCard, InfoStrip, LoadingScreen } from '@/components/ui';
 import { beautyTokens } from '../../../tamagui.config';
 
 interface BusinessBookingItem {
@@ -64,15 +64,7 @@ export default function BusinessBookingsScreen() {
   useEffect(() => { load(); }, [load]);
 
   const renderRow = (item: BusinessBookingItem) => (
-    <YStack
-      key={item.id}
-      bg={beautyTokens.white}
-      borderWidth={1}
-      borderColor={beautyTokens.line}
-      rounded={12}
-      p="$3"
-      gap="$1"
-    >
+    <BeautyCard key={item.id}>
       <SizableText fontWeight="700" fontSize={14} color={beautyTokens.text}>
         {item.service.name}
       </SizableText>
@@ -85,7 +77,7 @@ export default function BusinessBookingsScreen() {
       <SizableText fontSize={11} color={beautyTokens.textMuted}>
         {formatStatus(item.status)}
       </SizableText>
-    </YStack>
+    </BeautyCard>
   );
 
   return (
@@ -106,12 +98,10 @@ export default function BusinessBookingsScreen() {
         </YStack>
 
         {!env && !error ? (
-          <YStack flex={1} items="center" justify="center">
-            <Spinner color={beautyTokens.successHover} />
-          </YStack>
+          <LoadingScreen />
         ) : error ? (
           <YStack flex={1} p="$4">
-            <SizableText color={beautyTokens.danger}>{error}</SizableText>
+            <InfoStrip tone="danger">{error}</InfoStrip>
           </YStack>
         ) : (
           <ScrollView flex={1} bg={beautyTokens.surface2}>

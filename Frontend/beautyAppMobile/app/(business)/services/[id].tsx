@@ -7,20 +7,18 @@ import React, { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import {
-  Input,
-  Paragraph,
   ScrollView,
   SizableText,
-  Spinner,
   XStack,
   YStack,
 } from 'tamagui';
 
 import { resolve } from '@/services/bff';
-import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
-import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
+import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
+import { isRedirect, type BffEnvelope } from '@/bff/types';
 import { api } from '@/services/api';
 import { BeautyShell } from '@/components/BeautyShell';
+import { BeautyButton, BeautyInput, InfoStrip, LoadingScreen } from '@/components/ui';
 import { beautyTokens } from '../../../tamagui.config';
 
 const CATEGORY_OPTIONS = [
@@ -136,9 +134,7 @@ export default function ServiceFormScreen() {
     return (
       <BeautyShell>
         <Stack.Screen options={{ headerShown: false }} />
-        <YStack flex={1} items="center" justify="center">
-          <Spinner color={beautyTokens.successHover} />
-        </YStack>
+        <LoadingScreen />
       </BeautyShell>
     );
   }
@@ -148,7 +144,7 @@ export default function ServiceFormScreen() {
       <BeautyShell>
         <Stack.Screen options={{ headerShown: false }} />
         <YStack flex={1} p="$4">
-          <SizableText color={beautyTokens.danger}>{error}</SizableText>
+          <InfoStrip tone="danger">{error}</InfoStrip>
         </YStack>
       </BeautyShell>
     );
@@ -178,25 +174,24 @@ export default function ServiceFormScreen() {
 
         <ScrollView flex={1} bg={beautyTokens.surface2} keyboardShouldPersistTaps="handled">
           <YStack p="$4" gap="$4">
-            {/* Name */}
-            <YStack gap="$1">
-              <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted} testID="field-label-name">
-                SERVICE NAME
-              </SizableText>
-              <Input
-                value={name}
-                onChangeText={setName}
-                placeholder="e.g. Swedish Massage"
-                borderColor={beautyTokens.line}
-                color={beautyTokens.text}
-                testID="form-field-name"
-              />
-            </YStack>
+            <BeautyInput
+              label="SERVICE NAME"
+              value={name}
+              onChangeText={setName}
+              placeholder="e.g. Swedish Massage"
+              testID="form-field-name"
+            />
 
             {/* Category */}
-            <YStack gap="$1">
-              <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>
-                CATEGORY
+            <YStack gap={6}>
+              <SizableText
+                fontSize={11}
+                fontWeight="700"
+                color={beautyTokens.textMuted}
+                letterSpacing={1.2}
+                textTransform="uppercase"
+              >
+                Category
               </SizableText>
               <XStack gap="$2" flexWrap="wrap">
                 {CATEGORY_OPTIONS.map((opt) => (
@@ -222,84 +217,36 @@ export default function ServiceFormScreen() {
               </XStack>
             </YStack>
 
-            {/* Description */}
-            <YStack gap="$1">
-              <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>
-                DESCRIPTION (OPTIONAL)
-              </SizableText>
-              <Input
-                value={description}
-                onChangeText={setDescription}
-                placeholder="Describe this service…"
-                multiline
-                numberOfLines={3}
-                borderColor={beautyTokens.line}
-                color={beautyTokens.text}
-                testID="form-field-description"
-              />
-            </YStack>
+            <BeautyInput
+              label="DESCRIPTION (OPTIONAL)"
+              value={description}
+              onChangeText={setDescription}
+              placeholder="Describe this service…"
+              multiline
+              rows={3}
+              testID="form-field-description"
+            />
 
-            {/* Price */}
-            <YStack gap="$1">
-              <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>
-                PRICE (USD)
-              </SizableText>
-              <XStack
-                borderWidth={1}
-                borderColor={beautyTokens.line}
-                rounded={8}
-                height={44}
-                items="center"
-                px="$3"
-                bg={beautyTokens.white}
-              >
-                <SizableText fontSize={16} color={beautyTokens.textMuted}>$</SizableText>
-                <Input
-                  flex={1}
-                  unstyled
-                  value={price}
-                  onChangeText={setPrice}
-                  keyboardType="decimal-pad"
-                  placeholder="50.00"
-                  color={beautyTokens.text}
-                  ml="$1"
-                  testID="form-field-price"
-                />
-              </XStack>
-            </YStack>
+            <BeautyInput
+              label="PRICE (USD)"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+              placeholder="50.00"
+              helperText="Enter amount in dollars"
+              testID="form-field-price"
+            />
 
-            {/* Duration */}
-            <YStack gap="$1">
-              <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>
-                DURATION
-              </SizableText>
-              <XStack
-                borderWidth={1}
-                borderColor={beautyTokens.line}
-                rounded={8}
-                height={44}
-                items="center"
-                px="$3"
-                bg={beautyTokens.white}
-                gap="$2"
-              >
-                <Input
-                  flex={1}
-                  unstyled
-                  value={duration}
-                  onChangeText={setDuration}
-                  keyboardType="number-pad"
-                  placeholder="60"
-                  color={beautyTokens.text}
-                  testID="form-field-duration"
-                />
-                <SizableText fontSize={13} color={beautyTokens.textMuted}>min(s)</SizableText>
-              </XStack>
-            </YStack>
+            <BeautyInput
+              label="DURATION (MINUTES)"
+              value={duration}
+              onChangeText={setDuration}
+              keyboardType="number-pad"
+              placeholder="60"
+              testID="form-field-duration"
+            />
 
-            {submitError ? (
-              <Paragraph color={beautyTokens.danger} fontSize={13}>{submitError}</Paragraph>
-            ) : null}
+            {submitError ? <InfoStrip tone="danger">{submitError}</InfoStrip> : null}
           </YStack>
         </ScrollView>
 
@@ -310,25 +257,15 @@ export default function ServiceFormScreen() {
           borderTopColor={beautyTokens.line}
           p="$4"
         >
-          <Pressable
-            testID="form-submit"
-            disabled={submitting}
+          <BeautyButton
+            fullWidth
+            size="lg"
+            loading={submitting}
             onPress={onSubmit}
+            testID="form-submit"
           >
-            <YStack
-              height={48}
-              rounded={12}
-              bg={submitting ? beautyTokens.textMuted : beautyTokens.successHover}
-              justify="center"
-              items="center"
-            >
-              {submitting
-                ? <Spinner color={beautyTokens.white} />
-                : <SizableText fontWeight="700" color={beautyTokens.white}>
-                    {form?.submit_label ?? (isNew ? 'Create service' : 'Save changes')}
-                  </SizableText>}
-            </YStack>
-          </Pressable>
+            {form?.submit_label ?? (isNew ? 'Create service' : 'Save changes')}
+          </BeautyButton>
         </YStack>
       </YStack>
     </BeautyShell>

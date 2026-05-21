@@ -87,9 +87,7 @@ export default function BusinessAvailabilityScreen() {
         </YStack>
 
         {!env && !error ? (
-          <YStack flex={1} items="center" justify="center">
-            <Spinner color={beautyTokens.successHover} />
-          </YStack>
+          <LoadingScreen />
         ) : (
           <ScrollView flex={1} bg={beautyTokens.surface2} keyboardShouldPersistTaps="handled">
             <YStack p="$4" gap="$4">
@@ -97,20 +95,9 @@ export default function BusinessAvailabilityScreen() {
                 Weekly Hours
               </H2>
 
-              {error ? (
-                <Paragraph color={beautyTokens.danger}>{error}</Paragraph>
-              ) : null}
+              {error ? <InfoStrip tone="danger">{error}</InfoStrip> : null}
 
-              {saved ? (
-                <YStack
-                  bg="#d1fae5"
-                  rounded={10}
-                  px="$4"
-                  py="$2"
-                >
-                  <SizableText fontSize={13} color="#065f46">Hours saved ✓</SizableText>
-                </YStack>
-              ) : null}
+              {saved ? <InfoStrip tone="success">Hours saved ✓</InfoStrip> : null}
 
               <WeeklyHoursGrid rows={rows} onChange={setRows} />
             </YStack>
@@ -125,19 +112,15 @@ export default function BusinessAvailabilityScreen() {
             borderTopColor={beautyTokens.line}
             p="$4"
           >
-            <Pressable disabled={saving} onPress={onSave} testID="availability-save-btn">
-              <YStack
-                height={48}
-                rounded={12}
-                bg={saving ? beautyTokens.textMuted : beautyTokens.successHover}
-                justify="center"
-                items="center"
-              >
-                {saving
-                  ? <Spinner color={beautyTokens.white} />
-                  : <SizableText fontWeight="700" color={beautyTokens.white}>Save hours</SizableText>}
-              </YStack>
-            </Pressable>
+            <BeautyButton
+              fullWidth
+              size="lg"
+              loading={saving}
+              onPress={onSave}
+              testID="availability-save-btn"
+            >
+              Save hours
+            </BeautyButton>
           </YStack>
         ) : null}
       </YStack>

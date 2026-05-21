@@ -1,43 +1,59 @@
 /**
- * Customer favorites list — RN port of Angular `beauty-favorites.component.ts`.
- * GET /api/beauty/protected/favorites/, DELETE /protected/services/<id>/favorite/.
- * Direct REST (no BFF resolver), same as the Angular shell.
+ * Customer favorites — mirrors Angular `BeautyFavoritesComponent`:
+ *  - Sub-header with back + "Saved" serif title.
+ *  - GET /api/beauty/protected/favorites/.
+ *  - Empty: white dashed card "No saved services yet.".
+ *  - Loading: dashed "Loading…" card.
+ *  - Compact result cards (serif name, caps blue provider, mono duration·price, desc, filled heart).
+ *  - Heart removes via DELETE /protected/services/<id>/favorite/ (optimistic + rollback on error).
+ *  - Card tap → /(customer)/provider/[id] (mirrors Angular `/providers/:id`).
+ *  - 403 → "Sign in as a customer…" error toast.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
-import { Pressable } from 'react-native';
-import { H2, H4, Paragraph, ScrollView, SizableText, XStack, YStack } from 'tamagui';
+import { Ionicons } from '@expo/vector-icons';
 
-import { beautyTokens } from '../../tamagui.config';
-import { BeautyShell } from '@/components/BeautyShell';
 import {
-  BeautyCard,
-  EmptyState,
-  LoadingScreen,
-  Toast,
-} from '@/components/ui';
-import {
-  formatDuration,
-  formatPrice,
   listFavorites,
   unfavoriteService,
   type FavoriteRow,
 } from '@/services/marketplace';
 
+const C = {
+  surface: '#F2F2F2',
+  surface2: '#E9E9EB',
+  line: '#DCDCDF',
+  text: '#0F1115',
+  textMuted: '#6B6F77',
+  accentBlueDeep: '#7DA8CF',
+  accentBlueText: '#1a3a52',
+  ink: '#0A0A0B',
+  white: '#FFFFFF',
+  errorBg: '#FCE8E6',
+  errorBorder: '#F4C7C3',
+  error: '#B3261E',
+};
+
+const FONT_BODY = 'Inter_400Regular';
+const FONT_BODY_SEMI = 'Inter_600SemiBold';
+const FONT_DISPLAY = 'CormorantGaramond_500Medium';
+const FONT_MONO = 'Menlo';
+
 export default function FavoritesScreen() {
   const router = useRouter();
   const [rows, setRows] = useState<FavoriteRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setError(null);
+  const load = async () => {
+    setErrorMessage(null);
     try {
       const data = await listFavorites();
       setRows(data.items ?? []);
     } catch (e: any) {
       const status = e?.response?.status;
-      setError(
+      setErrorMessage(
         status === 403
           ? 'Sign in as a customer to view your saved services.'
           : 'Could not load saved services.',
@@ -45,11 +61,11 @@ export default function FavoritesScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  };
 
   useEffect(() => {
     load();
-  }, [load]);
+  }, []);
 
   const remove = async (row: FavoriteRow) => {
     const before = rows;
@@ -58,97 +74,137 @@ export default function FavoritesScreen() {
       await unfavoriteService(row.service.id);
     } catch {
       setRows(before);
-      setError('Could not remove favorite.');
+      setErrorMessage('Could not remove favorite.');
     }
   };
 
   return (
-    <BeautyShell>
-      <Stack.Screen options={{ headerShown: true, title: 'Saved' }} />
-      <ScrollView flex={1} bg={beautyTokens.surface}>
-        <YStack p="$4" gap="$3">
-          <H2 fontFamily="$heading" testID="favorites-title">
-            Saved
-          </H2>
+    <View style={styles.app}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <View style={styles.subHeader}>
+        <Pressable
+          onPress={() => router.back()}
+          style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
+          accessibilityLabel="Back"
+        >
+          <Ionicons name="chevron-back" size={20} color={C.text} />
+        </Pressable>
+        <Text style={styles.subHeaderTitle}>Saved</Text>
+        <View style={{ flex: 1 }} />
+      </View>
 
-          {loading ? <LoadingScreen inline message="Loading saved…" /> : null}
+      <ScrollView style={{ flex: 1 }}>
+        {loading ? (
+          <View style={styles.statusCard} testID="favorites-loading">
+            <Text style={styles.statusText}>Loading…</Text>
+          </View>
+        ) : null}
 
-          {!loading && rows.length === 0 ? (
-            <EmptyState
-              testID="favorites-empty"
-              message="No saved services yet."
-            />
-          ) : null}
+        {!loading && rows.length === 0 ? (
+          <View style={styles.statusCard} testID="favorites-empty">
+            <Text style={styles.statusText}>No saved services yet.</Text>
+          </View>
+        ) : null}
 
-          {!loading
-            ? rows.map((r) => (
-                <BeautyCard
-                  key={r.id}
-                  testID={`favorites-card-${r.id}`}
+        {!loading && rows.length ? (
+          <View style={styles.results}>
+            {rows.map((r) => (
+              <View key={r.id} style={styles.card} testID={`favorites-card-${r.id}`}>
+                <Pressable
+                  style={styles.cardBtn}
                   onPress={() =>
-                    router.push({
-                      pathname: '/(customer)/provider/[id]',
-                      params: { id: String(r.provider.id) },
-                    })
+                    router.push(`/(customer)/provider/${r.provider.id}` as any)
                   }
-                  gap="$2"
+                  accessibilityRole="button"
                 >
-                  <XStack justify="space-between" items="flex-start" gap="$2">
-                    <YStack flex={1} gap="$1">
-                      <H4>{r.service.name}</H4>
-                      <SizableText
-                        fontSize={11}
-                        fontWeight="600"
-                        color={beautyTokens.accentBlueText}
-                        letterSpacing={1.2}
-                        textTransform="uppercase"
-                      >
-                        {r.provider.name}
-                      </SizableText>
-                      <SizableText
-                        fontSize={11}
-                        color={beautyTokens.textMuted}
-                      >
-                        {formatDuration(r.service.duration_minutes)} ·{' '}
-                        {formatPrice(r.service.price_cents)}
-                      </SizableText>
-                      {r.service.description ? (
-                        <Paragraph
-                          opacity={0.7}
-                          numberOfLines={2}
-                          fontSize={12}
-                        >
-                          {r.service.description}
-                        </Paragraph>
-                      ) : null}
-                    </YStack>
-                    <Pressable
-                      onPress={() => remove(r)}
-                      accessibilityLabel="Remove from saved"
-                      accessibilityRole="button"
-                      testID={`favorites-remove-${r.id}`}
-                      hitSlop={8}
-                    >
-                      <SizableText
-                        fontSize={20}
-                        color={beautyTokens.accentBlueDeep}
-                      >
-                        ♥
-                      </SizableText>
-                    </Pressable>
-                  </XStack>
-                </BeautyCard>
-              ))
-            : null}
-        </YStack>
+                  <Text style={styles.cardName} numberOfLines={1}>{r.service.name}</Text>
+                  <Text style={styles.cardProvider} numberOfLines={1}>{r.provider.name}</Text>
+                  <View style={styles.cardMeta}>
+                    <Text style={styles.cardMetaText}>{r.service.duration_minutes} min</Text>
+                    <Text style={styles.cardMetaDot}>·</Text>
+                    <Text style={styles.cardPrice}>${(r.service.price_cents / 100).toFixed(0)}</Text>
+                  </View>
+                  {r.service.description ? (
+                    <Text style={styles.cardDesc} numberOfLines={2}>{r.service.description}</Text>
+                  ) : null}
+                </Pressable>
+                <Pressable
+                  style={styles.favBtn}
+                  onPress={() => remove(r)}
+                  accessibilityLabel="Remove from saved"
+                  testID={`favorites-remove-${r.id}`}
+                >
+                  <Ionicons name="heart" size={20} color={C.accentBlueDeep} />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {errorMessage ? (
+          <View style={styles.errorToast} testID="favorites-error">
+            <Text style={styles.errorToastText}>{errorMessage}</Text>
+          </View>
+        ) : null}
       </ScrollView>
-      <Toast
-        visible={Boolean(error)}
-        tone="danger"
-        title="Saved"
-        message={error ?? ''}
-        onDismiss={() => setError(null)}
-      />
-    </BeautyShell>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  app: { flex: 1, backgroundColor: C.surface },
+
+  subHeader: {
+    height: 56, paddingHorizontal: 12,
+    backgroundColor: C.surface,
+    borderBottomWidth: 1, borderBottomColor: C.line,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+  },
+  iconBtn: {
+    width: 44, height: 44, borderRadius: 8,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  iconBtnPressed: { backgroundColor: C.surface2 },
+  subHeaderTitle: { fontFamily: FONT_DISPLAY, fontSize: 20, color: C.text, marginLeft: 4 },
+
+  statusCard: {
+    margin: 16, marginTop: 24, padding: 18,
+    backgroundColor: C.white, borderWidth: 1, borderColor: C.line,
+    borderRadius: 12, borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  statusText: { color: C.textMuted, fontSize: 13, fontFamily: FONT_BODY },
+
+  results: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24, gap: 10 },
+
+  card: {
+    backgroundColor: C.white, borderWidth: 1, borderColor: C.line,
+    borderRadius: 14,
+    flexDirection: 'row', alignItems: 'stretch',
+  },
+  cardBtn: { flex: 1, padding: 14, minWidth: 0 },
+  favBtn: {
+    width: 48, borderLeftWidth: 1, borderLeftColor: C.line,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cardName: {
+    fontFamily: FONT_DISPLAY, fontSize: 19, lineHeight: 24,
+    color: C.text, letterSpacing: 0.2, marginBottom: 2,
+  },
+  cardProvider: {
+    fontSize: 10, fontFamily: FONT_BODY_SEMI, color: C.accentBlueText,
+    letterSpacing: 1.2, marginBottom: 4, textTransform: 'uppercase',
+  },
+  cardMeta: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  cardMetaText: { fontFamily: FONT_MONO, fontSize: 11, color: C.textMuted },
+  cardMetaDot: { fontFamily: FONT_MONO, fontSize: 11, color: C.textMuted, opacity: 0.5, marginHorizontal: 6 },
+  cardPrice: { fontFamily: FONT_BODY_SEMI, fontSize: 11, color: C.text },
+  cardDesc: { fontSize: 12, color: C.textMuted, lineHeight: 17, fontFamily: FONT_BODY },
+
+  errorToast: {
+    marginHorizontal: 16, marginVertical: 12,
+    padding: 12, borderRadius: 10,
+    backgroundColor: C.errorBg, borderWidth: 1, borderColor: C.errorBorder,
+  },
+  errorToastText: { color: C.error, fontSize: 13, fontFamily: FONT_BODY },
+});

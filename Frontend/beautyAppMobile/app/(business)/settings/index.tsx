@@ -3,7 +3,6 @@ import { Alert, Pressable } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import {
   H2,
-  Paragraph,
   ScrollView,
   SizableText,
   Spinner,
@@ -16,6 +15,7 @@ import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { useSession } from '@/hooks/useSession';
 import { BeautyShell } from '@/components/BeautyShell';
+import { BeautyCard, InfoStrip, LoadingScreen } from '@/components/ui';
 import { beautyTokens } from '../../../tamagui.config';
 
 interface SettingsData {
@@ -129,32 +129,23 @@ export default function BusinessSettingsScreen() {
         </YStack>
 
         {!env && !error ? (
-          <YStack flex={1} items="center" justify="center">
-            <Spinner color={beautyTokens.successHover} />
-          </YStack>
+          <LoadingScreen />
         ) : error ? (
           <YStack flex={1} p="$4">
-            <SizableText color={beautyTokens.danger}>{error}</SizableText>
+            <InfoStrip tone="danger">{error}</InfoStrip>
           </YStack>
         ) : (
           <ScrollView flex={1} bg={beautyTokens.surface2}>
             <YStack p="$4" gap="$3">
               {/* Account info */}
-              <YStack
-                bg={beautyTokens.white}
-                borderWidth={1}
-                borderColor={beautyTokens.line}
-                rounded={14}
-                px="$4"
-                py="$3"
-              >
+              <BeautyCard>
                 <SizableText fontWeight="700" fontSize={14} color={beautyTokens.text}>
                   {env?.action === 'render' ? env.data?.business.business_name : ''}
                 </SizableText>
                 <SizableText fontSize={12} color={beautyTokens.textMuted}>
                   {env?.action === 'render' ? env.data?.business.email : ''}
                 </SizableText>
-              </YStack>
+              </BeautyCard>
 
               {/* Setting rows */}
               <YStack

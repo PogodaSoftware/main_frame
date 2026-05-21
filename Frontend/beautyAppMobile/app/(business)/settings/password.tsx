@@ -2,11 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import {
-  Input,
-  Paragraph,
   ScrollView,
   SizableText,
-  Spinner,
   YStack,
 } from 'tamagui';
 
@@ -15,6 +12,7 @@ import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope } from '@/bff/types';
 import { api } from '@/services/api';
 import { BeautyShell } from '@/components/BeautyShell';
+import { BeautyButton, BeautyInput, InfoStrip, LoadingScreen } from '@/components/ui';
 import { beautyTokens } from '../../../tamagui.config';
 
 interface ChangePasswordData {
@@ -102,9 +100,7 @@ export default function ChangePasswordScreen() {
         </YStack>
 
         {!env && !error ? (
-          <YStack flex={1} items="center" justify="center">
-            <Spinner color={beautyTokens.successHover} />
-          </YStack>
+          <LoadingScreen />
         ) : (
           <ScrollView flex={1} bg={beautyTokens.surface2} keyboardShouldPersistTaps="handled">
             <YStack p="$4" gap="$4">
@@ -112,67 +108,47 @@ export default function ChangePasswordScreen() {
                 Change Password
               </SizableText>
 
-              {error ? <Paragraph color={beautyTokens.danger}>{error}</Paragraph> : null}
-              {success ? (
-                <YStack bg="#d1fae5" rounded={10} px="$4" py="$2">
-                  <SizableText fontSize={13} color="#065f46">Password changed successfully ✓</SizableText>
-                </YStack>
-              ) : null}
+              {error ? <InfoStrip tone="danger">{error}</InfoStrip> : null}
+              {success ? <InfoStrip tone="success">Password changed successfully ✓</InfoStrip> : null}
 
-              <YStack gap="$1">
-                <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>CURRENT PASSWORD</SizableText>
-                <Input
-                  value={currentPw}
-                  onChangeText={setCurrentPw}
-                  secureTextEntry
-                  placeholder="Current password"
-                  borderColor={beautyTokens.line}
-                  color={beautyTokens.text}
-                  testID="form-field-current_password"
-                />
-              </YStack>
+              <BeautyInput
+                label="CURRENT PASSWORD"
+                value={currentPw}
+                onChangeText={setCurrentPw}
+                secureTextEntry
+                placeholder="Current password"
+                testID="form-field-current_password"
+              />
 
-              <YStack gap="$1">
-                <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>NEW PASSWORD</SizableText>
-                <Input
-                  value={newPw}
-                  onChangeText={setNewPw}
-                  secureTextEntry
-                  placeholder="Min 8 characters"
-                  borderColor={beautyTokens.line}
-                  color={beautyTokens.text}
-                  testID="form-field-new_password"
-                />
-              </YStack>
+              <BeautyInput
+                label="NEW PASSWORD"
+                value={newPw}
+                onChangeText={setNewPw}
+                secureTextEntry
+                placeholder="Min 8 characters"
+                testID="form-field-new_password"
+              />
 
-              <YStack gap="$1">
-                <SizableText fontSize={12} fontWeight="600" color={beautyTokens.textMuted}>CONFIRM NEW PASSWORD</SizableText>
-                <Input
-                  value={confirmPw}
-                  onChangeText={setConfirmPw}
-                  secureTextEntry
-                  placeholder="Repeat new password"
-                  borderColor={beautyTokens.line}
-                  color={beautyTokens.text}
-                  testID="form-field-confirm_password"
-                />
-              </YStack>
+              <BeautyInput
+                label="CONFIRM NEW PASSWORD"
+                value={confirmPw}
+                onChangeText={setConfirmPw}
+                secureTextEntry
+                placeholder="Repeat new password"
+                testID="form-field-confirm_password"
+              />
 
-              {submitError ? <Paragraph color={beautyTokens.danger} fontSize={13}>{submitError}</Paragraph> : null}
+              {submitError ? <InfoStrip tone="danger">{submitError}</InfoStrip> : null}
 
-              <Pressable disabled={submitting} onPress={onSubmit} testID="form-submit">
-                <YStack
-                  height={48}
-                  rounded={12}
-                  bg={submitting ? beautyTokens.textMuted : beautyTokens.successHover}
-                  justify="center"
-                  items="center"
-                >
-                  {submitting
-                    ? <Spinner color={beautyTokens.white} />
-                    : <SizableText fontWeight="700" color={beautyTokens.white}>Change password</SizableText>}
-                </YStack>
-              </Pressable>
+              <BeautyButton
+                fullWidth
+                size="lg"
+                loading={submitting}
+                onPress={onSubmit}
+                testID="form-submit"
+              >
+                Change password
+              </BeautyButton>
             </YStack>
           </ScrollView>
         )}

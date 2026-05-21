@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable } from 'react-native';
+import { Alert } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import {
   H2,
-  Paragraph,
   ScrollView,
   SizableText,
-  Spinner,
   XStack,
   YStack,
 } from 'tamagui';
@@ -16,6 +14,7 @@ import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { BeautyShell } from '@/components/BeautyShell';
 import { BusinessBottomNav } from '@/components/BusinessBottomNav';
+import { BeautyButton, BeautyCard, EmptyState, InfoStrip, LoadingScreen } from '@/components/ui';
 import { beautyTokens } from '../../../tamagui.config';
 
 interface ServiceItem {
@@ -99,60 +98,35 @@ export default function BusinessServicesScreen() {
             My Services
           </H2>
           {links.add ? (
-            <Pressable
+            <BeautyButton
+              size="sm"
               testID="services-add-btn"
               onPress={() => navigateLink(router, links.add)}
             >
-              <YStack
-                bg={beautyTokens.successHover}
-                rounded={8}
-                height={34}
-                px="$3"
-                justify="center"
-              >
-                <SizableText fontSize={13} fontWeight="700" color={beautyTokens.white}>
-                  + Add
-                </SizableText>
-              </YStack>
-            </Pressable>
+              + Add
+            </BeautyButton>
           ) : null}
         </XStack>
 
         {!env && !error ? (
-          <YStack flex={1} items="center" justify="center">
-            <Spinner color={beautyTokens.successHover} />
-          </YStack>
+          <LoadingScreen />
         ) : error ? (
           <YStack flex={1} p="$4">
-            <SizableText color={beautyTokens.danger}>{error}</SizableText>
+            <InfoStrip tone="danger">{error}</InfoStrip>
           </YStack>
         ) : (
           <ScrollView flex={1} bg={beautyTokens.surface2}>
             <YStack p="$4" gap="$3">
               {env?.action === 'render' && env.data?.services.length === 0 ? (
-                <YStack items="center" justify="center" py="$8" gap="$2">
-                  <SizableText fontSize={36}>✂️</SizableText>
-                  <Paragraph fontWeight="600" color={beautyTokens.text}>No services yet</Paragraph>
-                  <Paragraph fontSize={13} color={beautyTokens.textMuted}>
-                    Add a service so clients can start booking.
-                  </Paragraph>
-                </YStack>
+                <EmptyState
+                  icon={<SizableText fontSize={36}>✂️</SizableText>}
+                  title="No services yet"
+                  message="Add a service so clients can start booking."
+                />
               ) : null}
 
               {env?.action === 'render' && env.data?.services.map((item) => (
-                <YStack
-                  key={item.id}
-                  bg={beautyTokens.white}
-                  borderWidth={1}
-                  borderColor={beautyTokens.line}
-                  rounded={14}
-                  p="$4"
-                  gap="$2"
-                  shadowColor="rgba(15,35,60,0.05)"
-                  shadowOffset={{ width: 0, height: 2 }}
-                  shadowRadius={6}
-                  shadowOpacity={1}
-                >
+                <BeautyCard key={item.id}>
                   <XStack justify="space-between" items="flex-start">
                     <YStack flex={1} gap={4}>
                       <SizableText fontWeight="700" fontSize={15} color={beautyTokens.text}>
@@ -170,49 +144,34 @@ export default function BusinessServicesScreen() {
                   </XStack>
                   <XStack gap="$2" mt="$1">
                     {item._links?.edit ? (
-                      <Pressable
-                        style={{ flex: 1 }}
-                        testID={`service-edit-${item.id}`}
-                        onPress={() => navigateLink(router, item._links!.edit!)}
-                      >
-                        <YStack
-                          height={36}
-                          rounded={8}
-                          borderWidth={1}
-                          borderColor={beautyTokens.accentBlueDeep}
-                          justify="center"
-                          items="center"
+                      <YStack flex={1}>
+                        <BeautyButton
+                          variant="outline"
+                          size="sm"
+                          fullWidth
+                          testID={`service-edit-${item.id}`}
+                          onPress={() => navigateLink(router, item._links!.edit!)}
                         >
-                          <SizableText fontSize={12} fontWeight="600" color={beautyTokens.accentBlueText}>
-                            Edit
-                          </SizableText>
-                        </YStack>
-                      </Pressable>
+                          Edit
+                        </BeautyButton>
+                      </YStack>
                     ) : null}
                     {item._links?.delete ? (
-                      <Pressable
-                        style={{ flex: 1 }}
-                        testID={`service-delete-${item.id}`}
-                        disabled={busyId === item.id}
-                        onPress={() => onDelete(item, item._links!.delete!)}
-                      >
-                        <YStack
-                          height={36}
-                          rounded={8}
-                          borderWidth={1}
-                          borderColor={beautyTokens.danger}
-                          justify="center"
-                          items="center"
-                          opacity={busyId === item.id ? 0.5 : 1}
+                      <YStack flex={1}>
+                        <BeautyButton
+                          variant="outline-danger"
+                          size="sm"
+                          fullWidth
+                          loading={busyId === item.id}
+                          testID={`service-delete-${item.id}`}
+                          onPress={() => onDelete(item, item._links!.delete!)}
                         >
-                          {busyId === item.id
-                            ? <Spinner size="small" />
-                            : <SizableText fontSize={12} fontWeight="600" color={beautyTokens.danger}>Delete</SizableText>}
-                        </YStack>
-                      </Pressable>
+                          Delete
+                        </BeautyButton>
+                      </YStack>
                     ) : null}
                   </XStack>
-                </YStack>
+                </BeautyCard>
               ))}
             </YStack>
           </ScrollView>
