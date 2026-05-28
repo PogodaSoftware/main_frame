@@ -310,15 +310,19 @@ export default function BookScreen() {
     if (template && bookingId != null) {
       route = template.replace(':bookingId', String(bookingId));
     }
+    // navigateLink builds the native path from screen + params (it ignores
+    // `route`). Without params the success route's [id] is left unfilled and
+    // the screen hangs forever on "Loading…". Carry bookingId through params.
     const target: BffLink = {
       rel: 'success',
       href: null,
       method: 'NAV',
-      screen: form.success_screen || 'beauty_bookings',
+      screen: bookingId != null ? (form.success_screen || 'beauty_bookings') : 'beauty_bookings',
       route,
+      params: bookingId != null ? { bookingId } : null,
       prompt: null,
     };
-    navigateLink(router, target);
+    navigateLink(router, target, { replace: true });
   };
 
   if (error) {
