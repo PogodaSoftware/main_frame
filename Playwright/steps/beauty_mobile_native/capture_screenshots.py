@@ -195,12 +195,12 @@ def _login_customer(driver: WebDriver, email: str, password: str) -> bool:
 
 
 def _login_business(driver: WebDriver, email: str, password: str) -> bool:
-    _open(driver, "/login")
-    _wait_text(driver, "Welcome back", timeout=20)
-    # Tap second "Sign in" link (Business provider) — last visible matches.
-    links = driver.find_elements(AppiumBy.XPATH, '//*[@text="Sign in"]')
-    _adb_tap(links[-1])
-    _wait_text(driver, "Business Sign In", timeout=10)
+    # Deep-link directly to the business sign-in screen — far more reliable
+    # than tapping the "Business provider? Sign in" link on the customer
+    # login (Pressable hit-areas behave inconsistently under the test driver).
+    _open(driver, "/business-login")
+    if not _wait_text(driver, "Business Sign In", timeout=15):
+        return False
     email_el = driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="Enter your business email"]')
     _adb_tap(email_el); time.sleep(0.3); _adb_type(email)
     pw_el = driver.find_element(AppiumBy.XPATH, '//android.widget.EditText[@text="Enter your password"]')

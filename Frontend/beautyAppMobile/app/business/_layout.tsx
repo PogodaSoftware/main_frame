@@ -9,13 +9,12 @@ import { AuthGuard } from '@/components/guards/AuthGuard';
 const SURFACE = '#F2F2F2';
 
 /**
- * Customer route group. App renders edge-to-edge so the Android status bar
- * was overlapping every header. Pad the top inset with the surface color
- * once for the whole group; per-screen headers paint on top of it.
+ * Business provider route group. Same edge-to-edge inset treatment as the
+ * customer + admin layouts so the status bar doesn't overlap any header.
  */
-export default function CustomerLayout() {
+export default function BusinessLayout() {
   return (
-    <AuthGuard requires="customer">
+    <AuthGuard requires="business">
       <View style={{ flex: 1, backgroundColor: SURFACE }}>
         <StatusBar style="dark" />
         <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: SURFACE }}>
