@@ -57,7 +57,6 @@ const SCREEN_TO_NATIVE_ROUTE: Record<string, string> = {
   beauty_admin_portal_tickets: '/admin/portal/tickets',
   beauty_admin_portal_team: '/admin/portal/team',
   beauty_admin_portal_audit: '/admin/portal/audit',
-  beauty_admin_flags: '/admin/flags',
 };
 
 export function nativeRouteFor(screen: string | null | undefined): string | null {

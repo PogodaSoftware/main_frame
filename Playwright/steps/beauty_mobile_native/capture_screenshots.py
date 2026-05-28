@@ -103,7 +103,6 @@ ADMIN_PAGES: list[tuple[str, str, str | None]] = [
     ("31_tickets",          "/admin/portal/tickets",                "Support tickets"),
     ("32_team",             "/admin/portal/team",                   "Admin team"),
     ("33_audit",            "/admin/portal/audit",                  "Audit log"),
-    ("40_flags",            "/admin/flags",                         "Feature flags"),
 ]
 
 
