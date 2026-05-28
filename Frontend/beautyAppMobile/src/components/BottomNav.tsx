@@ -30,13 +30,13 @@ type TabDef = {
 const DEFAULT_TABS: TabDef[] = [
   { key: 'bookings', label: 'Bookings', icon: 'calendar-outline', path: '/(customer)/bookings' },
   { key: 'home', label: 'Home', icon: 'home-outline', path: '/(customer)/home' },
-  { key: 'chat', label: 'Chat', icon: 'chatbubble-outline', path: '/(customer)/chats' },
+  { key: 'chat', label: 'Chat', icon: 'chatbubble-outline', path: '/chats' },
   { key: 'profile', label: 'Profile', icon: 'person-outline', path: '/(customer)/profile' },
 ];
 
 const MESSAGES_TABS: TabDef[] = [
   { key: 'home', label: 'Home', icon: 'home-outline', path: '/(customer)/home' },
-  { key: 'messages', label: 'Messages', icon: 'chatbubble-outline', path: '/(customer)/chats' },
+  { key: 'messages', label: 'Messages', icon: 'chatbubble-outline', path: '/chats' },
   { key: 'profile', label: 'Profile', icon: 'person-outline', path: '/(customer)/profile' },
 ];
 

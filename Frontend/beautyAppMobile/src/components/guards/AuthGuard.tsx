@@ -6,7 +6,11 @@ import type { UserType } from '@/services/auth';
 import { useSession } from '@/hooks/useSession';
 
 export interface AuthGuardProps {
-  requires: UserType;
+  /**
+   * Single user type, or a list — useful for screens that serve both
+   * customer and business sessions (e.g. /chats).
+   */
+  requires: UserType | UserType[];
   children: React.ReactNode;
 }
 
@@ -20,7 +24,8 @@ export function AuthGuard({ requires, children }: AuthGuardProps) {
       </YStack>
     );
   }
-  if (status !== requires) {
+  const allowed = Array.isArray(requires) ? requires : [requires];
+  if (!allowed.includes(status as UserType)) {
     return <Redirect href="/(auth)/login" />;
   }
   return <>{children}</>;
