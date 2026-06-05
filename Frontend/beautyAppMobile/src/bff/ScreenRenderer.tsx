@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'expo-router';
 import { Paragraph, Spinner, YStack } from 'tamagui';
 
@@ -18,12 +18,19 @@ export function ScreenRenderer({ screen, payload, onSuccess }: ScreenRendererPro
   const router = useRouter();
   const [envelope, setEnvelope] = useState<BffEnvelope | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Snapshot the payload so the resolve effect only fires on `screen`
+  // change, not on every re-render where `payload` is a fresh object
+  // literal. The old `[screen, JSON.stringify(payload)]` dep tripped a
+  // tight loop with React 18 dev double-mount + Fast Refresh and the
+  // BFF rate limiter started returning 429 on web.
+  const payloadRef = useRef(payload);
+  payloadRef.current = payload;
 
   useEffect(() => {
     let cancelled = false;
     setError(null);
     setEnvelope(null);
-    resolve(screen, payload)
+    resolve(screen, payloadRef.current)
       .then((env) => {
         if (cancelled) return;
         if (isRedirect(env)) {
@@ -39,7 +46,8 @@ export function ScreenRenderer({ screen, payload, onSuccess }: ScreenRendererPro
     return () => {
       cancelled = true;
     };
-  }, [screen, JSON.stringify(payload ?? {})]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen]);
 
   if (error) {
     return (

@@ -3,6 +3,8 @@ Beauty Admin Portal — Tag manager bottom-sheet resolver
 """
 
 from beauty_api.middleware import SESSION_COOKIE_NAME
+from django.db.models import Count
+
 from beauty_api.models import BeautyAdminTag
 from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
@@ -43,13 +45,15 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
 
     tags = []
     try:
-        for row in BeautyAdminTag.objects.all().order_by('-created_at'):
+        for row in BeautyAdminTag.objects.all().annotate(
+            count=Count('assignments'),
+        ).order_by('-created_at'):
             tags.append({
                 'id': row.slug,
                 'label': row.label,
                 'color': row.color,
                 'tone': row.tone,
-                'count': 0,  # assignments table lands later
+                'count': row.count,
             })
     except Exception:
         tags = []
@@ -57,7 +61,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     return {
         'action': 'render',
         'screen': 'beauty_admin_portal_tag_manager',
-        'data': {'tags': tags},
+        'data': {
+            'tags': tags,
+            'session_remaining': h.session_remaining_label(cookie, device_id),
+            'admin_initials': h.admin_initials(user),
+        },
         'meta': {'title': 'Beauty — Manage tags'},
         '_links': {
             'self':   h.self_link('beauty_admin_portal_tag_manager'),

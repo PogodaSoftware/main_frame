@@ -10,7 +10,7 @@
  *  - Sticky CTA stack: green Reschedule, red Cancel/Cancel grace, ink View provider.
  *  - 4-tab bottom nav.
  */
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +19,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { resolve } from '@/services/bff';
 import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
+import { useGraceCountdown } from '@/hooks/useGraceCountdown';
 import { BottomNav } from '@/components/BottomNav';
 
 interface BookingDetailData {
@@ -113,6 +114,21 @@ export default function BookingDetailScreen() {
   }, [bookingId, router]);
 
   useEffect(() => { load(); }, [load]);
+
+  const graceEndsAt =
+    env?.action === 'render' ? env.data?.booking?.grace_period_ends_at ?? null : null;
+  const graceLeft = useGraceCountdown(graceEndsAt);
+
+  // When the grace countdown elapses, re-fetch so the BFF returns the
+  // post-grace links (paid cancel) instead of the now-stale free-cancel link.
+  const reloadedOnExpiry = useRef(false);
+  useEffect(() => {
+    const hasGraceLink = !!(env?.action === 'render' && env._links?.cancel_grace);
+    if (hasGraceLink && graceEndsAt && !graceLeft && !reloadedOnExpiry.current) {
+      reloadedOnExpiry.current = true;
+      load();
+    }
+  }, [graceLeft, graceEndsAt, env, load]);
 
   const onCancel = async (link: BffLink) => {
     setIsCancelling(true);
@@ -238,51 +254,64 @@ export default function BookingDetailScreen() {
       </ScrollView>
 
       <View style={styles.ctaRow}>
+        {/* Reschedule — ink, full width */}
         {links.reschedule ? (
           <Pressable
             onPress={() => navigateLink(router, links.reschedule)}
-            style={({ pressed }) => [styles.btnConfirm, pressed && { backgroundColor: C.successHover, borderColor: C.successHover }]}
+            style={({ pressed }) => [styles.btnReschedule, pressed && { backgroundColor: '#1F1F22', borderColor: '#1F1F22' }]}
           >
-            <Ionicons name="checkmark" size={14} color={C.white} />
-            <Text style={styles.btnConfirmText}>{links.reschedule.prompt ?? 'Reschedule'}</Text>
+            <Ionicons name="refresh" size={14} color={C.white} />
+            <Text style={styles.btnRescheduleText}>{links.reschedule.prompt ?? 'Reschedule'}</Text>
           </Pressable>
         ) : null}
-        {links.cancel_grace ? (
-          <Pressable
-            onPress={() => onCancel(links.cancel_grace!)}
-            disabled={isCancelling}
-            style={({ pressed }) => [
-              styles.btnCancel,
-              isCancelling && { opacity: 0.55 },
-              pressed && !isCancelling && { backgroundColor: '#9F2E22', borderColor: '#9F2E22' },
-            ]}
-          >
-            <Text style={styles.btnCancelText}>
-              {isCancelling ? 'Cancelling…' : (links.cancel_grace.prompt ?? 'Cancel now (free)')}
+
+        {/* View provider + Add to calendar — white, side by side */}
+        <View style={styles.secondaryRow}>
+          {links.provider ? (
+            <Pressable
+              onPress={() => navigateLink(router, links.provider)}
+              style={({ pressed }) => [styles.btnSecondary, pressed && { borderColor: C.accentBlueDeep }]}
+            >
+              <Text style={styles.btnSecondaryText}>{links.provider.prompt ?? 'View provider'}</Text>
+            </Pressable>
+          ) : null}
+          <Pressable style={({ pressed }) => [styles.btnSecondary, pressed && { borderColor: C.accentBlueDeep }]}>
+            <Text style={styles.btnSecondaryText}>Add to calendar</Text>
+          </Pressable>
+        </View>
+
+        {/* Cancel — in grace (timer still running): baby-blue countdown pill
+            + helper note; past grace: red fee-bearing text link. */}
+        {links.cancel_grace && graceLeft ? (
+          <View style={{ alignItems: 'center' }}>
+            <Pressable
+              onPress={() => onCancel(links.cancel_grace!)}
+              disabled={isCancelling}
+              style={[styles.btnGrace, isCancelling && { opacity: 0.55 }]}
+              accessibilityRole="button"
+            >
+              <Ionicons name="time-outline" size={14} color={C.accentBlueText} />
+              <Text style={styles.btnGraceText}>
+                {isCancelling ? 'Cancelling…' : 'Cancel free'}
+              </Text>
+              <View style={styles.gracePill}>
+                <Text style={styles.gracePillText}>{graceLeft}</Text>
+              </View>
+            </Pressable>
+            <Text style={styles.graceHelper}>
+              {"Cancel within 5 minutes of booking and you won't be charged."}
             </Text>
-          </Pressable>
-        ) : null}
-        {links.cancel ? (
+          </View>
+        ) : links.cancel || links.cancel_grace ? (
           <Pressable
-            onPress={() => onCancel(links.cancel!)}
+            onPress={() => onCancel((links.cancel ?? links.cancel_grace)!)}
             disabled={isCancelling}
-            style={({ pressed }) => [
-              styles.btnCancel,
-              isCancelling && { opacity: 0.55 },
-              pressed && !isCancelling && { backgroundColor: '#9F2E22', borderColor: '#9F2E22' },
-            ]}
+            style={styles.cancelLink}
+            accessibilityRole="button"
           >
-            <Text style={styles.btnCancelText}>
-              {isCancelling ? 'Cancelling…' : (links.cancel.prompt ?? 'Cancel this booking')}
+            <Text style={[styles.cancelLinkText, isCancelling && { opacity: 0.55 }]}>
+              {isCancelling ? 'Cancelling…' : `${links.cancel?.prompt ?? 'Cancel this booking'} · $20 fee`}
             </Text>
-          </Pressable>
-        ) : null}
-        {links.provider ? (
-          <Pressable
-            onPress={() => navigateLink(router, links.provider)}
-            style={({ pressed }) => [styles.btnGhost, pressed && { backgroundColor: '#1F1F22', borderColor: '#1F1F22' }]}
-          >
-            <Text style={styles.btnGhostText}>{links.provider.prompt ?? 'View provider'}</Text>
           </Pressable>
         ) : null}
       </View>
@@ -313,7 +342,15 @@ const styles = StyleSheet.create({
   detailSection: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 },
   title: { fontFamily: FONT_DISPLAY, fontSize: 28, lineHeight: 32, color: C.text, letterSpacing: 0.2, flex: 1 },
-  price: { fontFamily: FONT_DISPLAY, fontSize: 22, color: C.text, flexShrink: 0 },
+  // Money in Inter semibold w/ tabular lining figures — Cormorant's old-style
+  // numerals made "$135" hard to read as a price. Serif stays on the title.
+  price: {
+    fontFamily: FONT_BODY_SEMI,
+    fontSize: 19,
+    color: C.text,
+    flexShrink: 0,
+    fontVariant: ['tabular-nums'],
+  },
   meta: { fontSize: 12, color: C.textMuted, marginTop: 4, marginBottom: 18, fontFamily: FONT_BODY },
   statusOk: { color: C.success, fontFamily: FONT_BODY_SEMI },
 
@@ -355,26 +392,49 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingVertical: 12,
     backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.line,
   },
-  btnConfirm: {
-    width: '100%', height: 46, borderRadius: 10,
-    backgroundColor: C.success, borderWidth: 1, borderColor: C.success,
-    alignItems: 'center', justifyContent: 'center',
-    flexDirection: 'row', gap: 8,
-    shadowColor: C.success, shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-  },
-  btnConfirmText: { color: C.white, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
-  btnCancel: {
-    width: '100%', height: 46, borderRadius: 10,
-    backgroundColor: C.danger, borderWidth: 1, borderColor: C.danger,
-    alignItems: 'center', justifyContent: 'center',
-    shadowColor: C.danger, shadowOpacity: 0.2, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
-  },
-  btnCancelText: { color: C.white, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
-  btnGhost: {
-    width: '100%', height: 46, borderRadius: 10,
+  // Reschedule — ink/black, full width (matches manage-booking design).
+  btnReschedule: {
+    width: '100%', height: 48, borderRadius: 10,
     backgroundColor: C.ink, borderWidth: 1, borderColor: C.ink,
     alignItems: 'center', justifyContent: 'center',
+    flexDirection: 'row', gap: 8,
     shadowColor: C.ink, shadowOpacity: 0.18, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
   },
-  btnGhostText: { color: C.white, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
+  btnRescheduleText: { color: C.white, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
+
+  // View provider + Add to calendar — white outline pair.
+  secondaryRow: { flexDirection: 'row', gap: 10 },
+  btnSecondary: {
+    flex: 1, height: 48, borderRadius: 10,
+    backgroundColor: C.white, borderWidth: 1, borderColor: C.line,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  btnSecondaryText: { color: C.text, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
+
+  // Past-grace cancel — red outline button.
+  cancelLink: {
+    width: '100%', height: 48, borderRadius: 10,
+    backgroundColor: C.white, borderWidth: 1, borderColor: C.danger,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cancelLinkText: { color: C.danger, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
+
+  // In-grace cancel — baby-blue pill w/ live MM:SS countdown + helper.
+  btnGrace: {
+    width: '100%', height: 44, borderRadius: 12,
+    backgroundColor: C.accentBlue,
+    borderWidth: 1, borderColor: 'rgba(125,168,207,0.5)',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+  },
+  btnGraceText: { fontSize: 13, fontFamily: FONT_BODY_SEMI, color: C.accentBlueText, letterSpacing: 0.2 },
+  gracePill: {
+    backgroundColor: C.white, borderWidth: 1, borderColor: 'rgba(125,168,207,0.55)',
+    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
+    minWidth: 46, alignItems: 'center',
+  },
+  gracePillText: { fontFamily: FONT_BODY_SEMI, fontSize: 12, color: C.accentBlueText },
+  graceHelper: {
+    fontSize: 12, color: C.textMuted, fontFamily: FONT_BODY,
+    textAlign: 'center', marginTop: 8,
+  },
 });

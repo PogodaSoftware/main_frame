@@ -85,7 +85,13 @@ interface Totals { admins: number; owners: number; pending_invites: number; }
             <span class="num adm-mono">{{ totals.pending_invites }}</span> invite{{ totals.pending_invites === 1 ? '' : 's' }} pending
           </div>
         </div>
-        <button type="button" class="new-btn" (click)="toggleInvite()" *ngIf="isOwner">+ Invite</button>
+        <div class="head-actions">
+          <button type="button" class="audit-btn" (click)="onAudit()" aria-label="Audit log">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+            Audit log
+          </button>
+          <button type="button" class="new-btn" (click)="toggleInvite()" *ngIf="isOwner">+ Invite</button>
+        </div>
       </header>
 
       <main class="body adm-body--scroll" role="main">
@@ -263,6 +269,8 @@ interface Totals { admins: number; owners: number; pending_invites: number; }
     .summary { font-size: 11px; color: var(--adm-slate-muted); margin-top: 2px; }
     .summary .num { color: #fff; font-weight: 600; }
     .new-btn { height: 32px; padding: 0 12px; border-radius: 999px; background: #fff; color: var(--adm-slate); border: none; font-family: var(--adm-font-body); font-size: 12px; font-weight: 700; cursor: pointer; }
+    .head-actions { display: flex; align-items: center; gap: 8px; }
+    .audit-btn { display: inline-flex; align-items: center; gap: 5px; height: 32px; padding: 0 10px; border-radius: 999px; background: var(--adm-slate2, rgba(255,255,255,0.08)); color: #fff; border: 1px solid var(--adm-slate-line); font-family: var(--adm-font-body); font-size: 11px; font-weight: 600; cursor: pointer; }
 
     .body { padding: 0 0 24px; background: #fff; }
     .section-eyebrow { padding: 14px 14px 6px; background: var(--surface); }
@@ -399,6 +407,11 @@ export class AdminPortalTeamComponent {
     this.inviteOpen = !this.inviteOpen;
     this.inviteError = null;
     this.inviteSent = false;
+  }
+
+  onAudit(): void {
+    const link = this.links['audit'];
+    if (link) this.followLink.emit(link);
   }
 
   onInviteSend(): void {

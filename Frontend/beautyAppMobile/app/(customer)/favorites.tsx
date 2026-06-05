@@ -14,11 +14,14 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import {
-  listFavorites,
-  unfavoriteService,
-  type FavoriteRow,
-} from '@/services/marketplace';
+import { type FavoriteRow } from '@/services/marketplace';
+import { api } from '@/services/api';
+import { resolve } from '@/services/bff';
+import { isRedirect, type BffLink } from '@/bff/types';
+
+interface FavRow extends FavoriteRow {
+  _links?: { unfavorite?: BffLink };
+}
 
 const C = {
   surface: '#F2F2F2',
@@ -42,22 +45,21 @@ const FONT_MONO = 'Menlo';
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const [rows, setRows] = useState<FavoriteRow[]>([]);
+  const [rows, setRows] = useState<FavRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const load = async () => {
     setErrorMessage(null);
     try {
-      const data = await listFavorites();
-      setRows(data.items ?? []);
-    } catch (e: any) {
-      const status = e?.response?.status;
-      setErrorMessage(
-        status === 403
-          ? 'Sign in as a customer to view your saved services.'
-          : 'Could not load saved services.',
-      );
+      const e = await resolve<{ items: FavRow[] }>('beauty_favorites');
+      if (isRedirect(e)) {
+        setErrorMessage('Sign in as a customer to view your saved services.');
+        return;
+      }
+      if (e.action === 'render') setRows(e.data?.items ?? []);
+    } catch {
+      setErrorMessage('Could not load saved services.');
     } finally {
       setLoading(false);
     }
@@ -67,11 +69,14 @@ export default function FavoritesScreen() {
     load();
   }, []);
 
-  const remove = async (row: FavoriteRow) => {
+  const remove = async (row: FavRow) => {
+    const href = row._links?.unfavorite?.href;
+    if (!href) return;
     const before = rows;
     setRows((prev) => prev.filter((r) => r.id !== row.id));
     try {
-      await unfavoriteService(row.service.id);
+      // HATEOAS unfavorite action-link from the resolver row.
+      await api.delete(href);
     } catch {
       setRows(before);
       setErrorMessage('Could not remove favorite.');

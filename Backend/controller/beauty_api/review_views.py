@@ -107,6 +107,12 @@ def _review_payload(r: BeautyReview, *, viewer_user_id: int | None, viewer_user_
     )
     customer_email = r.customer.email if r.customer_id else ''
     initial = (customer_email[:1] or '?').upper()
+    # No first/last name on BeautyUser — derive a friendly display name from
+    # the email local-part (e.g. "maria.lopez@…" → "Maria"). Reviews are
+    # public on the storefront, so this is safe to surface.
+    _local = customer_email.split('@', 1)[0] if customer_email else ''
+    _first = _local.replace('.', ' ').replace('_', ' ').split(' ')[0]
+    display_name = _first[:1].upper() + _first[1:] if _first else 'Guest'
     return {
         'id': r.id,
         'rating': r.rating,
@@ -124,6 +130,7 @@ def _review_payload(r: BeautyReview, *, viewer_user_id: int | None, viewer_user_
         'customer': {
             'id': r.customer_id,
             'initial': initial,
+            'display_name': display_name,
         },
     }
 

@@ -16,12 +16,10 @@ import { resolve } from '@/services/bff';
 import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { SlotPickerForm, type SlotPickerFormSpec } from '@/bff/SlotPickerForm';
+import { api } from '@/services/api';
 import {
-  favoriteService,
   formatDuration,
   formatPrice,
-  getServiceReviews,
-  unfavoriteService,
   type ReviewsListResponse,
 } from '@/services/marketplace';
 import {
@@ -46,6 +44,7 @@ interface BookService {
   price_cents: number;
   duration_minutes: number;
   category: string;
+  is_favorited?: boolean;
 }
 
 interface BookData {
@@ -82,14 +81,17 @@ export default function ServiceDetailScreen() {
           return;
         }
         setEnv(e);
+        if (e.action === 'render' && e.data) setFavorited(!!e.data.service.is_favorited);
       })
       .catch((err: any) => {
         if (!cancelled) setError(err?.response?.data?.detail ?? 'Failed to load.');
       });
 
-    getServiceReviews(serviceId)
-      .then((r) => {
-        if (!cancelled) setReviews(r);
+    // Reviews via the paginated `beauty_service_reviews` resolver (first page).
+    resolve<ReviewsListResponse>('beauty_service_reviews', { serviceId })
+      .then((rv) => {
+        if (cancelled || isRedirect(rv) || rv.action !== 'render') return;
+        setReviews(rv.data ?? null);
       })
       .catch(() => {
         // reviews list optional; ignore failure
@@ -101,15 +103,15 @@ export default function ServiceDetailScreen() {
   }, [serviceId]);
 
   const toggleFavorite = async () => {
+    // HATEOAS favorite/unfavorite action-links from the beauty_book envelope.
+    const linksNow = (env?._links ?? {}) as Record<string, BffLink | undefined>;
+    const href = favorited ? linksNow.unfavorite?.href : linksNow.favorite?.href;
+    if (!href) return;
     setFavPending(true);
     try {
-      if (favorited) {
-        await unfavoriteService(serviceId);
-        setFavorited(false);
-      } else {
-        await favoriteService(serviceId);
-        setFavorited(true);
-      }
+      if (favorited) await api.delete(href);
+      else await api.post(href);
+      setFavorited(!favorited);
     } catch {
       // ignore
     } finally {

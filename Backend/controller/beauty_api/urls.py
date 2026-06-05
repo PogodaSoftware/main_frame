@@ -7,6 +7,7 @@ from .admin_portal_views import (
     AdminCustomerMessageView,
     AdminInviteConsumeView,
     AdminProviderMessageView,
+    AdminTagAssignView,
     AdminTagCreateView,
     AdminTeamInviteView,
     AdminTeamRevokeView,
@@ -30,6 +31,7 @@ from .chat_views import (
     ChatSendView,
     ChatThreadView,
     CustomerChatListView,
+    WsTicketView,
 )
 from .business_views import (
     BusinessAccountContactView,
@@ -83,6 +85,7 @@ urlpatterns = [
     path('admin/flags/toggle/', FlagToggleView.as_view(), name='beauty-admin-flag-toggle'),
     path('admin/crm/suspend/', CrmSuspendView.as_view(), name='beauty-admin-crm-suspend'),
     path('admin/portal/tags/', AdminTagCreateView.as_view(), name='beauty-admin-portal-tag-create'),
+    path('admin/portal/tags/<str:slug>/assign/', AdminTagAssignView.as_view(), name='beauty-admin-portal-tag-assign'),
     path('admin/portal/<str:target_type>/<int:target_id>/note/',  AdminAccountNoteView.as_view(),   name='beauty-admin-portal-note'),
     path('admin/portal/customer/<int:customer_id>/message/',      AdminCustomerMessageView.as_view(), name='beauty-admin-portal-customer-msg'),
     path('admin/portal/business/<int:provider_id>/message/',      AdminProviderMessageView.as_view(), name='beauty-admin-portal-business-msg'),
@@ -117,6 +120,7 @@ urlpatterns = [
     path('protected/bookings/<int:booking_id>/reschedule/', RescheduleBookingView.as_view(), name='beauty-booking-reschedule'),
 
     # Per-booking chat (customer + business; both auth gates handled in views).
+    path('protected/chat/ws-ticket/', WsTicketView.as_view(), name='beauty-chat-ws-ticket'),
     path('protected/bookings/<int:booking_id>/chat/', ChatThreadView.as_view(), name='beauty-chat-thread'),
     path('protected/bookings/<int:booking_id>/chat/send/', ChatSendView.as_view(), name='beauty-chat-send'),
     path('protected/chats/', CustomerChatListView.as_view(), name='beauty-chats'),

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { Image, Pressable } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Image, Pressable, ScrollView as RNScrollView } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import {
   H2,
@@ -41,6 +41,10 @@ export default function CustomerHome() {
   const [env, setEnv] = useState<BffEnvelope<HomeData> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [paused, setPaused] = useState(false);
+  // Auto-advancing services carousel (mirrors Angular's auto-play + Pause).
+  const carouselRef = useRef<RNScrollView>(null);
+  const carouselIdx = useRef(0);
+  const CARD_STEP = 232; // card width 220 + $3 gap (12)
 
   useEffect(() => {
     let cancelled = false;
@@ -62,6 +66,21 @@ export default function CustomerHome() {
       cancelled = true;
     };
   }, [router]);
+
+  // Auto-scroll the services carousel every 2.5s unless paused.
+  const serviceCount =
+    env?.action === 'render' ? env.data?.services.length ?? 0 : 0;
+  useEffect(() => {
+    if (paused || serviceCount < 2) return;
+    const id = setInterval(() => {
+      carouselIdx.current = (carouselIdx.current + 1) % serviceCount;
+      carouselRef.current?.scrollTo({
+        x: carouselIdx.current * CARD_STEP,
+        animated: true,
+      });
+    }, 2500);
+    return () => clearInterval(id);
+  }, [paused, serviceCount]);
 
   const onLogout = async () => {
     if (env?.action === 'render' && env._links?.logout) {
@@ -150,7 +169,11 @@ export default function CustomerHome() {
               </Pressable>
             </XStack>
 
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <RNScrollView
+              ref={carouselRef}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            >
               <XStack gap="$3" px="$4">
                 {data.services.map((s) => (
                   <Pressable
@@ -197,7 +220,7 @@ export default function CustomerHome() {
                   </Pressable>
                 ))}
               </XStack>
-            </ScrollView>
+            </RNScrollView>
           </YStack>
 
           {/* Map placeholder */}

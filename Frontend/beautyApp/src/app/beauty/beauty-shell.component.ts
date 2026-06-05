@@ -81,6 +81,7 @@ import { AdminPortalSuspendConfirmComponent } from './admin-portal/admin-portal-
 import { AdminPortalCustomerDetailComponent } from './admin-portal/admin-portal-customer-detail.component';
 import { AdminPortalProviderDetailComponent } from './admin-portal/admin-portal-provider-detail.component';
 import { AdminPortalBookingsLedgerComponent } from './admin-portal/admin-portal-bookings-ledger.component';
+import { AdminPortalBookingDetailComponent } from './admin-portal/admin-portal-booking-detail.component';
 import { AdminPortalTicketsComponent } from './admin-portal/admin-portal-tickets.component';
 import { AdminPortalTeamComponent } from './admin-portal/admin-portal-team.component';
 import { AdminPortalAuditLogComponent } from './admin-portal/admin-portal-audit.component';
@@ -113,6 +114,7 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     AdminPortalCustomerDetailComponent,
     AdminPortalProviderDetailComponent,
     AdminPortalBookingsLedgerComponent,
+    AdminPortalBookingDetailComponent,
     AdminPortalTicketsComponent,
     AdminPortalTeamComponent,
     AdminPortalAuditLogComponent,
@@ -295,6 +297,12 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-admin-portal-bookings-ledger
         *ngIf="bffResponse!.screen === 'beauty_admin_portal_bookings'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-booking-detail
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_booking_detail'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"

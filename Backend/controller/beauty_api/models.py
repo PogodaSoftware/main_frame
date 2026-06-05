@@ -544,6 +544,43 @@ class BeautyChatMessage(models.Model):
         return f"chat#{self.booking_id} {self.sender_type}:{self.sender_id} @ {self.created_at:%Y-%m-%d %H:%M}"
 
 
+class BeautyChatRead(models.Model):
+    """Per-viewer read marker for a booking's chat thread.
+
+    One row per (booking, viewer) records the moment that viewer last
+    opened the thread. Unread = messages from the *other* party created
+    after ``last_read_at``. A missing row means the viewer has never
+    opened the thread (everything from the peer counts as unread).
+
+    Viewer identity mirrors ``BeautyChatMessage.sender_type`` /
+    ``sender_id`` (``customer``→BeautyUser.id, ``business``→
+    BusinessProvider.id). Rows cascade-delete with the booking, same as
+    the messages themselves.
+    """
+
+    booking = models.ForeignKey(
+        BeautyBooking, on_delete=models.CASCADE, related_name='chat_reads',
+    )
+    viewer_type = models.CharField(max_length=16, choices=BeautyChatMessage.SENDER_CHOICES)
+    viewer_id = models.IntegerField()
+    last_read_at = models.DateTimeField()
+
+    class Meta:
+        db_table = 'beauty_chat_reads'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['booking', 'viewer_type', 'viewer_id'],
+                name='beauty_chat_read_unique',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['viewer_type', 'viewer_id'], name='beauty_chat_read_viewer_idx'),
+        ]
+
+    def __str__(self):
+        return f"read#{self.booking_id} {self.viewer_type}:{self.viewer_id} @ {self.last_read_at:%Y-%m-%d %H:%M}"
+
+
 class BeautyAdminPrincipal(models.Model):
     """
     Grants admin access to the Beauty CRM/admin surfaces.
@@ -782,6 +819,44 @@ class BeautyAdminTag(models.Model):
 
     def __str__(self):
         return self.label
+
+
+class BeautyAdminTagAssignment(models.Model):
+    """
+    Many-to-many between BeautyAdminTag and (BeautyUser | BusinessProvider).
+
+    Uses the same ``(user_type, user_id)`` polymorphic pair as
+    BeautyAdminPrincipal so a tag can be attached to either kind of
+    account without a second join table.
+    """
+
+    USER_TYPE_CUSTOMER = 'customer'
+    USER_TYPE_BUSINESS = 'business'
+    USER_TYPE_CHOICES = [
+        (USER_TYPE_CUSTOMER, 'Customer'),
+        (USER_TYPE_BUSINESS, 'Business Provider'),
+    ]
+
+    tag = models.ForeignKey(BeautyAdminTag, on_delete=models.CASCADE, related_name='assignments')
+    user_type = models.CharField(max_length=20, choices=USER_TYPE_CHOICES)
+    user_id = models.IntegerField()
+    assigned_by_email = models.EmailField(blank=True, default='')
+    assigned_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'beauty_admin_tag_assignments'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['tag', 'user_type', 'user_id'],
+                name='beauty_admin_tag_assignment_unique',
+            ),
+        ]
+        indexes = [
+            models.Index(fields=['user_type', 'user_id'], name='beauty_tag_assn_target_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.tag.slug}:{self.user_type}:{self.user_id}"
 
 
 class BeautyAuthAuditLog(models.Model):

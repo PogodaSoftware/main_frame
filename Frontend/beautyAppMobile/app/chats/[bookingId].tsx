@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { resolve } from '@/services/bff';
 import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
+import { setActiveChat } from '@/services/activeChat';
 
 interface ChatMessage {
   id: number;
@@ -70,6 +71,31 @@ function formatTime(iso: string): string {
   } catch { return ''; }
 }
 
+const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+// Booking slot in device-local time (EDT), not the UTC-baked `slot_label`.
+function formatSlotLocal(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const wd = WEEKDAYS_SHORT[d.getDay()];
+  const mo = MONTHS_SHORT[d.getMonth()];
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  let tz = '';
+  try {
+    const part = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+      .formatToParts(d)
+      .find((p) => p.type === 'timeZoneName');
+    tz = part?.value ?? '';
+  } catch {
+    /* no tz abbreviation */
+  }
+  return `${wd} ${mo} ${d.getDate()} · ${time}${tz ? ` ${tz}` : ''}`;
+}
+
 export default function ChatThreadScreen() {
   const router = useRouter();
   const { bookingId: raw } = useLocalSearchParams<{ bookingId: string }>();
@@ -87,7 +113,7 @@ export default function ChatThreadScreen() {
       const e = await resolve<ChatThreadData>('beauty_chat_thread', { bookingId });
       if (isRedirect(e)) {
         const route = nativeRouteFor(e._links?.target?.screen);
-        router.replace((route ?? '/(customer)/chats') as any);
+        router.replace((route ?? '/chats') as any);
         return;
       }
       setEnv(e);
@@ -98,10 +124,11 @@ export default function ChatThreadScreen() {
   }, [bookingId, router]);
 
   useEffect(() => {
+    setActiveChat(bookingId);
     load();
     const timer = setInterval(load, POLL_INTERVAL_MS);
-    return () => clearInterval(timer);
-  }, [load]);
+    return () => { clearInterval(timer); setActiveChat(null); };
+  }, [load, bookingId]);
 
   useEffect(() => {
     scrollRef.current?.scrollToEnd?.({ animated: false });
@@ -151,7 +178,7 @@ export default function ChatThreadScreen() {
     if (data.status === 'booked' || data.status === 'completed') parts.push('Confirmed');
     if (data.service_duration_minutes) parts.push(`${data.service_duration_minutes} min`);
     if (data.service_price_dollars) parts.push(`$${data.service_price_dollars} paid`);
-    return parts.length ? parts.join(' · ') : `${data.service_name} · ${data.slot_label}`;
+    return parts.length ? parts.join(' · ') : `${data.service_name} · ${formatSlotLocal(data.slot_at)}`;
   })();
 
   return (
@@ -177,7 +204,7 @@ export default function ChatThreadScreen() {
         </LinearGradient>
         <View style={styles.hdrText}>
           <Text style={styles.hdrName} numberOfLines={1} testID="chat-peer-name">{data.peer_name}</Text>
-          <Text style={styles.hdrSub} numberOfLines={1}>{data.service_name} · {data.slot_label}</Text>
+          <Text style={styles.hdrSub} numberOfLines={1}>{data.service_name} · {formatSlotLocal(data.slot_at)}</Text>
         </View>
         <Pressable
           onPress={() => links.view_booking && navigateLink(router, links.view_booking)}

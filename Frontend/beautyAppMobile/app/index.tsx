@@ -15,6 +15,6 @@ export default function Index() {
     );
   }
   if (status === 'customer') return <Redirect href="/(customer)/home" />;
-  if (status === 'business') return <Redirect href="/(business)/home" />;
+  if (status === 'business') return <Redirect href={'/business/home' as any} />;
   return <Redirect href="/(auth)/login" />;
 }

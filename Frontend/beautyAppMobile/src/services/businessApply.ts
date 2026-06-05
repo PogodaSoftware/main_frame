@@ -25,8 +25,8 @@ export async function patchApplicationStep(
   return resp.data;
 }
 
-export async function submitApplication(href: string): Promise<unknown> {
-  const resp = await api.post(href, {});
+export async function submitApplication(href: string, acceptTos = true): Promise<unknown> {
+  const resp = await api.post(href, { accept_tos: acceptTos });
   return resp.data;
 }
 

@@ -196,6 +196,12 @@ export const routes: Routes = [
     data: { screen: 'beauty_admin_portal_bookings' },
   },
   {
+    path: 'admin/portal/bookings/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Booking',
+    data: { screen: 'beauty_admin_portal_booking_detail' },
+  },
+  {
     path: 'admin/portal/tickets',
     component: BeautyShellComponent,
     title: 'Beauty - Support tickets',

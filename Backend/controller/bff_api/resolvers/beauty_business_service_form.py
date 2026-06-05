@@ -49,7 +49,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     if is_edit:
         submit_href = f'/api/beauty/protected/business/services/{svc.id}/'
         submit_method = 'PUT'
-        submit_label = 'Save changes'
+        submit_label = 'Save'
         title = f'Edit · {svc.name}'
         defaults = {
             'name': svc.name,
@@ -107,6 +107,15 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             ),
             'business_home': h.screen_link(
                 'business_home', 'beauty_business_home', prompt='Dashboard',
+            ),
+            # Delete action-link — only on the edit form (a real service exists).
+            **(
+                {'delete': h.link(
+                    rel='delete',
+                    href=f'/api/beauty/protected/business/services/{svc.id}/',
+                    method='DELETE',
+                    prompt='Delete service',
+                )} if is_edit and svc else {}
             ),
         },
     }

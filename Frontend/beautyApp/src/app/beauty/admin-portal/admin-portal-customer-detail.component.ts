@@ -178,7 +178,9 @@ interface DetailTag { id: string; label: string; color: string; tone: string; }
           <div class="sec-sub">{{ bookings.length }} of {{ totalBookings }} · most recent</div>
           <adm-card [padding]="0">
             <div *ngIf="!bookings.length" class="empty">No bookings yet.</div>
-            <div *ngFor="let b of bookings; let last = last" class="bkg" [class.last]="last">
+            <div *ngFor="let b of bookings; let last = last" class="bkg" [class.last]="last"
+                 role="link" tabindex="0" (click)="openBooking(b)" (keydown.enter)="openBooking(b)"
+                 [attr.aria-label]="'Open booking ' + b.service">
               <div class="bk-date">
                 <div class="mon">{{ b.mon }}</div>
                 <div class="day">{{ b.day }}</div>
@@ -499,6 +501,17 @@ export class AdminPortalCustomerDetailComponent {
     if (ev) ev.preventDefault();
     const link = this.links['manage_tags'];
     if (link) this.followLink.emit(link);
+  }
+
+  openBooking(b: BookingRow): void {
+    // Admin booking detail — stays inside the admin portal.
+    const link = this.links['booking_detail'];
+    if (!link) return;
+    this.followLink.emit({
+      ...link,
+      route: (link.route ?? '').replace(':id', String(b.id)),
+      params: { id: b.id },
+    });
   }
 
   get tabBadges(): Record<string, number | string | null> {

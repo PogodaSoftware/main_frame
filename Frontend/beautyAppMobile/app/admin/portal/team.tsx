@@ -83,6 +83,7 @@ export default function AdminTeam() {
   const [inviteRole, setInviteRole] = useState('support_agent');
   const [inviteError, setInviteError] = useState<string | null>(null);
   const [inviteSent, setInviteSent] = useState(false);
+  const scrollRef = React.useRef<ScrollView>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -120,6 +121,10 @@ export default function AdminTeam() {
     );
   }
   const data = env.data!;
+  // O(1) role lookups (built once per render; avoids re-scanning
+  // role_options per admin/invite row).
+  const roleMap = new Map<string, RoleOption>();
+  for (const r of data.role_options) roleMap.set(r.value, r);
 
   const onTab = (kind: AdmTabKind) => {
     if (kind === 'team') return;
@@ -208,8 +213,7 @@ export default function AdminTeam() {
     }
   };
 
-  const roleColor = (v: string) =>
-    data.role_options.find((r) => r.value === v)?.color ?? '#6B6F77';
+  const roleColor = (v: string) => roleMap.get(v)?.color ?? '#6B6F77';
 
   return (
     <View style={styles.app}>
@@ -227,9 +231,33 @@ export default function AdminTeam() {
             {data.totals.pending_invites === 1 ? '' : 's'} pending
           </Text>
         </View>
+        <View style={styles.headActions}>
+          {data.is_owner ? (
+            <Pressable
+              onPress={() => scrollRef.current?.scrollToEnd({ animated: true })}
+              style={styles.newBtn}
+              hitSlop={6}
+              accessibilityLabel="Invite teammate"
+            >
+              <Text style={styles.newBtnText}>+ Invite</Text>
+            </Pressable>
+          ) : null}
+          <Pressable
+            onPress={() => router.push('/admin/portal/audit' as any)}
+            style={styles.auditBtn}
+            hitSlop={8}
+            accessibilityLabel="Audit log"
+          >
+            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke={admTokens.white} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <Path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <Path d="M14 2v6h6M9 13h6M9 17h6" />
+            </Svg>
+            <Text style={styles.auditBtnText}>Audit log</Text>
+          </Pressable>
+        </View>
       </View>
 
-      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 24 }}>
+      <ScrollView ref={scrollRef} style={styles.body} contentContainerStyle={{ paddingBottom: 24 }}>
         {data.admins.map((a) => (
           <View key={a.principal_id} style={styles.row}>
             <View style={styles.rowMain}>
@@ -327,8 +355,7 @@ export default function AdminTeam() {
                         style={[
                           styles.rolePill,
                           {
-                            backgroundColor:
-                              data.role_options.find((r) => r.value === inv.role)?.bg ?? admTokens.surface2,
+                            backgroundColor: roleMap.get(inv.role)?.bg ?? admTokens.surface2,
                           },
                         ]}
                       >
@@ -507,6 +534,18 @@ const styles = StyleSheet.create({
   subTitle: { fontSize: 24, color: admTokens.white, fontFamily: 'CormorantGaramond_500Medium' },
   subSummary: { marginTop: 2, fontSize: 11, color: admTokens.slateMuted },
   subNum: { color: admTokens.white, fontWeight: '600', fontFamily: admTokens.fontMono },
+  headActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  newBtn: {
+    height: 32, paddingHorizontal: 12, borderRadius: 999,
+    backgroundColor: admTokens.white, alignItems: 'center', justifyContent: 'center',
+  },
+  newBtnText: { color: admTokens.slate, fontSize: 12, fontWeight: '700' },
+  auditBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
+    borderWidth: 1, borderColor: admTokens.slateLine, backgroundColor: admTokens.slate2,
+  },
+  auditBtnText: { color: admTokens.white, fontSize: 11, fontWeight: '600' },
   body: { flex: 1, backgroundColor: '#fff' },
   row: {
     paddingHorizontal: 14,

@@ -120,6 +120,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'admin_email': user.get('email') or '',
             'tab_badges': h.admin_tab_badges(),
             'notif_count': h.admin_notif_count(),
+            'session_remaining': h.session_remaining_label(cookie, device_id),
+            'admin_initials': h.admin_initials(user),
         },
         'meta': {'title': 'Beauty — Audit log'},
         '_links': {

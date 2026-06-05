@@ -1,45 +1,10 @@
 /**
- * Business management portal REST shim.
- * Mutations only — screen data comes from BFF (`resolve('beauty_business_*')`).
+ * Business management portal action-link shim.
+ * Every call targets an `href` handed back by a BFF resolver's `_links`
+ * (HATEOAS mutations) — no hardcoded REST paths. Screen data comes from
+ * BFF (`resolve('beauty_business_*')`).
  */
 import { api } from '@/services/api';
-import type { WeeklyHourRow } from '@/services/businessApply';
-
-export interface ServicePayload {
-  name: string;
-  category: string;
-  description?: string;
-  price_dollars: string;
-  duration_minutes: number;
-}
-
-export async function createService(payload: ServicePayload): Promise<unknown> {
-  const resp = await api.post('/api/beauty/protected/business/services/', payload);
-  return resp.data;
-}
-
-export async function updateService(
-  serviceId: number,
-  payload: ServicePayload,
-): Promise<unknown> {
-  const resp = await api.put(
-    `/api/beauty/protected/business/services/${serviceId}/`,
-    payload,
-  );
-  return resp.data;
-}
-
-export async function deleteService(serviceId: number): Promise<void> {
-  await api.delete(`/api/beauty/protected/business/services/${serviceId}/`);
-}
-
-export async function putAvailability(
-  href: string,
-  rows: WeeklyHourRow[],
-): Promise<unknown> {
-  const resp = await api.put(href, { weekly_hours: rows });
-  return resp.data;
-}
 
 export async function changeBusinessPassword(
   href: string,

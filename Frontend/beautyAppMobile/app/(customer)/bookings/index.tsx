@@ -65,6 +65,33 @@ function dotColor(status: string) {
   return C.textMuted;
 }
 
+const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+// Format an ISO timestamp in the device-local timezone. Mirrors the Angular
+// web app, which renders booking times in the viewer's local zone rather than
+// the UTC-suffixed `slot_label` the BFF bakes in.
+function formatSlotLocal(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const wd = WEEKDAYS_SHORT[d.getDay()];
+  const mo = MONTHS_SHORT[d.getMonth()];
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  let tz = '';
+  try {
+    const part = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+      .formatToParts(d)
+      .find((p) => p.type === 'timeZoneName');
+    tz = part?.value ?? '';
+  } catch {
+    /* no tz abbreviation available */
+  }
+  return `${wd} ${mo} ${d.getDate()} · ${time}${tz ? ` ${tz}` : ''}`;
+}
+
 export default function BookingsListScreen() {
   const router = useRouter();
   const [env, setEnv] = useState<BffEnvelope<BookingsData> | null>(null);
@@ -180,7 +207,7 @@ export default function BookingsListScreen() {
                     <Text style={styles.bPlace} numberOfLines={1}>
                       {b.provider.name} · {b.provider.location_label}
                     </Text>
-                    <Text style={styles.bWhen}>{b.slot_label}</Text>
+                    <Text style={styles.bWhen}>{formatSlotLocal(b.slot_at)}</Text>
 
                     {b._links?.cancel ? (
                       <View style={styles.rowActions}>
@@ -226,7 +253,7 @@ export default function BookingsListScreen() {
                         </View>
                       </View>
                       <Text style={styles.bPlace} numberOfLines={1}>{b.provider.name}</Text>
-                      <Text style={styles.bWhen}>{b.slot_label}</Text>
+                      <Text style={styles.bWhen}>{formatSlotLocal(b.slot_at)}</Text>
                     </View>
                   );
                 })}

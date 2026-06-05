@@ -9,9 +9,9 @@ from django.db.models import Avg, Count, Sum
 
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
-    BeautyAdminNote, BeautyBooking, BeautyProvider,
-    BeautyProviderAvailability, BeautyReview, BeautyService, BeautySession,
-    BusinessProvider,
+    BeautyAdminNote, BeautyAdminTag, BeautyAdminTagAssignment, BeautyBooking,
+    BeautyProvider, BeautyProviderAvailability, BeautyReview, BeautyService,
+    BeautySession, BusinessProvider,
 )
 from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
@@ -62,12 +62,14 @@ def _weekly_hours_for(provider_id: int):
     }
     for i, label in enumerate(_DOW_LABELS):
         a = avail_by_dow.get(i)
-        if a is None or not a.is_open:
+        if a is None or a.is_closed:
             rows.append({'day': label, 'hours': 'Closed', 'closed': True})
+        elif a.is_24h:
+            rows.append({'day': label, 'hours': 'Open 24h', 'closed': False})
         else:
             rows.append({
                 'day': label,
-                'hours': f'{a.open_time.strftime("%I:%M %p").lstrip("0")} – {a.close_time.strftime("%I:%M %p").lstrip("0")}',
+                'hours': f'{a.start_time.strftime("%I:%M %p").lstrip("0")} – {a.end_time.strftime("%I:%M %p").lstrip("0")}',
                 'closed': False,
             })
     return rows
@@ -176,6 +178,20 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'is_suspended': bp.is_suspended,
             'verified': bool(profile and bp.business_name),
             'has_active_booking': has_active_booking,
+            'attached_tags': [
+                {'id': a.tag.slug, 'label': a.tag.label, 'color': a.tag.color, 'tone': a.tag.tone}
+                for a in BeautyAdminTagAssignment.objects
+                    .filter(user_type='business', user_id=bp.id)
+                    .select_related('tag')
+                    .order_by('assigned_at')
+            ],
+            'suggested_tags': [
+                {'id': t.slug, 'label': t.label, 'color': t.color, 'tone': t.tone}
+                for t in BeautyAdminTag.objects.exclude(
+                    assignments__user_type='business',
+                    assignments__user_id=bp.id,
+                ).order_by('label')[:4]
+            ],
             'performance': performance,
             'services': services,
             'payouts': [],
@@ -196,6 +212,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'risk_label': risk_label,
             'tab_badges': h.admin_tab_badges(),
             'notif_count': h.admin_notif_count(),
+            'session_remaining': h.session_remaining_label(cookie, device_id),
+            'admin_initials': h.admin_initials(user),
         },
         'meta': {'title': f'Beauty — {bp.business_name or bp.email}'},
         '_links': {
@@ -225,6 +243,18 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                     .replace(':type', 'business').replace(':id', str(bp.id)),
                 params={'type': 'business', 'id': bp.id},
                 prompt='Suspend / Reinstate',
+            ),
+            'tag_assign_template': h.link(
+                rel='tag_assign', href='/api/beauty/admin/portal/tags/:slug/assign/',
+                method='POST', screen='beauty_admin_portal_provider_detail',
+                route=h.SCREEN_ROUTES['beauty_admin_portal_provider_detail'].replace(':id', str(bp.id)),
+                prompt='Tag',
+            ),
+            'tag_unassign_template': h.link(
+                rel='tag_unassign', href='/api/beauty/admin/portal/tags/:slug/assign/?type=business&id=' + str(bp.id),
+                method='DELETE', screen='beauty_admin_portal_provider_detail',
+                route=h.SCREEN_ROUTES['beauty_admin_portal_provider_detail'].replace(':id', str(bp.id)),
+                prompt='Remove tag',
             ),
         },
     }

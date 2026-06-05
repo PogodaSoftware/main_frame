@@ -1,24 +1,13 @@
 import React from 'react';
-import { View } from 'react-native';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
-
-import { admTokens } from '@/components/admin/tokens';
 
 /**
- * Admin route group root. The /portal subtree has its own slate-themed
- * SafeAreaView in `portal/_layout.tsx`; siblings like /flags (which uses a
- * lighter chrome) inherit the same top inset here so the status bar doesn't
- * overlap content under edge-to-edge.
+ * Admin route group root. Intentionally a plain pass-through Stack — the
+ * only subtree is `/portal`, whose own `portal/_layout.tsx` supplies the
+ * slate-themed `SafeAreaShell` (top inset + status-bar clamp). Wrapping a
+ * second shell here double-padded the top inset, leaving a dead band above
+ * the header.
  */
 export default function AdminLayout() {
-  return (
-    <View style={{ flex: 1, backgroundColor: admTokens.slate }}>
-      <StatusBar style="light" />
-      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: admTokens.slate }}>
-        <Stack screenOptions={{ headerShown: false }} />
-      </SafeAreaView>
-    </View>
-  );
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

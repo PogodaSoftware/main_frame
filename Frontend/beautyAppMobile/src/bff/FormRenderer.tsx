@@ -29,6 +29,7 @@ import {
 } from 'tamagui';
 
 import { beautyTokens } from '../../tamagui.config';
+import { GoogleGlyph } from '@/components/ui/GoogleGlyph';
 import { getDeviceId } from '@/services/deviceId';
 import type { BffForm } from '@/bff/types';
 import { dispatchLink, navigateToScreen } from '@/bff/linkAction';
@@ -248,16 +249,24 @@ export function FormRenderer({ form, onSuccess }: FormRendererProps) {
                             }
                           >
                             <SizableText
-                              fontSize={11}
-                              fontWeight="700"
-                              color={beautyTokens.text}
-                              letterSpacing={1}
+                              fontSize={13}
+                              fontWeight="600"
+                              color={beautyTokens.accentBlueText}
                             >
-                              {showSecret ? 'HIDE' : 'SHOW'}
+                              {showSecret ? 'Hide' : 'Show'}
                             </SizableText>
                           </Pressable>
                         ) : null}
                       </XStack>
+                      {isPassword &&
+                      field.min_length &&
+                      !showForgotLink &&
+                      !fieldState.error ? (
+                        <SizableText color={beautyTokens.textMuted} fontSize={12}>
+                          Use {field.min_length}+ characters with a mix of
+                          letters & numbers.
+                        </SizableText>
+                      ) : null}
                       {fieldState.error ? (
                         <SizableText color={beautyTokens.danger} fontSize={12}>
                           {fieldState.error.message}
@@ -391,19 +400,7 @@ export function FormRenderer({ form, onSuccess }: FormRendererProps) {
               justify="center"
               gap={10}
             >
-              <XStack
-                width={18}
-                height={18}
-                items="center"
-                justify="center"
-                bg={beautyTokens.white}
-              >
-                {/* Multi-color G glyph — colored letters fake the real
-                    Google G without shipping the SVG. */}
-                <SizableText fontSize={14} fontWeight="700" color="#4285F4">
-                  G
-                </SizableText>
-              </XStack>
+              <GoogleGlyph size={18} />
               <SizableText
                 color={beautyTokens.text}
                 fontWeight="600"

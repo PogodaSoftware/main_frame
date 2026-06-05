@@ -74,6 +74,20 @@ class CrmSuspendView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Self-suspend guard. Suspending an account deactivates its sessions,
+        # so an admin suspending their own principal would lock themselves
+        # out instantly. Refuse it. (Reinstate is unreachable while suspended,
+        # so we only need to block the suspend direction.)
+        if (
+            suspended
+            and kind == (user.get('user_type') or '').strip().lower()
+            and target_id == user.get('user_id')
+        ):
+            return Response(
+                {'detail': 'You cannot suspend your own account.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         now = datetime.now(timezone.utc) if suspended else None
         if kind == 'customer':
             updated = BeautyUser.objects.filter(id=target_id).update(

@@ -88,6 +88,79 @@ def _fmt_int(n: int) -> str:
     return f'{n:,}'
 
 
+def _fmt_money(cents: int) -> str:
+    """Render cents as compact dollars: '$184k', '$42.1k', '$985'."""
+    dollars = (cents or 0) / 100.0
+    if dollars >= 1_000_000:
+        return f'${dollars / 1_000_000:.1f}m'.replace('.0m', 'm')
+    if dollars >= 10_000:
+        return f'${dollars / 1000:.0f}k'
+    if dollars >= 1_000:
+        return f'${dollars / 1000:.1f}k'
+    return f'${dollars:,.0f}'
+
+
+def _pct_delta(curr: int, prev: int) -> str:
+    """Signed percent string. Returns 'new' when the prior bucket is empty."""
+    if not prev:
+        if not curr:
+            return '0%'
+        return 'new'
+    pct = ((curr - prev) / prev) * 100.0
+    sign = '+' if pct >= 0 else ''
+    return f'{sign}{pct:.1f}%'
+
+
+def _bookings_series(now, days: int = 7) -> list[int]:
+    """Per-day booking counts for the last ``days`` days, oldest → newest."""
+    start = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    counts = [0] * days
+    qs = BeautyBooking.objects.filter(
+        created_at__gte=start,
+    ).exclude(status__in=BeautyBooking.CANCELLED_STATUSES).values_list('created_at', flat=True)
+    for created in qs:
+        idx = (created.date() - start.date()).days
+        if 0 <= idx < days:
+            counts[idx] += 1
+    return counts
+
+
+def _gmv_series(now, days: int = 7) -> list[int]:
+    """Per-day GMV cents (snapshot-aware) for last ``days``, oldest → newest."""
+    start = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    cents = [0] * days
+    qs = BeautyBooking.objects.filter(
+        created_at__gte=start,
+    ).exclude(status__in=BeautyBooking.CANCELLED_STATUSES).values_list(
+        'created_at', 'service_price_cents_at_booking', 'service__price_cents',
+    )
+    for created, snap_cents, live_cents in qs:
+        idx = (created.date() - start.date()).days
+        if 0 <= idx < days:
+            cents[idx] += int(snap_cents if snap_cents is not None else (live_cents or 0))
+    return cents
+
+
+def _signups_weekly(now, weeks: int = 12) -> list[int]:
+    """Per-week customer signup counts for last ``weeks`` weeks, oldest → newest."""
+    week_start = (now - timedelta(days=7 * (weeks - 1))).replace(hour=0, minute=0, second=0, microsecond=0)
+    week_start = week_start - timedelta(days=week_start.weekday())
+    counts = [0] * weeks
+    qs = BeautyUser.objects.filter(created_at__gte=week_start).values_list('created_at', flat=True)
+    for created in qs:
+        delta_weeks = ((created.date() - week_start.date()).days) // 7
+        if 0 <= delta_weeks < weeks:
+            counts[delta_weeks] += 1
+    return counts
+
+
+def _flagged_count() -> int:
+    """Accounts needing manual review: business-cancelled bookings as proxy."""
+    return BeautyBooking.objects.filter(
+        status=BeautyBooking.STATUS_CANCELLED_BY_BUSINESS,
+    ).count()
+
+
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
@@ -101,18 +174,66 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         c = _counts()
     except Exception:
         c = {
-            'customers_total': 12840, 'providers_total': 486,
-            'customers_7d': 182, 'providers_7d': 9, 'bookings_mo': 3402,
+            'customers_total': 0, 'providers_total': 0,
+            'customers_7d': 0, 'providers_7d': 0, 'bookings_mo': 0,
         }
 
     now = datetime.now(timezone.utc)
     first_name = (user.get('email') or 'admin').split('@', 1)[0].split('.', 1)[0].title()
 
+    # ── Real series + month-over-month deltas, all from DB ──
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    prev_month_end = month_start - timedelta(seconds=1)
+    prev_month_start = prev_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    try:
+        bookings_prev_mo = BeautyBooking.objects.filter(
+            created_at__gte=prev_month_start, created_at__lt=month_start,
+        ).count()
+        gmv_mo_cents = sum(
+            int(snap if snap is not None else (live or 0))
+            for snap, live in BeautyBooking.objects.filter(
+                created_at__gte=month_start,
+            ).exclude(status__in=BeautyBooking.CANCELLED_STATUSES).values_list(
+                'service_price_cents_at_booking', 'service__price_cents',
+            )
+        )
+        gmv_prev_mo_cents = sum(
+            int(snap if snap is not None else (live or 0))
+            for snap, live in BeautyBooking.objects.filter(
+                created_at__gte=prev_month_start, created_at__lt=month_start,
+            ).exclude(status__in=BeautyBooking.CANCELLED_STATUSES).values_list(
+                'service_price_cents_at_booking', 'service__price_cents',
+            )
+        )
+        bookings_7d_series = _bookings_series(now, 7)
+        bookings_prev7_series = _bookings_series(now - timedelta(days=7), 7)
+        gmv_7d_series = _gmv_series(now, 7)
+        gmv_prev7_series = _gmv_series(now - timedelta(days=7), 7)
+        signups_12w_series = _signups_weekly(now, 12)
+        flagged = _flagged_count()
+    except Exception:
+        bookings_prev_mo = 0
+        gmv_mo_cents = 0
+        gmv_prev_mo_cents = 0
+        bookings_7d_series = [0] * 7
+        bookings_prev7_series = [0] * 7
+        gmv_7d_series = [0] * 7
+        gmv_prev7_series = [0] * 7
+        signups_12w_series = [0] * 12
+        flagged = 0
+
+    bookings_7d_total = sum(bookings_7d_series)
+    bookings_prev7_total = sum(bookings_prev7_series)
+    gmv_7d_total_cents = sum(gmv_7d_series)
+    gmv_prev7_total_cents = sum(gmv_prev7_series)
+    signups_12w_total = sum(signups_12w_series)
+
     kpis = [
         {'label': 'Customers',     'value': _fmt_int(c['customers_total']), 'delta': f"+{c['customers_7d']} · 7d", 'tone': 'up'},
         {'label': 'Providers',     'value': _fmt_int(c['providers_total']), 'delta': f"+{c['providers_7d']} · 7d", 'tone': 'up'},
-        {'label': 'Bookings (mo)', 'value': _fmt_int(c['bookings_mo']),     'delta': '+12.4%', 'tone': 'up'},
-        {'label': 'GMV (mo)',      'value': '$184k',                         'delta': '+8.7%',  'tone': 'up'},
+        {'label': 'Bookings (mo)', 'value': _fmt_int(c['bookings_mo']),     'delta': _pct_delta(c['bookings_mo'], bookings_prev_mo), 'tone': 'up' if c['bookings_mo'] >= bookings_prev_mo else 'down'},
+        {'label': 'GMV (mo)',      'value': _fmt_money(gmv_mo_cents),       'delta': _pct_delta(gmv_mo_cents, gmv_prev_mo_cents),     'tone': 'up' if gmv_mo_cents >= gmv_prev_mo_cents else 'down'},
     ]
 
     tickets_sig = h.admin_ticket_signals()
@@ -169,12 +290,25 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'today_label': now.strftime('%a, %b %-d') if hasattr(now, 'strftime') else now.strftime('%a, %b %d'),
             'first_name': first_name,
             'new_signups': c['customers_7d'],
-            'flagged': 3,
+            'flagged': flagged,
             'kpis': kpis,
             'quick_links': quick_links,
             'activity': activity,
             'tab_badges': h.admin_tab_badges(),
             'notif_count': h.admin_notif_count(),
+            'session_remaining': h.session_remaining_label(
+                request.COOKIES.get(SESSION_COOKIE_NAME), device_id,
+            ),
+            'admin_initials': h.admin_initials(user),
+            # Real-data series (replace hardcoded RN client charts).
+            'signups_12w_series': signups_12w_series,
+            'signups_12w_total': signups_12w_total,
+            'bookings_7d_series': bookings_7d_series,
+            'bookings_7d_total': bookings_7d_total,
+            'bookings_7d_delta': _pct_delta(bookings_7d_total, bookings_prev7_total),
+            'gmv_7d_series_cents': gmv_7d_series,
+            'gmv_7d_total': _fmt_money(gmv_7d_total_cents),
+            'gmv_7d_delta': _pct_delta(gmv_7d_total_cents, gmv_prev7_total_cents),
         },
         'meta': {'title': 'Beauty — Admin dashboard'},
         '_links': {

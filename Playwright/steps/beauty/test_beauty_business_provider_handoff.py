@@ -273,7 +273,7 @@ def test_service_create_edit_delete_round_trip(page, signed_in_business):
     timeout_for_testing(page)
     name_input = page.get_by_role('textbox', name='Service name')
     name_input.fill('Glow Plus Facial')
-    page.get_by_role('button', name='Save changes').click()
+    page.get_by_role('button', name='Save').click()
     page.wait_for_url('**/business/services', timeout=10_000)
     timeout_for_testing(page)
 

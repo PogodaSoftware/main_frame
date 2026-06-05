@@ -18,7 +18,10 @@ from decimal import Decimal
 from django.db.models import Sum
 
 from beauty_api.middleware import SESSION_COOKIE_NAME
-from beauty_api.models import BeautyBooking, BeautySession, BeautyUser, BusinessProvider
+from beauty_api.models import (
+    BeautyAdminTag, BeautyAdminTagAssignment, BeautyBooking, BeautySession,
+    BeautyUser, BusinessProvider,
+)
 from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
 
@@ -117,6 +120,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             qs = qs.filter(is_suspended=True)
         elif active_status in ('pending', 'flagged', 'deleted'):
             qs = qs.none()
+        if active_tag:
+            tagged_ids = set(
+                BeautyAdminTagAssignment.objects
+                .filter(tag__slug=active_tag, user_type='customer')
+                .values_list('user_id', flat=True)
+            )
+            qs = qs.filter(id__in=tagged_ids)
         if q:
             qs = qs.filter(email__icontains=q)
         if has_bk:
@@ -159,6 +169,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             qs = qs.filter(is_suspended=True)
         elif active_status in ('pending', 'flagged', 'deleted'):
             qs = qs.none()
+        if active_tag:
+            tagged_ids = set(
+                BeautyAdminTagAssignment.objects
+                .filter(tag__slug=active_tag, user_type='business')
+                .values_list('user_id', flat=True)
+            )
+            qs = qs.filter(id__in=tagged_ids)
         if q:
             qs = qs.filter(Q(email__icontains=q) | Q(business_name__icontains=q))
         if signup_30d:
@@ -216,6 +233,18 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'filtered_total': filtered_total,
             'tab_badges': h.admin_tab_badges(),
             'notif_count': h.admin_notif_count(),
+            'session_remaining': h.session_remaining_label(cookie, device_id),
+            'admin_initials': h.admin_initials(user),
+            'tags': [
+                {
+                    'id': t.slug,
+                    'label': t.label,
+                    'color': t.color,
+                    'tone': t.tone,
+                    'count': 0,
+                }
+                for t in BeautyAdminTag.objects.order_by('label')
+            ],
         },
         'meta': {'title': 'Beauty — Admin CRM'},
         '_links': {

@@ -29,7 +29,8 @@ from . import audit
 from .middleware import SESSION_COOKIE_NAME
 from .models import (
     BeautyAdminInvite, BeautyAdminNote, BeautyAdminPrincipal, BeautyAdminTag,
-    BeautyAdminTicket, BeautyBooking, BeautyChatMessage, BeautyUser, BusinessProvider,
+    BeautyAdminTagAssignment, BeautyAdminTicket, BeautyBooking, BeautyChatMessage,
+    BeautyUser, BusinessProvider,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,6 +87,101 @@ class AdminTagCreateView(APIView):
             {'id': tag.id, 'slug': tag.slug, 'label': tag.label, 'color': tag.color, 'tone': tag.tone},
             status=status.HTTP_201_CREATED,
         )
+
+
+_VALID_TAG_TARGETS = ('customer', 'business')
+
+
+def _resolve_tag_target(target_type: str, target_id: int):
+    """Returns (label_or_None) — verifies the (type,id) row exists."""
+    if target_type == 'customer':
+        u = BeautyUser.objects.filter(id=target_id).only('email').first()
+        return (u.email if u else None)
+    if target_type == 'business':
+        b = BusinessProvider.objects.filter(id=target_id).only('email', 'business_name').first()
+        return ((b.business_name or b.email) if b else None)
+    return None
+
+
+class AdminTagAssignView(APIView):
+    """POST /api/beauty/admin/portal/tags/<slug>/assign/
+    Body: { "type": "customer"|"business", "id": int }
+    """
+
+    def post(self, request, slug: str):
+        user, err = _admin_or_error(request)
+        if err is not None:
+            return err
+
+        tag = BeautyAdminTag.objects.filter(slug=slug).first()
+        if tag is None:
+            return Response({'detail': 'Tag not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        target_type = (request.data.get('type') or '').strip().lower()
+        try:
+            target_id = int(request.data.get('id') or 0)
+        except (TypeError, ValueError):
+            target_id = 0
+        if target_type not in _VALID_TAG_TARGETS or target_id <= 0:
+            return Response({'detail': 'type must be customer|business and id required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        target_label = _resolve_tag_target(target_type, target_id)
+        if target_label is None:
+            return Response({'detail': 'Target account not found.'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+        assignment, created = BeautyAdminTagAssignment.objects.get_or_create(
+            tag=tag, user_type=target_type, user_id=target_id,
+            defaults={'assigned_by_email': user.get('email') or ''},
+        )
+        if created:
+            audit.log_event(
+                request=request, user=user, action='tag.assign',
+                target_type=target_type, target_id=str(target_id), target_label=target_label,
+                meta={'tag': tag.slug, 'tag_label': tag.label},
+            )
+
+        return Response(
+            {
+                'tag': tag.slug,
+                'type': target_type,
+                'id': target_id,
+                'assigned_at': assignment.assigned_at.isoformat(),
+                'newly_created': created,
+            },
+            status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED,
+        )
+
+    def delete(self, request, slug: str):
+        user, err = _admin_or_error(request)
+        if err is not None:
+            return err
+
+        tag = BeautyAdminTag.objects.filter(slug=slug).first()
+        if tag is None:
+            return Response({'detail': 'Tag not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        target_type = (request.query_params.get('type') or request.data.get('type') or '').strip().lower()
+        try:
+            target_id = int(request.query_params.get('id') or request.data.get('id') or 0)
+        except (TypeError, ValueError):
+            target_id = 0
+        if target_type not in _VALID_TAG_TARGETS or target_id <= 0:
+            return Response({'detail': 'type must be customer|business and id required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        deleted, _details = BeautyAdminTagAssignment.objects.filter(
+            tag=tag, user_type=target_type, user_id=target_id,
+        ).delete()
+        if deleted:
+            target_label = _resolve_tag_target(target_type, target_id) or ''
+            audit.log_event(
+                request=request, user=user, action='tag.unassign',
+                target_type=target_type, target_id=str(target_id), target_label=target_label,
+                meta={'tag': tag.slug, 'tag_label': tag.label},
+            )
+        return Response({'tag': tag.slug, 'removed': deleted}, status=status.HTTP_200_OK)
 
 
 def _admin_or_error(request):

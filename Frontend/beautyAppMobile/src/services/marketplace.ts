@@ -1,10 +1,10 @@
 /**
- * Live-data REST endpoints not exposed through the BFF envelope.
- * Screens themselves are BFF-driven; search/favorite/reviews are direct
- * REST so paging and toggles don't go through the resolver. Matches the
- * Angular shell's split (BFF for screens, REST for in-screen data).
+ * Marketplace shared types + pure formatters.
+ * All data + mutations now flow through BFF resolvers / action-links
+ * (search → `beauty_service_search`, reviews → `beauty_service_reviews`,
+ * favorites → `beauty_favorites` + favorite/unfavorite action-links). This
+ * module no longer talks to REST directly.
  */
-import { api } from '@/services/api';
 
 export interface ProviderSummary {
   id: number;
@@ -60,45 +60,6 @@ export interface ReviewsListResponse {
   aggregate: { avg_rating: number | null; count: number };
 }
 
-export async function searchServices(params: {
-  q?: string;
-  location?: string;
-  offset?: number;
-  limit?: number;
-  includeFuture?: boolean;
-}): Promise<SearchResponse> {
-  const resp = await api.get<SearchResponse>('/api/beauty/services/search/', {
-    params: {
-      q: params.q || undefined,
-      location: params.location || undefined,
-      offset: params.offset ?? 0,
-      limit: params.limit ?? 20,
-      includeFuture: params.includeFuture ?? true,
-    },
-  });
-  return resp.data;
-}
-
-export async function getServiceReviews(
-  serviceId: number,
-  offset = 0,
-  limit = 20,
-): Promise<ReviewsListResponse> {
-  const resp = await api.get<ReviewsListResponse>(
-    `/api/beauty/services/${serviceId}/reviews/`,
-    { params: { offset, limit } },
-  );
-  return resp.data;
-}
-
-export async function favoriteService(serviceId: number): Promise<void> {
-  await api.post(`/api/beauty/protected/services/${serviceId}/favorite/`);
-}
-
-export async function unfavoriteService(serviceId: number): Promise<void> {
-  await api.delete(`/api/beauty/protected/services/${serviceId}/favorite/`);
-}
-
 export interface FavoriteRow {
   id: number;
   created_at: string;
@@ -123,26 +84,9 @@ export interface FavoritesListResponse {
   count: number;
 }
 
-export async function listFavorites(): Promise<FavoritesListResponse> {
-  const resp = await api.get<FavoritesListResponse>(
-    '/api/beauty/protected/favorites/',
-  );
-  return resp.data;
-}
-
 export interface SubmitReviewPayload {
   rating: number;
   body: string;
-}
-
-export async function submitServiceReview(
-  serviceId: number,
-  payload: SubmitReviewPayload,
-): Promise<void> {
-  await api.post(
-    `/api/beauty/protected/services/${serviceId}/reviews/`,
-    payload,
-  );
 }
 
 export function formatPrice(cents: number): string {

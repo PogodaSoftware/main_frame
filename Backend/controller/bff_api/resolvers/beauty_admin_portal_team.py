@@ -164,6 +164,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'is_owner': is_owner,
             'tab_badges': h.admin_tab_badges(),
             'notif_count': h.admin_notif_count(),
+            'session_remaining': h.session_remaining_label(cookie, device_id),
+            'admin_initials': h.admin_initials(user),
         },
         'meta': {'title': 'Beauty — Admin team'},
         '_links': {

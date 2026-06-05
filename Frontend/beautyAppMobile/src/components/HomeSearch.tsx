@@ -15,12 +15,14 @@ import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-na
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import {
-  favoriteService,
-  searchServices,
-  unfavoriteService,
-  type SearchServiceItem,
-} from '@/services/marketplace';
+import { type SearchServiceItem } from '@/services/marketplace';
+import { api } from '@/services/api';
+import { resolve } from '@/services/bff';
+import { isRedirect, type BffLink } from '@/bff/types';
+
+interface SearchItem extends SearchServiceItem {
+  _links?: { favorite?: BffLink; unfavorite?: BffLink };
+}
 
 const LOCATION_KEY = 'beauty_customer_city';
 
@@ -67,22 +69,19 @@ const FONT_MONO = 'Menlo';
 export function HomeSearch() {
   const router = useRouter();
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchServiceItem[]>([]);
+  const [results, setResults] = useState<SearchItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [rateLimited, setRateLimited] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [location, setLocation] = useState<string>('');
 
   const hasQuery = useMemo(() => query.trim().length > 0, [query]);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastQueryRef = useRef<string>('');
-  const rateTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     readStoredCity().then(setLocation).catch(() => {});
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      if (rateTimerRef.current) clearTimeout(rateTimerRef.current);
     };
   }, []);
 
@@ -90,23 +89,17 @@ export function HomeSearch() {
     setLoading(true);
     setErrorMessage(null);
     try {
-      const resp = await searchServices({
+      const e = await resolve<{ items: SearchItem[] }>('beauty_service_search', {
         q,
         location: location || undefined,
         offset: 0,
         limit: PAGE_SIZE,
         includeFuture: true,
       });
-      setResults(resp.items || []);
-    } catch (err: any) {
-      const status = err?.response?.status;
-      if (status === 429) {
-        setRateLimited(true);
-        if (rateTimerRef.current) clearTimeout(rateTimerRef.current);
-        rateTimerRef.current = setTimeout(() => setRateLimited(false), 3000);
-      } else {
-        setErrorMessage('Something went wrong, please try again');
-      }
+      if (isRedirect(e)) { setResults([]); return; }
+      if (e.action === 'render') setResults(e.data?.items ?? []);
+    } catch {
+      setErrorMessage('Something went wrong, please try again');
     } finally {
       setLoading(false);
     }
@@ -128,18 +121,21 @@ export function HomeSearch() {
     }, DEBOUNCE_MS);
   };
 
-  const openService = (s: SearchServiceItem) => {
+  const openService = (s: SearchItem) => {
     if (!s?.id) return;
     router.push(`/(customer)/book/${s.id}` as any);
   };
 
-  const toggleFavorite = async (s: SearchServiceItem) => {
+  const toggleFavorite = async (s: SearchItem) => {
     if (!s?.id) return;
     const wasOn = !!s.is_favorited;
+    // HATEOAS favorite/unfavorite action-links from the search resolver item.
+    const href = wasOn ? s._links?.unfavorite?.href : s._links?.favorite?.href;
+    if (!href) return;
     setResults((arr) => arr.map((x) => (x.id === s.id ? { ...x, is_favorited: !wasOn } : x)));
     try {
-      if (wasOn) await unfavoriteService(s.id);
-      else await favoriteService(s.id);
+      if (wasOn) await api.delete(href);
+      else await api.post(href);
     } catch {
       setResults((arr) => arr.map((x) => (x.id === s.id ? { ...x, is_favorited: wasOn } : x)));
     }
@@ -161,22 +157,25 @@ export function HomeSearch() {
           accessibilityLabel="Search services"
           testID="home-search-input"
         />
+        {hasQuery ? (
+          <Pressable
+            onPress={() => onChangeQuery('')}
+            accessibilityRole="button"
+            accessibilityLabel="Clear search"
+            testID="home-search-clear"
+            hitSlop={8}
+          >
+            <Ionicons name="close-circle" size={18} color={C.textMuted} />
+          </Pressable>
+        ) : null}
       </View>
 
       {hasQuery ? (
         <Text style={styles.status} accessibilityLiveRegion="polite" testID="home-search-status">
           {loading
             ? 'Searching…'
-            : rateLimited
-              ? ''
-              : `${results.length} result${results.length === 1 ? '' : 's'} found`}
+            : `${results.length} result${results.length === 1 ? '' : 's'} found`}
         </Text>
-      ) : null}
-
-      {rateLimited ? (
-        <View style={[styles.toast, styles.toastRate]} testID="home-search-rate-toast">
-          <Text style={styles.toastTextRate}>Please slow down</Text>
-        </View>
       ) : null}
 
       {errorMessage ? (
@@ -227,7 +226,7 @@ export function HomeSearch() {
         </View>
       ) : null}
 
-      {hasQuery && !loading && !errorMessage && !results.length && !rateLimited ? (
+      {hasQuery && !loading && !errorMessage && !results.length ? (
         <View style={styles.empty} testID="home-search-empty">
           <Text style={styles.emptyText}>No services match.</Text>
         </View>

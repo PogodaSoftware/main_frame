@@ -2,12 +2,32 @@
  * Admin Portal atoms — RN port of Angular admin-portal/atoms.ts.
  * Status bar, home indicator, brand mark + row, button. Slate-tone variants.
  */
-import React from 'react';
-import { Pressable, Text, View, StyleSheet } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, Text, View, StyleSheet } from 'react-native';
+import { useRouter } from 'expo-router';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { resolve } from '@/services/bff';
+import { isRedirect } from '@/bff/types';
 import { admTokens } from './tokens';
+
+interface AdmNotif {
+  kind: string;
+  title: string;
+  sub: string;
+  time: string;
+  unread?: boolean;
+  screen?: string;
+}
+
+// BFF screen name → RN admin route for notification tap-through.
+const ADM_NOTIF_ROUTE: Record<string, string> = {
+  beauty_admin_portal_crm: '/admin/portal/crm',
+  beauty_admin_portal_tickets: '/admin/portal/tickets',
+  beauty_admin_portal_audit: '/admin/portal/audit',
+  beauty_admin_portal_notifications: '/admin/portal/notifications',
+};
 
 type Tone = 'slate' | 'light';
 
@@ -131,11 +151,37 @@ export function AdmTopHeader({
   onNotifPress?: () => void;
   onAvatarPress?: () => void;
 }) {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState<AdmNotif[]>([]);
+
+  const openPanel = useCallback(async () => {
+    if (onNotifPress) { onNotifPress(); return; } // caller override
+    setOpen(true);
+    setLoading(true);
+    try {
+      const e = await resolve<{ notifications: AdmNotif[] }>('beauty_admin_portal_notifications');
+      if (!isRedirect(e) && e.action === 'render') setItems(e.data?.notifications ?? []);
+    } catch {
+      /* leave empty */
+    } finally {
+      setLoading(false);
+    }
+  }, [onNotifPress]);
+
+  const goto = (screen?: string) => {
+    setOpen(false);
+    const route = screen ? ADM_NOTIF_ROUTE[screen] : undefined;
+    if (route) router.push(route as any);
+  };
+
   return (
     <View style={styles.hdr}>
       <AdmBrandRow />
       <View style={{ flex: 1 }} />
-      <Pressable onPress={onNotifPress} style={styles.iconBtn} accessibilityLabel="Notifications">
+      <Pressable onPress={openPanel} style={styles.iconBtn} accessibilityLabel="Notifications">
         <Svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="#E8ECF1" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
           <Path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
           <Path d="M10 21a2 2 0 0 0 4 0" />
@@ -149,7 +195,126 @@ export function AdmTopHeader({
       <Pressable onPress={onAvatarPress} style={styles.avatar}>
         <Text style={styles.avatarText}>{initials}</Text>
       </Pressable>
+
+      <AdmNotifPanel
+        visible={open}
+        loading={loading}
+        items={items}
+        topInset={insets.top}
+        onClose={() => setOpen(false)}
+        onItem={(it) => goto(it.screen)}
+        onViewAll={() => goto('beauty_admin_portal_notifications')}
+        onMarkAllRead={() => setItems((cur) => cur.map((i) => ({ ...i, unread: false })))}
+      />
     </View>
+  );
+}
+
+export function AdmNotifIcon({ kind }: { kind: string }) {
+  const c = NOTIF_ICON_COLOR[kind] ?? NOTIF_ICON_COLOR.default;
+  return (
+    <View style={[styles.notifIcon, { backgroundColor: c.bg }]}>
+      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={c.fg} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+        {kind === 'flag' ? (
+          <Path d="M4 22V4M4 4h13l-2 4 2 4H4" />
+        ) : kind === 'provider' ? (
+          <>
+            <Circle cx={9} cy={8} r={3.2} />
+            <Path d="M3.5 20a5.5 5.5 0 0 1 11 0M18 8v6M21 11h-6" />
+          </>
+        ) : kind === 'ticket' ? (
+          <>
+            <Rect x={3} y={5} width={18} height={14} rx={2} />
+            <Path d="M3 7l9 6 9-6" />
+          </>
+        ) : (
+          <>
+            <Circle cx={12} cy={12} r={9} />
+            <Path d="M12 7v5l3 2" />
+          </>
+        )}
+      </Svg>
+    </View>
+  );
+}
+
+const NOTIF_ICON_COLOR: Record<string, { bg: string; fg: string }> = {
+  flag:     { bg: '#FCE8E5', fg: '#B23A2D' },
+  provider: { bg: '#E5F3EA', fg: '#2F7A47' },
+  ticket:   { bg: '#EAF1F8', fg: '#3F6F9C' },
+  default:  { bg: '#F1ECE2', fg: '#7A5A1F' },
+};
+
+export function AdmNotifPanel({
+  visible,
+  loading,
+  items,
+  topInset = 0,
+  onClose,
+  onItem,
+  onViewAll,
+  onMarkAllRead,
+}: {
+  visible: boolean;
+  loading?: boolean;
+  items: AdmNotif[];
+  topInset?: number;
+  onClose: () => void;
+  onItem: (it: AdmNotif) => void;
+  onViewAll: () => void;
+  onMarkAllRead: () => void;
+}) {
+  const unread = items.filter((i) => i.unread).length;
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.notifBackdrop} onPress={onClose}>
+        <Pressable
+          style={[styles.notifCard, { marginTop: topInset + 52 }]}
+          onPress={(e) => e.stopPropagation?.()}
+        >
+          <View style={styles.notifHead}>
+            <Text style={styles.notifTitle}>Notifications</Text>
+            {unread ? (
+              <View style={styles.notifNewPill}>
+                <Text style={styles.notifNewPillText}>{unread} new</Text>
+              </View>
+            ) : null}
+            <View style={{ flex: 1 }} />
+            <Pressable onPress={onMarkAllRead} hitSlop={8}>
+              <Text style={styles.notifMarkRead}>Mark all read</Text>
+            </Pressable>
+          </View>
+
+          {loading ? (
+            <View style={styles.notifLoading}><ActivityIndicator color={admTokens.slateMuted} /></View>
+          ) : items.length === 0 ? (
+            <View style={styles.notifLoading}><Text style={styles.notifEmpty}>You&apos;re all caught up.</Text></View>
+          ) : (
+            items.map((it, i) => (
+              <Pressable
+                key={i}
+                onPress={() => onItem(it)}
+                style={[styles.notifRow, i < items.length - 1 && styles.notifRowDivider]}
+              >
+                <AdmNotifIcon kind={it.kind} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={styles.notifRowTitle} numberOfLines={1}>{it.title}</Text>
+                  <Text style={styles.notifRowSub} numberOfLines={1}>{it.sub}</Text>
+                </View>
+                <View style={styles.notifRowRight}>
+                  <Text style={styles.notifRowTime}>{it.time}</Text>
+                  {it.unread ? <View style={styles.notifDot} /> : null}
+                </View>
+              </Pressable>
+            ))
+          )}
+
+          <Pressable onPress={onViewAll} style={styles.notifFooter}>
+            <Text style={styles.notifFooterText}>View all activity →</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -302,20 +467,29 @@ export function AdmFilterChip({
   count,
   style = 'pill',
   children,
+  icon,
+  caret = false,
   onPress,
 }: {
   active?: boolean;
   count?: number | string | null;
   style?: 'pill' | 'underline';
   children: React.ReactNode;
+  // Leading icon — receives the resolved text color so it flips with state.
+  icon?: (color: string) => React.ReactNode;
+  // Trailing ▾ caret, for chips that open a dropdown in the design.
+  caret?: boolean;
   onPress?: () => void;
 }) {
   if (style === 'underline') {
+    const color = active ? admTokens.text : admTokens.textMuted;
     return (
       <Pressable onPress={onPress} style={styles.underlineChip}>
+        {icon ? icon(color) : null}
         <Text style={[styles.underlineChipText, active && styles.underlineChipTextOn]}>
           {children}
         </Text>
+        {caret ? <Text style={[styles.chipCaret, { color }]}>▾</Text> : null}
         {count !== null && count !== undefined ? (
           <Text style={styles.underlineChipCount}>{count}</Text>
         ) : null}
@@ -323,12 +497,15 @@ export function AdmFilterChip({
       </Pressable>
     );
   }
+  const color = active ? '#fff' : '#0F1115';
   return (
     <Pressable
       onPress={onPress}
       style={[styles.pillChip, active && styles.pillChipOn]}
     >
+      {icon ? icon(color) : null}
       <Text style={[styles.pillChipText, active && { color: '#fff' }]}>{children}</Text>
+      {caret ? <Text style={[styles.chipCaret, { color }]}>▾</Text> : null}
       {count !== null && count !== undefined ? (
         <View style={[styles.pillChipCount, active && { backgroundColor: 'rgba(255,255,255,0.18)' }]}>
           <Text style={[styles.pillChipCountText, active && { color: '#fff' }]}>{count}</Text>
@@ -425,6 +602,33 @@ const styles = StyleSheet.create({
     borderColor: admTokens.slate,
   },
   iconBadgeText: { color: admTokens.white, fontSize: 9, fontWeight: '700', lineHeight: 14 },
+
+  // ── Notifications dropdown ──
+  notifBackdrop: { flex: 1, backgroundColor: 'rgba(15,17,21,0.35)', alignItems: 'flex-end' },
+  notifCard: {
+    width: 344, maxWidth: '94%', marginRight: 10,
+    backgroundColor: '#FFFFFF', borderRadius: 16,
+    paddingTop: 6, paddingBottom: 4,
+    shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 14,
+  },
+  notifHead: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
+  notifTitle: { fontFamily: 'CormorantGaramond_500Medium', fontSize: 20, color: admTokens.text },
+  notifNewPill: { backgroundColor: '#FCE8E5', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 },
+  notifNewPillText: { color: admTokens.red, fontSize: 10, fontWeight: '700' },
+  notifMarkRead: { color: admTokens.red, fontSize: 12, fontWeight: '600' },
+  notifLoading: { paddingVertical: 28, alignItems: 'center' },
+  notifEmpty: { color: admTokens.textMuted, fontSize: 13 },
+  notifRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 },
+  notifRowDivider: { borderBottomWidth: 1, borderBottomColor: admTokens.line },
+  notifIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  notifRowTitle: { fontSize: 14, fontWeight: '600', color: admTokens.text },
+  notifRowSub: { fontSize: 12, color: admTokens.textMuted, marginTop: 2 },
+  notifRowRight: { alignItems: 'flex-end', gap: 6, minWidth: 30 },
+  notifRowTime: { fontSize: 11, color: admTokens.textMuted },
+  notifDot: { width: 7, height: 7, borderRadius: 4, backgroundColor: admTokens.red },
+  notifFooter: { paddingVertical: 14, alignItems: 'center', borderTopWidth: 1, borderTopColor: admTokens.line, marginTop: 2 },
+  notifFooterText: { fontSize: 13, fontWeight: '700', color: admTokens.text },
+
   avatar: {
     width: 30,
     height: 30,
@@ -509,6 +713,7 @@ const styles = StyleSheet.create({
   },
   pillChipOn: { backgroundColor: '#0F1115', borderColor: '#0F1115' },
   pillChipText: { fontSize: 12, fontWeight: '600', color: '#0F1115' },
+  chipCaret: { fontSize: 9, marginLeft: -2 },
   pillChipCount: {
     paddingHorizontal: 5,
     paddingVertical: 1,

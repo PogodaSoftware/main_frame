@@ -134,7 +134,7 @@ export default function RescheduleScreen() {
     const submitLink: BffLink = {
       rel: 'submit', href: form.submit_href,
       method: (form.submit_method as BffLink['method']) || 'POST',
-      screen: null, route: null, prompt: null,
+      screen: null, route: null, params: null, prompt: null,
     };
     const r = await dispatchLink(submitLink, body);
     setIsSubmitting(false);
@@ -147,6 +147,7 @@ export default function RescheduleScreen() {
       rel: 'success', href: null, method: 'NAV' as const,
       screen: form.success_screen || 'beauty_booking_detail',
       route: form.success_route_template ?? null,
+      params: null,
       prompt: null,
     };
     navigateLink(router, target);

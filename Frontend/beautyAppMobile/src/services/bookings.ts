@@ -1,8 +1,8 @@
 /**
- * Booking + chat write endpoints (REST). The screens themselves come
- * from BFF resolvers; only mutations and chat polling live here.
+ * Booking + chat shared types and timezone/format helpers.
+ * All data + mutations now flow through BFF resolvers / action-links;
+ * this module only holds shared types and pure formatters.
  */
-import { api } from '@/services/api';
 
 export interface ChatMessage {
   id: number;
@@ -13,73 +13,12 @@ export interface ChatMessage {
   created_at: string;
 }
 
-export interface ChatThreadResponse {
-  booking_id: number;
-  is_active: boolean;
-  expires_at: string;
-  peer_name: string;
-  service_name: string;
-  slot_at?: string;
-  messages: ChatMessage[];
-}
-
-export async function createBooking(serviceId: number, slotAt: string): Promise<{ id: number }> {
-  const resp = await api.post('/api/beauty/protected/bookings/', {
-    service_id: serviceId,
-    slot_at: slotAt,
-  });
-  return resp.data;
-}
-
-export async function rescheduleBooking(bookingId: number, slotAt: string): Promise<void> {
-  await api.post(`/api/beauty/protected/bookings/${bookingId}/reschedule/`, {
-    slot_at: slotAt,
-  });
-}
-
-export async function cancelBooking(bookingId: number): Promise<void> {
-  await api.post(`/api/beauty/protected/bookings/${bookingId}/cancel/`);
-}
-
-export async function cancelBookingGrace(bookingId: number): Promise<void> {
-  await api.post(`/api/beauty/protected/bookings/${bookingId}/cancel-grace/`);
-}
-
-export async function getChatThread(bookingId: number): Promise<ChatThreadResponse> {
-  const resp = await api.get<ChatThreadResponse>(
-    `/api/beauty/protected/bookings/${bookingId}/chat/`,
-  );
-  return resp.data;
-}
-
-export interface MyBookingsResponse {
-  upcoming?: MyBooking[];
-  past?: MyBooking[];
-  bookings?: MyBooking[];
-  items?: MyBooking[];
-}
-
 export interface MyBooking {
   id: number;
   status: string;
   slot_at?: string;
   service: { id: number; name: string };
   provider?: { id: number; name: string };
-}
-
-export async function listMyBookings(): Promise<MyBookingsResponse> {
-  const resp = await api.get<MyBookingsResponse>(
-    '/api/beauty/protected/bookings/',
-  );
-  return resp.data;
-}
-
-export async function sendChatMessage(bookingId: number, body: string): Promise<ChatMessage> {
-  const resp = await api.post<ChatMessage>(
-    `/api/beauty/protected/bookings/${bookingId}/chat/send/`,
-    { body },
-  );
-  return resp.data;
 }
 
 /**

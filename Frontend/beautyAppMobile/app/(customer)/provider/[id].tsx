@@ -44,7 +44,7 @@ interface ProviderService {
   price_cents: number;
   duration_minutes: number;
   is_favorited: boolean;
-  _links?: { book?: BffLink | null };
+  _links?: { book?: BffLink | null; favorite?: BffLink; unfavorite?: BffLink };
 }
 
 interface ProviderReview {
@@ -58,6 +58,7 @@ interface ProviderReview {
   service_id: number;
   service_name: string;
   customer_initial: string;
+  _links?: { delete?: BffLink };
 }
 
 interface ProviderDetailData {
@@ -66,6 +67,8 @@ interface ProviderDetailData {
   reviews: ProviderReview[];
   can_review: boolean;
   review_eligible_booking_id: number | null;
+  review_eligible_service_name: string | null;
+  review_eligible_visited_at: string | null;
 }
 
 const C = {
@@ -111,8 +114,9 @@ function categoriesLine(services: ProviderService[]): string {
 
 export default function ProviderDetailScreen() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, posted } = useLocalSearchParams<{ id: string; posted?: string }>();
   const providerId = Number(id);
+  const [showPostedBanner, setShowPostedBanner] = useState(!!posted);
 
   const [env, setEnv] = useState<BffEnvelope<ProviderDetailData> | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -149,23 +153,27 @@ export default function ProviderDetailScreen() {
   const data = env?.action === 'render' ? env.data : null;
   const provider = data?.provider;
   const links = (env?._links ?? {}) as Record<string, BffLink | undefined>;
-  const canReview = !!data?.can_review;
 
   const toggleFav = async (s: ProviderService) => {
     const wasOn = !!s.is_favorited;
+    // HATEOAS favorite/unfavorite action-links from the resolver service item.
+    const href = wasOn ? s._links?.unfavorite?.href : s._links?.favorite?.href;
+    if (!href) return;
     setServices((arr) => arr.map((x) => (x.id === s.id ? { ...x, is_favorited: !wasOn } : x)));
     try {
-      if (wasOn) await api.delete(`/api/beauty/protected/services/${s.id}/favorite/`);
-      else await api.post(`/api/beauty/protected/services/${s.id}/favorite/`);
+      if (wasOn) await api.delete(href);
+      else await api.post(href);
     } catch {
       setServices((arr) => arr.map((x) => (x.id === s.id ? { ...x, is_favorited: wasOn } : x)));
     }
   };
 
-  const deleteReview = async (reviewId: number) => {
+  const deleteReview = async (review: ProviderReview) => {
+    const href = review._links?.delete?.href;
+    if (!href) return;
     try {
-      await api.delete(`/api/beauty/protected/reviews/${reviewId}/`);
-      setReviews((arr) => arr.filter((r) => r.id !== reviewId));
+      await api.delete(href);
+      setReviews((arr) => arr.filter((r) => r.id !== review.id));
     } catch {
       // swallow
     }
@@ -191,6 +199,8 @@ export default function ProviderDetailScreen() {
 
   const reviewCount = provider.review_count ?? 0;
   const avgRating = provider.avg_rating == null ? '—' : provider.avg_rating.toFixed(1);
+  // Pin the customer's own review to the top (business-reviewed artboard).
+  const sortedReviews = [...reviews].sort((a, b) => (b.is_owner ? 1 : 0) - (a.is_owner ? 1 : 0));
 
   return (
     <View style={styles.app}>
@@ -208,6 +218,15 @@ export default function ProviderDetailScreen() {
       </View>
 
       <ScrollView style={{ flex: 1 }}>
+        {showPostedBanner ? (
+          <View style={styles.postedBanner} testID="review-posted-banner">
+            <Ionicons name="checkmark-circle" size={18} color={C.success} />
+            <Text style={styles.postedBannerText}>Your review was posted</Text>
+            <Pressable onPress={() => setShowPostedBanner(false)} hitSlop={8} accessibilityLabel="Dismiss">
+              <Ionicons name="close" size={16} color={C.success} />
+            </Pressable>
+          </View>
+        ) : null}
         <View style={styles.hero}>
           <LinearGradient
             colors={['#5C4A3F', '#3D2F25']}
@@ -259,6 +278,30 @@ export default function ProviderDetailScreen() {
 
           {provider.long_description ? (
             <Text style={styles.description}>{provider.long_description}</Text>
+          ) : null}
+
+          {data?.can_review && data?.review_eligible_booking_id ? (
+            <View style={styles.reviewPrompt} testID="review-prompt-card">
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={styles.reviewPromptTitle}>How was your visit?</Text>
+                <Text style={styles.reviewPromptSub}>
+                  {data.review_eligible_visited_at
+                    ? `You visited on ${formatDate(data.review_eligible_visited_at)}`
+                    : 'Share your experience'}
+                  {data.review_eligible_service_name ? ` · ${data.review_eligible_service_name}` : ''}
+                </Text>
+              </View>
+              <Pressable
+                onPress={() =>
+                  router.push(`/(customer)/bookings/${data.review_eligible_booking_id}/review` as any)
+                }
+                style={({ pressed }) => [styles.btnLeaveReview, pressed && styles.btnLeaveReviewPressed]}
+                testID="leave-review-cta"
+              >
+                <Ionicons name="star" size={15} color={C.white} />
+                <Text style={styles.btnLeaveReviewText}>Leave a review</Text>
+              </Pressable>
+            </View>
           ) : null}
 
           <View style={styles.servicesHead}>
@@ -324,24 +367,18 @@ export default function ProviderDetailScreen() {
               <Text style={styles.servicesCount} testID="reviews-count-pill">{reviewCount} total</Text>
             </View>
 
-            {canReview ? (
-              <Pressable
-                onPress={() => links.write_review && navigateLink(router, links.write_review)}
-                style={({ pressed }) => [styles.btnLeaveReview, pressed && styles.btnBookPressed]}
-                testID="leave-review-btn"
-              >
-                <Text style={styles.btnLeaveReviewText}>Leave a review</Text>
-              </Pressable>
-            ) : null}
-
             {reviews.length === 0 ? (
               <View style={styles.reviewsEmpty} testID="reviews-empty">
-                <Text style={styles.reviewsEmptyText}>No reviews yet. Be the first to leave one.</Text>
+                <Text style={styles.reviewsEmptyText}>No reviews yet — review after your visit.</Text>
               </View>
             ) : (
               <View style={{ gap: 10, marginTop: 10 }}>
-                {reviews.map((r) => (
-                  <View key={r.id} style={styles.reviewCard} testID="review-card">
+                {sortedReviews.map((r) => (
+                  <View
+                    key={r.id}
+                    style={[styles.reviewCard, r.is_owner && styles.reviewCardOwner]}
+                    testID="review-card"
+                  >
                     <View style={styles.reviewHead}>
                       <View style={styles.reviewAvatar}>
                         <Text style={styles.reviewAvatarText}>{r.customer_initial}</Text>
@@ -356,6 +393,11 @@ export default function ProviderDetailScreen() {
                           />
                         ))}
                       </View>
+                      {r.is_owner ? (
+                        <View style={styles.ownerBadge} testID="review-owner-badge">
+                          <Text style={styles.ownerBadgeText}>Your review</Text>
+                        </View>
+                      ) : null}
                       <Text style={styles.reviewService}>{r.service_name}</Text>
                       <Text style={styles.reviewWhen}>{formatDate(r.created_at)}</Text>
                     </View>
@@ -372,7 +414,7 @@ export default function ProviderDetailScreen() {
                       <View style={styles.reviewActions}>
                         <Pressable
                           style={styles.reviewActionDelete}
-                          onPress={() => deleteReview(r.id)}
+                          onPress={() => deleteReview(r)}
                           testID="review-delete-btn"
                         >
                           <Text style={styles.reviewActionDeleteText}>Delete my review</Text>
@@ -481,14 +523,24 @@ const styles = StyleSheet.create({
   btnBookText: { color: '#fff', fontSize: 12, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
 
   reviewsSection: { marginTop: 18, marginBottom: 24 },
-  btnLeaveReview: {
-    alignSelf: 'flex-start',
-    height: 38, paddingHorizontal: 14, borderRadius: 10,
-    backgroundColor: C.ink, borderWidth: 1, borderColor: C.ink,
-    alignItems: 'center', justifyContent: 'center', marginTop: 8, marginBottom: 12,
-    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+
+  reviewPrompt: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: C.white, borderWidth: 1, borderColor: C.line,
+    borderRadius: 14, padding: 14, marginBottom: 18,
   },
-  btnLeaveReviewText: { color: '#fff', fontSize: 12, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
+  reviewPromptTitle: { fontFamily: FONT_DISPLAY, fontSize: 18, color: C.text, letterSpacing: 0.2 },
+  reviewPromptSub: { fontFamily: FONT_BODY, fontSize: 12, color: C.textMuted, marginTop: 2 },
+
+  btnLeaveReview: {
+    height: 44, paddingHorizontal: 16, borderRadius: 12,
+    backgroundColor: C.ink, borderWidth: 1, borderColor: C.ink,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
+    shadowColor: '#000', shadowOpacity: 0.18, shadowRadius: 6, shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  btnLeaveReviewPressed: { backgroundColor: '#1F1F22', borderColor: '#1F1F22' },
+  btnLeaveReviewText: { color: C.white, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.3 },
 
   reviewsEmpty: {
     marginTop: 10, padding: 16,
@@ -497,9 +549,26 @@ const styles = StyleSheet.create({
   },
   reviewsEmptyText: { color: C.textMuted, fontSize: 13, fontFamily: FONT_BODY, textAlign: 'center' },
 
+  postedBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    marginHorizontal: 16, marginTop: 12,
+    paddingHorizontal: 14, paddingVertical: 11, borderRadius: 12,
+    backgroundColor: 'rgba(47,122,71,0.12)', borderWidth: 1, borderColor: 'rgba(47,122,71,0.35)',
+  },
+  postedBannerText: { flex: 1, color: C.success, fontSize: 13, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
+
   reviewCard: {
     backgroundColor: C.white, borderWidth: 1, borderColor: C.line, borderRadius: 14,
     padding: 12, paddingHorizontal: 14,
+  },
+  reviewCardOwner: { borderColor: C.accentBlueDeep, backgroundColor: 'rgba(125,168,207,0.06)' },
+  ownerBadge: {
+    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999,
+    backgroundColor: C.accentBlue,
+  },
+  ownerBadgeText: {
+    fontSize: 9, fontFamily: FONT_BODY_SEMI, color: C.accentBlueText,
+    letterSpacing: 0.8, textTransform: 'uppercase',
   },
   reviewHead: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 },
   reviewAvatar: {

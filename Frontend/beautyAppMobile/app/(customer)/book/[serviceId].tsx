@@ -296,6 +296,7 @@ export default function BookScreen() {
       screen: null,
       route: null,
       prompt: null,
+      params: null,
     };
     const result = await dispatchLink(submitLink, body);
     setIsSubmitting(false);
@@ -572,7 +573,15 @@ const styles = StyleSheet.create({
   detailSection: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 12 },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12, marginBottom: 4 },
   title: { fontFamily: FONT_DISPLAY, fontSize: 28, color: C.text, letterSpacing: 0.2, lineHeight: 32, flex: 1 },
-  price: { fontFamily: FONT_DISPLAY, fontSize: 22, color: C.text, flexShrink: 0 },
+  // Money in Inter semibold w/ tabular lining figures — Cormorant's old-style
+  // numerals made "$135" hard to read as a price. Serif stays on the title.
+  price: {
+    fontFamily: FONT_BODY_SEMI,
+    fontSize: 19,
+    color: C.text,
+    flexShrink: 0,
+    fontVariant: ['tabular-nums'],
+  },
   meta: { fontSize: 12, color: C.textMuted, marginBottom: 18, fontFamily: FONT_BODY },
 
   sectionLabel: {

@@ -206,6 +206,19 @@ def is_beauty_admin(user: dict | None) -> bool:
     return True
 
 
+def admin_flagged_count() -> int:
+    """Accounts needing CRM review — business-cancelled bookings (refunds
+    owed / accounts to follow up). Same signal the dashboard surfaces as
+    'N flagged accounts need review'."""
+    try:
+        from beauty_api.models import BeautyBooking
+        return BeautyBooking.objects.filter(
+            status=BeautyBooking.STATUS_CANCELLED_BY_BUSINESS,
+        ).count()
+    except Exception:
+        return 0
+
+
 def admin_tab_badges() -> dict:
     """
     Real counts for the admin portal bottom tab bar.
@@ -222,9 +235,12 @@ def admin_tab_badges() -> dict:
         ).count()
     except Exception:
         open_tickets = None
+    # CRM badge = accounts needing review (flagged). None when zero so the
+    # badge hides rather than rendering "0".
+    flagged = admin_flagged_count()
     return {
         'home':     None,
-        'crm':      None,  # No real "needs CRM attention" signal yet.
+        'crm':      flagged or None,
         'bookings': None,
         'tickets':  open_tickets or None,
         'team':     None,
@@ -233,11 +249,11 @@ def admin_tab_badges() -> dict:
 
 def admin_notif_count() -> int | None:
     """
-    Header bell badge — count of urgent admin attention items. Today this
-    is just SLA-breached open tickets. Returns None when there are zero so
-    the badge is hidden entirely instead of rendering a literal "0".
+    Header bell badge — count of admin attention items across the portal:
+    SLA-breached open tickets + flagged accounts needing review. Returns
+    None when there are zero so the badge hides instead of showing "0".
     """
-    n = admin_ticket_signals().get('sla_breach') or 0
+    n = (admin_ticket_signals().get('sla_breach') or 0) + admin_flagged_count()
     return n if n else None
 
 
@@ -270,6 +286,54 @@ def _touch_principal_last_active(user_type: str, user_id: int) -> None:
         )
     except Exception:
         logger.debug('Failed to touch admin last_active_at', exc_info=True)
+
+
+def session_remaining_label(cookie_value: str | None, device_id: str | None) -> str:
+    """Return ``MM:SS`` (or ``HH:MM:SS`` for >1h) of remaining session lifetime.
+
+    Sourced from ``BeautySession.expires_at`` for the active token. Empty
+    string when no active session is found.
+    """
+    if not cookie_value or not device_id:
+        return ''
+    try:
+        import hashlib
+        from datetime import datetime, timezone
+        from beauty_api.models import BeautySession
+        token_hash = hashlib.sha256(cookie_value.encode()).hexdigest()
+        sess = BeautySession.objects.filter(
+            token_hash=token_hash,
+            device_id=device_id,
+            is_active=True,
+        ).order_by('-expires_at').first()
+        if not sess:
+            return ''
+        secs = int((sess.expires_at - datetime.now(timezone.utc)).total_seconds())
+        if secs <= 0:
+            return '00:00'
+        h, rem = divmod(secs, 3600)
+        m, s = divmod(rem, 60)
+        if h:
+            return f'{h:02d}:{m:02d}:{s:02d}'
+        return f'{m:02d}:{s:02d}'
+    except Exception:
+        return ''
+
+
+def admin_initials(user: dict | None) -> str:
+    """Two-letter initials from a user dict, falling back to ``AD``."""
+    if not user:
+        return 'AD'
+    email = (user.get('email') or '').strip()
+    if not email:
+        return 'AD'
+    local = email.split('@', 1)[0]
+    parts = [p for p in local.replace('.', ' ').replace('_', ' ').replace('-', ' ').split() if p]
+    if not parts:
+        return local[:2].upper() or 'AD'
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[1][0]).upper()
 
 
 def is_business_login_enabled() -> bool:
@@ -348,6 +412,7 @@ SCREEN_ROUTES = {
     'beauty_admin_portal_customer_detail': '/pogoda/beauty/admin/portal/crm/customer/:id',
     'beauty_admin_portal_provider_detail': '/pogoda/beauty/admin/portal/crm/provider/:id',
     'beauty_admin_portal_bookings':    '/pogoda/beauty/admin/portal/bookings',
+    'beauty_admin_portal_booking_detail': '/pogoda/beauty/admin/portal/bookings/:id',
     'beauty_admin_portal_tickets':     '/pogoda/beauty/admin/portal/tickets',
     'beauty_admin_portal_team':        '/pogoda/beauty/admin/portal/team',
     'beauty_admin_portal_audit':       '/pogoda/beauty/admin/portal/audit',

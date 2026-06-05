@@ -12,7 +12,7 @@ Auth required — redirects unauthenticated visitors to `beauty_login`.
 
 from beauty_api.availability_service import compute_slots
 from beauty_api.middleware import SESSION_COOKIE_NAME
-from beauty_api.models import BeautyService, BeautySession
+from beauty_api.models import BeautyFavorite, BeautyService
 from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
 from ..services.beauty_timezone_service import provider_timezone as _provider_timezone
@@ -37,6 +37,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     except BeautyService.DoesNotExist:
         return h.redirect_envelope('beauty_home', 'service_not_found')
 
+    is_favorited = BeautyFavorite.objects.filter(
+        customer_id=user.get('user_id'), service_id=svc.id,
+    ).exists()
+    fav_href = f'/api/beauty/protected/services/{svc.id}/favorite/'
+
     return {
         'action': 'render',
         'screen': 'beauty_book',
@@ -48,6 +53,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 'price_cents': svc.price_cents,
                 'duration_minutes': svc.duration_minutes,
                 'category': svc.category,
+                'is_favorited': is_favorited,
             },
             'provider': {
                 'id': svc.provider.id,
@@ -89,5 +95,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'home': h.screen_link('home', 'beauty_home', prompt='Home'),
             'chats': h.screen_link('chats', 'beauty_chats', prompt='Chat'),
             'profile': h.screen_link('profile', 'beauty_profile', prompt='Profile'),
+            # POST favorite / DELETE unfavorite — same href.
+            'favorite': h.link(rel='favorite', href=fav_href, method='POST', prompt='Save'),
+            'unfavorite': h.link(rel='unfavorite', href=fav_href, method='DELETE', prompt='Unsave'),
         },
     }

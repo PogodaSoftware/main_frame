@@ -8,7 +8,10 @@ from decimal import Decimal
 from django.db.models import Count, Sum
 
 from beauty_api.middleware import SESSION_COOKIE_NAME
-from beauty_api.models import BeautyAdminNote, BeautyBooking, BeautySession, BeautyUser
+from beauty_api.models import (
+    BeautyAdminAuditEvent, BeautyAdminNote, BeautyAdminTag, BeautyAdminTagAssignment,
+    BeautyAdminTicket, BeautyBooking, BeautySession, BeautyUser,
+)
 from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
 
@@ -116,18 +119,55 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'status': _status_to_chip(b.status),
         })
 
-    # Timeline (last 4 events): recent bookings + signup
+    # Timeline: real BeautyAdminAuditEvent rows scoped to this customer, plus
+    # bookings + the original signup record for context.
+    # (color, verb, kind) — `kind` drives the per-event icon in the RN client.
+    _AUDIT_STYLE = {
+        'account.suspend':    ('#C0392B', 'suspended',                'account'),
+        'account.reinstate':  ('#2F7A47', 'reinstated',               'account'),
+        'account.export':     ('#0F1115', 'exported account data for', 'export'),
+        'note.create':        ('#7DA8CF', 'added note to',            'note'),
+        'message.send':       ('#7DA8CF', 'messaged',                 'message'),
+        'tag.assign':         ('#A06B2C', 'tagged',                   'tag'),
+        'tag.unassign':       ('#6B6F77', 'removed tag from',         'tag'),
+    }
     timeline = []
+    audit_events = (
+        BeautyAdminAuditEvent.objects
+        .filter(target_type='customer', target_id=str(target.id))
+        .order_by('-created_at')[:10]
+    )
+    for ev in audit_events:
+        color, verb, kind = _AUDIT_STYLE.get(ev.action, ('#6B6F77', ev.action, 'event'))
+        actor = ev.actor_email or 'Admin'
+        title = f'<b>{actor}</b> {verb} <b>{ev.target_label or target.email}</b>'
+        meta_bits = []
+        if ev.actor_role:
+            meta_bits.append(f'ACL: {ev.actor_role}')
+        if isinstance(ev.meta, dict):
+            for k, v in ev.meta.items():
+                if v in (None, '', [], {}):
+                    continue
+                meta_bits.append(f'{k}: {v}')
+        timeline.append({
+            'when': _humanize_relative(ev.created_at),
+            'color': color,
+            'kind': kind,
+            'title': title,
+            'meta': ' · '.join(meta_bits) or ev.action,
+        })
     for b in bks[:3]:
         timeline.append({
             'when': _humanize_relative(b.created_at),
             'color': '#2F7A47',
+            'kind': 'booking',
             'title': f'Booked <b>{b.service_name_at_booking or (b.service.name if b.service else "service")}</b>',
             'meta': f'Booking #{b.id}',
         })
     timeline.append({
         'when': _humanize_relative(target.created_at),
         'color': '#0F1115',
+        'kind': 'signup',
         'title': f'Created account · {target.email}',
         'meta': 'No 3DS challenge',
     })
@@ -148,6 +188,30 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         {'value': str(chargebacks),                    'label': 'Chargebacks'},
     ]
 
+    # Support tickets — real rows raised by this customer. Open = anything not
+    # yet resolved; historical = resolved. The list deep-links to the tickets
+    # screen via the `tickets` rel below (HATEOAS-navigable).
+    cust_tickets = list(
+        BeautyAdminTicket.objects
+        .filter(from_principal_type=BeautyAdminTicket.FROM_CUSTOMER, from_principal_id=target.id)
+        .order_by('-created_at')[:25]
+    )
+    open_count = sum(1 for t in cust_tickets if t.status != BeautyAdminTicket.STATUS_RESOLVED)
+    support_tickets = {
+        'open_count': open_count,
+        'total': len(cust_tickets),
+        'rows': [
+            {
+                'id': f'#{t.id}',
+                'subject': t.subject,
+                'category': t.get_category_display(),
+                'status': 'Resolved' if t.status == BeautyAdminTicket.STATUS_RESOLVED else 'Open',
+                'when': _humanize_relative(t.created_at),
+            }
+            for t in cust_tickets[:6]
+        ],
+    }
+
     return {
         'action': 'render',
         'screen': 'beauty_admin_portal_customer_detail',
@@ -160,15 +224,24 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'last_seen_label': _humanize_relative(last_session.created_at) if last_session else '—',
             'is_suspended': target.is_suspended,
             'status_tags': [],
-            'attached_tags': [],
+            'attached_tags': [
+                {'id': a.tag.slug, 'label': a.tag.label, 'color': a.tag.color, 'tone': a.tag.tone}
+                for a in BeautyAdminTagAssignment.objects
+                    .filter(user_type='customer', user_id=target.id)
+                    .select_related('tag')
+                    .order_by('assigned_at')
+            ],
             'suggested_tags': [
-                {'id': 'win-back', 'label': 'Win-back',   'color': '#8A6A1F', 'tone': '#F1E8DA'},
-                {'id': 'beta',     'label': 'Beta program','color': '#1F6E7A','tone': '#DCEEF1'},
-                {'id': 'press',    'label': 'Press / PR', 'color': '#0F1115', 'tone': '#E9E9EB'},
+                {'id': t.slug, 'label': t.label, 'color': t.color, 'tone': t.tone}
+                for t in BeautyAdminTag.objects.exclude(
+                    assignments__user_type='customer',
+                    assignments__user_id=target.id,
+                ).order_by('label')[:4]
             ],
             'lifetime_stats': lifetime_stats,
             'bookings': bk_rows,
             'total_bookings': total_bookings,
+            'support_tickets': support_tickets,
             'timeline': timeline,
             'payment_methods': [],
             'internal_notes': [
@@ -185,12 +258,16 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'risk_label': risk_label,
             'tab_badges': h.admin_tab_badges(),
             'notif_count': h.admin_notif_count(),
+            'session_remaining': h.session_remaining_label(cookie, device_id),
+            'admin_initials': h.admin_initials(user),
         },
         'meta': {'title': f'Beauty — {display_name}'},
         '_links': {
             'self': h.self_link('beauty_admin_portal_customer_detail', params={'id': target.id}),
             'back': h.screen_link('back', 'beauty_admin_portal_crm', prompt='Customers'),
             'manage_tags': h.screen_link('manage_tags', 'beauty_admin_portal_tag_manager', prompt='Manage tags'),
+            'tickets': h.screen_link('tickets', 'beauty_admin_portal_tickets', prompt='Support tickets'),
+            'booking_detail': h.screen_link('booking_detail', 'beauty_admin_portal_booking_detail', prompt='Open booking'),
             'note': h.link(
                 rel='note', href=f'/api/beauty/admin/portal/customer/{target.id}/note/',
                 method='POST', screen='beauty_admin_portal_customer_detail',
@@ -214,6 +291,18 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                     .replace(':type', 'customer').replace(':id', str(target.id)),
                 params={'type': 'customer', 'id': target.id},
                 prompt='Suspend / Reinstate',
+            ),
+            'tag_assign_template': h.link(
+                rel='tag_assign', href='/api/beauty/admin/portal/tags/:slug/assign/',
+                method='POST', screen='beauty_admin_portal_customer_detail',
+                route=h.SCREEN_ROUTES['beauty_admin_portal_customer_detail'].replace(':id', str(target.id)),
+                prompt='Tag',
+            ),
+            'tag_unassign_template': h.link(
+                rel='tag_unassign', href='/api/beauty/admin/portal/tags/:slug/assign/?type=customer&id=' + str(target.id),
+                method='DELETE', screen='beauty_admin_portal_customer_detail',
+                route=h.SCREEN_ROUTES['beauty_admin_portal_customer_detail'].replace(':id', str(target.id)),
+                prompt='Remove tag',
             ),
         },
     }

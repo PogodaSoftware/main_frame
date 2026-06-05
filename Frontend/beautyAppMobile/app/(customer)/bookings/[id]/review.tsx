@@ -1,19 +1,26 @@
 /**
- * Customer review-write — mirrors Angular `BeautyReviewWriteComponent`.
- *  - Sub-header: back arrow + "Leave a review" serif title.
- *  - Service card: serif name + caps blue provider.
- *  - Form card: YOUR RATING (5 stars), COMMENT (textarea, "Share your experience..."),
- *    right-aligned small ink "Post review" pill (disabled until rating).
- *  - POST /api/beauty/protected/services/<id>/reviews/.
- *  - 409 → already reviewed, 403 → not yet completed, else generic error.
+ * Customer review-write — mirrors the Claude-design "Leave a review · rating
+ * + comment" artboard.
+ *  - Sub-header: back arrow + centered "Leave a review" serif title.
+ *  - Context card: brown square avatar, serif provider name, caps service,
+ *    muted "Visited <date>".
+ *  - Rating card: centered "YOUR RATING", 5 stars, dynamic Poor→Excellent
+ *    label (placeholder "Tap a star to rate" until a star is picked).
+ *  - Comment card: "YOUR COMMENT" + live N/280 counter, textarea.
+ *  - Helper: "Reviews are public and shown on the provider's storefront…".
+ *  - Sticky full-width "Post review" (disabled until a rating is picked).
+ *  - POST /api/beauty/protected/services/<id>/reviews/ → "Review posted"
+ *    confirmation. 409 → already reviewed, 403 → not yet completed.
  */
 import React, { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-import { listMyBookings, type MyBooking } from '@/services/bookings';
-import { submitServiceReview } from '@/services/marketplace';
+import { type MyBooking } from '@/services/bookings';
+import { api } from '@/services/api';
+import { resolve } from '@/services/bff';
+import { isRedirect } from '@/bff/types';
 
 const C = {
   surface: '#F2F2F2',
@@ -24,7 +31,9 @@ const C = {
   accentBlueText: '#1a3a52',
   ink: '#0A0A0B',
   danger: '#C0392B',
+  success: '#2F7A47',
   white: '#FFFFFF',
+  avatar: '#5C4A3F',
   starFill: '#F5C36B',
   starEmpty: '#CFCFD3',
 };
@@ -32,12 +41,23 @@ const FONT_BODY = 'Inter_400Regular';
 const FONT_BODY_SEMI = 'Inter_600SemiBold';
 const FONT_DISPLAY = 'CormorantGaramond_500Medium';
 
+const MAX_COMMENT = 280;
+const RATING_LABELS = ['Tap a star to rate', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+
+function formatVisited(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
 export default function ReviewWriteScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const bookingId = Number(id);
 
   const [booking, setBooking] = useState<MyBooking | null>(null);
+  const [submitHref, setSubmitHref] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [rating, setRating] = useState(0);
   const [body, setBody] = useState('');
@@ -47,37 +67,41 @@ export default function ReviewWriteScreen() {
   const load = useCallback(async () => {
     if (!Number.isFinite(bookingId)) { setLoading(false); return; }
     try {
-      const resp = await listMyBookings();
-      const all: MyBooking[] = [
-        ...(resp.upcoming ?? []),
-        ...(resp.past ?? []),
-        ...((resp as any).bookings ?? []),
-        ...((resp as any).items ?? []),
-      ];
-      const seen = new Set<number>();
-      const dedup = all.filter((b) => {
-        if (!b || seen.has(b.id)) return false;
-        seen.add(b.id);
-        return true;
-      });
-      setBooking(dedup.find((b) => b.id === bookingId) ?? null);
+      // Single-booking lookup via the `beauty_booking_detail` BFF resolver.
+      const e = await resolve<{ booking: {
+        id: number; status: string; slot_at: string;
+        service: { id: number; name: string };
+        provider: { id: number; name: string };
+      } }>('beauty_booking_detail', { id: bookingId });
+      if (isRedirect(e)) { router.replace('/(auth)/login' as any); return; }
+      if (e.action === 'render' && e.data?.booking) {
+        const b = e.data.booking;
+        setBooking({
+          id: b.id,
+          status: b.status,
+          slot_at: b.slot_at,
+          service: { id: b.service.id, name: b.service.name },
+          provider: { id: b.provider.id, name: b.provider.name },
+        });
+        setSubmitHref((e._links as Record<string, { href?: string }> | undefined)?.submit_review?.href ?? null);
+      }
     } catch { /* surface below */ }
     finally { setLoading(false); }
-  }, [bookingId]);
+  }, [bookingId, router]);
 
   useEffect(() => { load(); }, [load]);
 
   const onSubmit = async () => {
-    if (submitting || !booking?.service?.id || rating < 1 || rating > 5) return;
+    if (submitting || !submitHref || rating < 1 || rating > 5) return;
     setSubmitting(true); setError(null);
     try {
-      await submitServiceReview(booking.service.id, { rating, body });
-      const providerId = booking.provider?.id;
-      if (providerId) {
-        router.replace(`/(customer)/provider/${providerId}` as any);
-      } else {
-        router.replace('/(customer)/bookings' as any);
-      }
+      // HATEOAS submit_review action-link from beauty_booking_detail.
+      await api.post(submitHref, { rating, body });
+      // Land on the storefront's post-review state (green banner + pinned
+      // "Your review") — the `business-reviewed` artboard.
+      const providerId = booking?.provider?.id;
+      if (providerId) router.replace(`/(customer)/provider/${providerId}?posted=1` as any);
+      else router.replace('/(customer)/bookings' as any);
     } catch (e: any) {
       const status = e?.response?.status;
       setError(
@@ -109,21 +133,30 @@ export default function ReviewWriteScreen() {
     );
   }
 
+  const providerName = booking.provider?.name ?? 'Provider';
+  const initial = (providerName.trim()[0] ?? 'P').toUpperCase();
+  const visited = formatVisited(booking.slot_at);
+  const canSubmit = rating >= 1 && !submitting;
+
   return (
     <View style={styles.app}>
       <Stack.Screen options={{ headerShown: false }} />
       <Header onBack={() => router.back()} />
 
       <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.body}>
-        <View style={styles.serviceCard} testID="rw-service-card">
-          <Text style={styles.serviceName} testID="rw-service-name">{booking.service.name}</Text>
-          {booking.provider?.name ? (
-            <Text style={styles.providerName} testID="rw-provider-name">{booking.provider.name}</Text>
-          ) : null}
+        <View style={styles.contextCard} testID="rw-service-card">
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initial}</Text>
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={styles.providerName} numberOfLines={1} testID="rw-provider-name">{providerName}</Text>
+            <Text style={styles.serviceName} numberOfLines={1} testID="rw-service-name">{booking.service.name}</Text>
+            {visited ? <Text style={styles.visited}>Visited {visited}</Text> : null}
+          </View>
         </View>
 
-        <View style={styles.formCard} testID="rw-form-card">
-          <Text style={styles.label}>Your rating</Text>
+        <View style={styles.card}>
+          <Text style={[styles.label, styles.labelCentered]}>Your rating</Text>
           <View style={styles.stars} accessibilityRole="radiogroup" testID="rw-stars">
             {[1, 2, 3, 4, 5].map((n) => {
               const on = n <= rating;
@@ -136,45 +169,57 @@ export default function ReviewWriteScreen() {
                   accessibilityState={{ checked: on }}
                   hitSlop={6}
                 >
-                  <Ionicons name="star" size={28} color={on ? C.starFill : C.starEmpty} />
+                  <Ionicons name={on ? 'star' : 'star-outline'} size={34} color={on ? C.starFill : C.starEmpty} />
                 </Pressable>
               );
             })}
           </View>
+          <View style={[styles.ratingPill, rating > 0 && styles.ratingPillActive]}>
+            <Text style={[styles.ratingPillText, rating > 0 && styles.ratingPillTextActive]} testID="rw-rating-label">
+              {RATING_LABELS[rating]}
+            </Text>
+          </View>
+        </View>
 
-          <Text style={[styles.label, { marginTop: 14 }]}>Comment</Text>
+        <View style={styles.card}>
+          <View style={styles.commentHead}>
+            <Text style={styles.label}>Your comment</Text>
+            <Text style={styles.counter} testID="rw-counter">{body.length}/{MAX_COMMENT}</Text>
+          </View>
           <TextInput
             style={styles.textarea}
             value={body}
             onChangeText={setBody}
-            placeholder="Share your experience…"
+            placeholder="What stood out about your visit? Was the studio clean, the staff friendly, the result worth it?"
             placeholderTextColor={C.textMuted}
             multiline
             numberOfLines={5}
-            maxLength={4000}
+            maxLength={MAX_COMMENT}
             testID="rw-body"
           />
-
-          {error ? (
-            <Text style={styles.error} testID="rw-error">{error}</Text>
-          ) : null}
-
-          <View style={styles.submitRow}>
-            <Pressable
-              onPress={onSubmit}
-              disabled={rating < 1 || submitting}
-              style={({ pressed }) => [
-                styles.btnSubmit,
-                (rating < 1 || submitting) && styles.btnSubmitDisabled,
-                pressed && rating >= 1 && !submitting && { backgroundColor: '#1F1F22', borderColor: '#1F1F22' },
-              ]}
-              testID="rw-submit"
-            >
-              <Text style={styles.btnSubmitText}>{submitting ? 'Posting…' : 'Post review'}</Text>
-            </Pressable>
-          </View>
         </View>
+
+        <Text style={styles.helper}>
+          Reviews are public and shown on the provider&apos;s storefront. Keep it honest and respectful.
+        </Text>
+
+        {error ? <Text style={styles.error} testID="rw-error">{error}</Text> : null}
       </ScrollView>
+
+      <View style={styles.footer}>
+        <Pressable
+          onPress={onSubmit}
+          disabled={!canSubmit}
+          style={({ pressed }) => [
+            styles.btnSubmit,
+            !canSubmit && styles.btnSubmitDisabled,
+            pressed && canSubmit && { backgroundColor: '#1F1F22', borderColor: '#1F1F22' },
+          ]}
+          testID="rw-submit"
+        >
+          <Text style={styles.btnSubmitText}>{submitting ? 'Posting…' : 'Post review'}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -190,7 +235,7 @@ function Header({ onBack }: { onBack: () => void }) {
         <Ionicons name="chevron-back" size={20} color={C.text} />
       </Pressable>
       <Text style={styles.subHeaderTitle}>Leave a review</Text>
-      <View style={{ width: 36 }} />
+      <View style={{ width: 44 }} />
     </View>
   );
 }
@@ -210,41 +255,64 @@ const styles = StyleSheet.create({
 
   body: { paddingHorizontal: 16, paddingVertical: 16, gap: 12 },
 
-  serviceCard: {
+  contextCard: {
     backgroundColor: C.white, borderWidth: 1, borderColor: C.line,
-    borderRadius: 14, padding: 14, gap: 4,
+    borderRadius: 14, padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12,
   },
-  serviceName: { fontFamily: FONT_DISPLAY, fontSize: 20, color: C.text, letterSpacing: 0.2 },
-  providerName: {
+  avatar: {
+    width: 46, height: 46, borderRadius: 10, backgroundColor: C.avatar,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  avatarText: { color: C.white, fontSize: 18, fontFamily: FONT_DISPLAY },
+  providerName: { fontFamily: FONT_DISPLAY, fontSize: 20, color: C.text, letterSpacing: 0.2 },
+  serviceName: {
     fontSize: 11, fontFamily: FONT_BODY_SEMI, color: C.accentBlueText,
-    letterSpacing: 1.2, textTransform: 'uppercase',
+    letterSpacing: 1.2, textTransform: 'uppercase', marginTop: 1,
   },
+  visited: { fontSize: 12, color: C.textMuted, fontFamily: FONT_BODY, marginTop: 3 },
 
-  formCard: {
+  card: {
     backgroundColor: C.white, borderWidth: 1, borderColor: C.line,
     borderRadius: 14, padding: 14, gap: 8,
   },
   label: {
     fontSize: 11, fontFamily: FONT_BODY_SEMI, color: C.textMuted,
-    letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 4,
+    letterSpacing: 1.2, textTransform: 'uppercase',
   },
-  stars: { flexDirection: 'row', gap: 8 },
+  labelCentered: { textAlign: 'center' },
+
+  stars: { flexDirection: 'row', gap: 10, justifyContent: 'center', marginTop: 4 },
+  ratingPill: {
+    alignSelf: 'center', marginTop: 6,
+    paddingHorizontal: 12, paddingVertical: 4, borderRadius: 999,
+    backgroundColor: C.surface2,
+  },
+  ratingPillActive: { backgroundColor: 'rgba(245,195,107,0.22)' },
+  ratingPillText: { fontSize: 12, fontFamily: FONT_BODY_SEMI, color: C.textMuted, letterSpacing: 0.3 },
+  ratingPillTextActive: { color: C.text },
+
+  commentHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  counter: { fontSize: 11, fontFamily: FONT_BODY_SEMI, color: C.textMuted },
 
   textarea: {
-    minHeight: 90, padding: 12, borderWidth: 1, borderColor: C.line,
+    minHeight: 110, padding: 12, borderWidth: 1, borderColor: C.line,
     borderRadius: 8, backgroundColor: C.white,
     color: C.text, fontSize: 14, fontFamily: FONT_BODY,
-    textAlignVertical: 'top',
+    textAlignVertical: 'top', lineHeight: 20,
   },
 
-  error: { color: C.danger, fontSize: 13, fontFamily: FONT_BODY },
+  helper: { fontSize: 12, color: C.textMuted, fontFamily: FONT_BODY, textAlign: 'center', lineHeight: 18, paddingHorizontal: 8 },
+  error: { color: C.danger, fontSize: 13, fontFamily: FONT_BODY, textAlign: 'center' },
 
-  submitRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 6 },
+  footer: {
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 18,
+    backgroundColor: C.surface, borderTopWidth: 1, borderTopColor: C.line,
+  },
   btnSubmit: {
-    paddingHorizontal: 14, height: 38, borderRadius: 8,
+    width: '100%', height: 50, borderRadius: 12,
     backgroundColor: C.ink, borderWidth: 1, borderColor: C.ink,
     alignItems: 'center', justifyContent: 'center',
   },
-  btnSubmitDisabled: { backgroundColor: '#9A9AA0', borderColor: '#9A9AA0' },
-  btnSubmitText: { color: C.white, fontSize: 12, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
+  btnSubmitDisabled: { backgroundColor: '#B8B8BE', borderColor: '#B8B8BE' },
+  btnSubmitText: { color: C.white, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.3 },
 });

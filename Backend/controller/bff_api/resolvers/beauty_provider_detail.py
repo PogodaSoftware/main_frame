@@ -47,7 +47,7 @@ def _serialize_review(r: BeautyReview, *, viewer_user_id: int | None, viewer_use
     )
     customer_email = r.customer.email if r.customer_id else ''
     initial = (customer_email[:1] or '?').upper()
-    return {
+    payload = {
         'id': r.id,
         'rating': r.rating,
         'body': r.body,
@@ -58,7 +58,16 @@ def _serialize_review(r: BeautyReview, *, viewer_user_id: int | None, viewer_use
         'service_id': r.service_id,
         'service_name': r.service.name if r.service_id else '',
         'customer_initial': initial,
+        '_links': {},
     }
+    # Customers can delete their own review (action-link).
+    if is_owner:
+        payload['_links']['delete'] = h.link(
+            rel='delete',
+            href=f'/api/beauty/protected/reviews/{r.id}/',
+            method='DELETE', prompt='Delete',
+        )
+    return payload
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
@@ -110,6 +119,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
 
     can_review = False
     review_booking_id: int | None = None
+    review_service_name: str | None = None
+    review_visited_at = None
     if user_type == BeautySession.USER_TYPE_CUSTOMER and user_id:
         now = datetime.now(timezone.utc)
         already_reviewed_service_ids = set(
@@ -128,6 +139,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             if _is_review_eligible(b, now=now):
                 can_review = True
                 review_booking_id = b.id
+                review_service_name = b.service.name if b.service_id else None
+                review_visited_at = b.slot_at
                 break
 
     links: dict = {
@@ -173,6 +186,17 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                             'book', 'beauty_book',
                             prompt='Book', params={'serviceId': s.id},
                         ),
+                        # POST favorite / DELETE unfavorite — same href.
+                        'favorite': h.link(
+                            rel='favorite',
+                            href=f'/api/beauty/protected/services/{s.id}/favorite/',
+                            method='POST', prompt='Save',
+                        ),
+                        'unfavorite': h.link(
+                            rel='unfavorite',
+                            href=f'/api/beauty/protected/services/{s.id}/favorite/',
+                            method='DELETE', prompt='Unsave',
+                        ),
                     },
                 }
                 for s in services
@@ -183,6 +207,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             ],
             'can_review': can_review,
             'review_eligible_booking_id': review_booking_id,
+            'review_eligible_service_name': review_service_name,
+            'review_eligible_visited_at': (
+                review_visited_at.isoformat() if review_visited_at else None
+            ),
         },
         'meta': {'title': f'Beauty — {provider.name}'},
         '_links': links,

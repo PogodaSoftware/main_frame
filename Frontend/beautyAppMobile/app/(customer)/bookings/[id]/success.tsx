@@ -18,6 +18,7 @@ import { resolve } from '@/services/bff';
 import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { BottomNav } from '@/components/BottomNav';
+import { useGraceCountdown } from '@/hooks/useGraceCountdown';
 
 interface SuccessData {
   booking: {
@@ -100,6 +101,10 @@ export default function BookingSuccessScreen() {
       });
     return () => { cancelled = true; };
   }, [bookingId]);
+
+  const graceEndsAt =
+    env?.action === 'render' ? env.data?.booking?.grace_period_ends_at ?? null : null;
+  const graceLeft = useGraceCountdown(graceEndsAt);
 
   if (error) {
     return (
@@ -241,17 +246,35 @@ export default function BookingSuccessScreen() {
             </Pressable>
           </View>
 
-          {b.in_grace_window && links.cancel_grace ? (
+          {b.in_grace_window && links.cancel_grace && graceLeft ? (
+            <>
+              <Pressable
+                onPress={onCancelGrace}
+                disabled={isCancelling}
+                style={[styles.btnGrace, isCancelling && { opacity: 0.55 }]}
+                accessibilityRole="button"
+              >
+                <Ionicons name="time-outline" size={14} color={C.accentBlueText} />
+                <Text style={styles.btnGraceText}>
+                  {isCancelling ? 'Cancelling…' : 'Cancel free'}
+                </Text>
+                <View style={styles.gracePill}>
+                  <Text style={styles.gracePillText}>{graceLeft}</Text>
+                </View>
+              </Pressable>
+              <Text style={styles.graceHelper}>
+                {"Cancel within 5 minutes of booking and you won't be charged."}
+              </Text>
+            </>
+          ) : b.in_grace_window && links.cancel_grace && !graceLeft ? (
+            // Grace elapsed on this screen — cancelling now carries the fee;
+            // send the user to the booking to complete it.
             <Pressable
-              onPress={onCancelGrace}
-              disabled={isCancelling}
-              style={[styles.btnGrace, isCancelling && { opacity: 0.55 }]}
+              onPress={() => router.push(`/(customer)/bookings/${b.id}` as any)}
+              style={styles.cancelLink}
+              accessibilityRole="button"
             >
-              <Ionicons name="time-outline" size={14} color={C.accentBlueText} />
-              <Text style={styles.btnGraceText}>Cancel free</Text>
-              <View style={styles.gracePill}>
-                <Text style={styles.gracePillText}>—</Text>
-              </View>
+              <Text style={styles.cancelLinkText}>Cancel this booking · $20 fee</Text>
             </Pressable>
           ) : null}
         </View>
@@ -356,6 +379,7 @@ const styles = StyleSheet.create({
   },
   btnSecondaryText: { fontSize: 13, fontFamily: FONT_BODY_SEMI, color: C.text, letterSpacing: 0.2 },
 
+  // Grace-window cancel — baby-blue pill w/ live MM:SS countdown + helper.
   btnGrace: {
     width: '100%', height: 44, borderRadius: 12,
     backgroundColor: C.accentBlue,
@@ -369,4 +393,14 @@ const styles = StyleSheet.create({
     minWidth: 46, alignItems: 'center',
   },
   gracePillText: { fontFamily: FONT_MONO, fontSize: 12, color: C.accentBlueText, fontWeight: '600' as const },
+  graceHelper: {
+    fontSize: 12, color: C.textMuted, fontFamily: FONT_BODY,
+    textAlign: 'center', marginTop: 8,
+  },
+  cancelLink: {
+    width: '100%', height: 48, borderRadius: 10,
+    backgroundColor: C.white, borderWidth: 1, borderColor: C.danger,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cancelLinkText: { color: C.danger, fontSize: 14, fontFamily: FONT_BODY_SEMI, letterSpacing: 0.2 },
 });

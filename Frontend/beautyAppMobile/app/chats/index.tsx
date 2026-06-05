@@ -65,6 +65,31 @@ function avatarColors(name: string): [string, string] {
   return AVATAR_PALETTES[seed % AVATAR_PALETTES.length];
 }
 
+const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const MONTHS_SHORT = [
+  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+];
+
+// Booking slot in device-local time (EDT), not the UTC-baked `slot_label`.
+function formatSlotLocal(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return '';
+  const wd = WEEKDAYS_SHORT[d.getDay()];
+  const mo = MONTHS_SHORT[d.getMonth()];
+  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  let tz = '';
+  try {
+    const part = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
+      .formatToParts(d)
+      .find((p) => p.type === 'timeZoneName');
+    tz = part?.value ?? '';
+  } catch {
+    /* no tz abbreviation */
+  }
+  return `${wd} ${mo} ${d.getDate()} · ${time}${tz ? ` ${tz}` : ''}`;
+}
+
 function formatRelative(iso: string | null): string {
   if (!iso) return '';
   try {
@@ -203,7 +228,7 @@ export default function ChatsListScreen() {
                             ) : null}
                           </View>
                           <Text style={styles.convSvc} numberOfLines={1}>
-                            {t.service_name} · {t.slot_label}
+                            {t.service_name} · {formatSlotLocal(t.slot_at)}
                           </Text>
                           <Text
                             style={[styles.convPreview, t.unread_count ? styles.convPreviewUnread : null]}
@@ -221,7 +246,7 @@ export default function ChatsListScreen() {
           ) : null}
         </ScrollView>
 
-        <BottomNav active="messages" variant="messages" />
+        <BottomNav active="chat" />
       </View>
     </BeautyShell>
   );

@@ -15,6 +15,18 @@ from ..services.application_gate import (
 )
 
 
+def _initial(email: str) -> str:
+    return (email.strip()[:1] or '?').upper()
+
+
+def _display_name(email: str) -> str:
+    """Friendly name from the email local-part (capitalized). The BeautyUser
+    model has no name field, so the local-part is the best stable label."""
+    local = (email or '').split('@', 1)[0]
+    first = local.replace('.', ' ').replace('_', ' ').split(' ')[0]
+    return (first[:1].upper() + first[1:]) if first else 'Guest'
+
+
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     business, app, redirect = resolve_business_or_redirect(request, device_id)
     if redirect is not None:
@@ -34,25 +46,30 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     items = []
     for rv in reviews_qs:
         booking = rv.booking
+        email = booking.customer.email if booking and booking.customer else ''
         item = {
             'id': rv.id,
             'rating': rv.rating,
             'body': rv.body or '',
             'created_at': rv.created_at.isoformat(),
-            'customer_email': booking.customer.email if booking and booking.customer else '',
-            'service_name': booking.service.name if booking and booking.service else '',
-            'reply': rv.business_reply or None,
-            'reply_at': rv.business_reply_at.isoformat() if rv.business_reply_at else None,
-            '_links': {},
+            'customer': {
+                'initial': _initial(email),
+                'display_name': _display_name(email),
+            },
+            'service': {'name': booking.service.name if booking and booking.service else ''},
+            'business_reply': rv.business_reply or '',
+            'business_reply_at': rv.business_reply_at.isoformat() if rv.business_reply_at else None,
+            # Reply link is always present: the same endpoint creates AND edits
+            # a reply, so the screen can post or revise inline.
+            '_links': {
+                'reply': h.link(
+                    rel='reply',
+                    href=f'/api/beauty/protected/business/reviews/{rv.id}/reply/',
+                    method='POST',
+                    prompt='Reply',
+                ),
+            },
         }
-        # Only expose reply link when the review has no reply yet.
-        if not rv.business_reply:
-            item['_links']['reply'] = h.link(
-                rel='reply',
-                href=f'/api/beauty/protected/business/reviews/{rv.id}/reply/',
-                method='POST',
-                prompt='Reply',
-            )
         items.append(item)
 
     return {

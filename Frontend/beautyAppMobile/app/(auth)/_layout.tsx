@@ -1,8 +1,7 @@
 import React from 'react';
-import { View } from 'react-native';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { SafeAreaShell } from '@/components/SafeAreaShell';
 
 const SURFACE = '#F2F2F2';
 
@@ -13,16 +12,13 @@ const SURFACE = '#F2F2F2';
  */
 export default function AuthLayout() {
   return (
-    <View style={{ flex: 1, backgroundColor: SURFACE }}>
-      <StatusBar style="dark" />
-      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: SURFACE }}>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: SURFACE },
-          }}
-        />
-      </SafeAreaView>
-    </View>
+    <SafeAreaShell background={SURFACE} statusBarStyle="dark" padBottom>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: { backgroundColor: SURFACE },
+        }}
+      />
+    </SafeAreaShell>
   );
 }

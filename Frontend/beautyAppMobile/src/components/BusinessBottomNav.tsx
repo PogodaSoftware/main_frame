@@ -16,10 +16,10 @@ export interface BusinessBottomNavProps {
 }
 
 const TABS: Array<{ key: BusinessTabKey; label: string; icon: string; path: string }> = [
-  { key: 'home',     label: 'Home',     icon: '⌂',  path: '/(business)/home' },
-  { key: 'bookings', label: 'Bookings', icon: '📅', path: '/(business)/bookings' },
-  { key: 'services', label: 'Services', icon: '✂️',  path: '/(business)/services' },
-  { key: 'profile',  label: 'Profile',  icon: '👤', path: '/(business)/profile' },
+  { key: 'home',     label: 'Home',     icon: '⌂',  path: '/business/home' },
+  { key: 'bookings', label: 'Bookings', icon: '📅', path: '/business/bookings' },
+  { key: 'services', label: 'Services', icon: '✂️',  path: '/business/services' },
+  { key: 'profile',  label: 'Profile',  icon: '👤', path: '/business/profile' },
 ];
 
 export function BusinessBottomNav({ active }: BusinessBottomNavProps) {

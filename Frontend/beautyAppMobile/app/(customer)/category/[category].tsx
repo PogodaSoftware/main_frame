@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { resolve } from '@/services/bff';
 import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
+import { BottomNav } from '@/components/BottomNav';
 
 interface CategoryService {
   id: number;
@@ -253,33 +254,9 @@ export default function CategoryScreen() {
           </View>
         </ScrollView>
 
-        {/* bottom nav */}
-        <View style={styles.bottomNav}>
-          {[
-            { key: 'bookings', label: 'Bookings', icon: 'calendar-outline' as const, link: links.bookings },
-            { key: 'home', label: 'Home', icon: 'home-outline' as const, link: links.home, active: true },
-            { key: 'profile', label: 'Profile', icon: 'person-outline' as const, link: links.profile },
-          ].map((t) => (
-            <Pressable
-              key={t.key}
-              onPress={() => goto(t.link)}
-              disabled={!t.link}
-              style={styles.navTab}
-            >
-              {t.active ? <View style={styles.navDot} /> : null}
-              <Ionicons
-                name={t.icon}
-                size={24}
-                color={t.active ? C.accentBlueText : C.text}
-              />
-              <Text
-                style={[styles.navLabel, t.active && styles.navLabelActive]}
-              >
-                {t.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+        {/* Shared 4-tab nav (Bookings · Home · Chat · Profile) — keeps the
+            chat tab consistent with the rest of the customer app. */}
+        <BottomNav active="home" />
       </View>
     </>
   );
@@ -409,22 +386,4 @@ const styles = StyleSheet.create({
 
   errorText: { color: C.success, fontSize: 13, marginBottom: 12 },
   muted: { color: C.textMuted, fontSize: 13, padding: 8 },
-
-  bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: C.white,
-    borderTopWidth: 1, borderTopColor: C.line,
-    shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 14, shadowOffset: { width: 0, height: -2 },
-    elevation: 8,
-  },
-  navTab: {
-    flex: 1, height: 64, alignItems: 'center', justifyContent: 'center', gap: 4,
-    position: 'relative',
-  },
-  navDot: {
-    position: 'absolute', top: 6,
-    width: 6, height: 6, borderRadius: 3, backgroundColor: C.accentBlueDeep,
-  },
-  navLabel: { fontSize: 11, color: C.text, fontFamily: FONT_BODY },
-  navLabelActive: { color: C.accentBlueText, fontFamily: FONT_BODY_SEMI },
 });

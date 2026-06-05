@@ -68,7 +68,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     q = (qparams.get('q') or '').strip()
     sort = (qparams.get('sort') or 'newest').lower()
 
+    from datetime import timedelta
     now = datetime.now(timezone.utc)
+    pending_cutoff = now - timedelta(hours=24)
     base = BeautyBooking.objects.select_related('customer', 'service__provider')
 
     # Status buckets (counts always reflect base — not q — so user sees full
@@ -78,7 +80,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     past_count = bucket_qs.filter(slot_at__lt=now).exclude(status__in=BeautyBooking.CANCELLED_STATUSES).count()
     cancelled_count = bucket_qs.filter(status__in=BeautyBooking.CANCELLED_STATUSES).count()
     refunded_count = bucket_qs.filter(status__in=_REFUND_STATUSES).count()
-    pending_count = 0  # no pending field; placeholder bucket
+    # Pending = newly-booked (created in last 24h) + slot still in future +
+    # not yet cancelled. Real DB query — no fake placeholder.
+    pending_count = bucket_qs.filter(
+        status=BeautyBooking.STATUS_BOOKED,
+        slot_at__gte=now,
+        created_at__gte=pending_cutoff,
+    ).count()
     total_count = bucket_qs.count()
 
     status_buckets = [
@@ -100,7 +108,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     elif active_status == 'refunded':
         qs = qs.filter(status__in=_REFUND_STATUSES)
     elif active_status == 'pending':
-        qs = qs.none()
+        qs = qs.filter(
+            status=BeautyBooking.STATUS_BOOKED,
+            slot_at__gte=now,
+            created_at__gte=pending_cutoff,
+        )
 
     if q:
         try:
@@ -162,6 +174,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'refund_rate_pct': f'{refund_rate:.1f}%',
             'tab_badges': h.admin_tab_badges(),
             'notif_count': h.admin_notif_count(),
+            'session_remaining': h.session_remaining_label(cookie, device_id),
+            'admin_initials': h.admin_initials(user),
         },
         'meta': {'title': 'Beauty — Bookings ledger'},
         '_links': {
@@ -170,11 +184,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'crm':             h.screen_link('crm',      'beauty_admin_portal_crm'),
             'tickets':         h.screen_link('tickets',  'beauty_admin_portal_tickets'),
             'team':            h.screen_link('team',     'beauty_admin_portal_team'),
-            'booking_detail':  h.link(
-                rel='booking_detail', href=None, method='NAV',
-                screen='beauty_booking_detail',
-                route=h.SCREEN_ROUTES['beauty_booking_detail'],
-                prompt='Open booking',
-            ),
+            # Admin booking detail — stays inside the admin portal. Never link
+            # to the customer/business `beauty_booking_detail` screen.
+            'booking_detail':  h.screen_link('booking_detail', 'beauty_admin_portal_booking_detail',
+                                             prompt='Open booking'),
         },
     }

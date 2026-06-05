@@ -14,10 +14,12 @@
 import React from 'react';
 import { Linking, Platform, Pressable, View } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Separator, SizableText, XStack, YStack } from 'tamagui';
 
 import { beautyTokens } from '../../tamagui.config';
 import { BeautyShell } from '@/components/BeautyShell';
+import { GoogleGlyph } from '@/components/ui/GoogleGlyph';
 
 // Linear gradient fallback. expo-linear-gradient ships a broken
 // `./normalizeColor` import on web builds (Metro can't resolve the
@@ -41,32 +43,14 @@ function HeroBackground() {
       />
     );
   }
+  // Native: baby-blue → surface vertical gradient (matches design artboard).
   return (
-    <YStack
-      position="absolute"
-      t={0}
-      l={0}
-      r={0}
-      b={0}
-      bg={beautyTokens.accentBlue}
+    <LinearGradient
+      colors={[beautyTokens.accentBlue, beautyTokens.surface]}
+      start={{ x: 0.5, y: 0 }}
+      end={{ x: 0.5, y: 1 }}
+      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
     />
-  );
-}
-
-function GoogleGlyph() {
-  return (
-    <YStack
-      width={18}
-      height={18}
-      bg={beautyTokens.white}
-      items="center"
-      justify="center"
-      testID="welcome-google-glyph"
-    >
-      <SizableText fontSize={14} fontWeight="700" color="#4285F4">
-        G
-      </SizableText>
-    </YStack>
   );
 }
 
