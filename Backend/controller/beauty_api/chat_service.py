@@ -22,7 +22,7 @@ scheduled task. ``prune_all_expired()`` is provided for admin/cron use.
 
 from datetime import datetime, timedelta, timezone
 
-from .models import BeautyBooking, BeautyChatMessage
+from .models import BeautyBooking, BeautyChatMessage, BeautyChatRead
 
 
 CHAT_RETENTION_HOURS = 24
@@ -124,3 +124,45 @@ def post_message(
         body=body,
     )
     return msg
+
+
+# ---------------------------------------------------------------------------
+# Read-state / unread counts
+# ---------------------------------------------------------------------------
+
+def mark_read(
+    booking: BeautyBooking,
+    *,
+    viewer_type: str,
+    viewer_id: int,
+    now: datetime | None = None,
+) -> None:
+    """Stamp this viewer's read marker for the thread to ``now``.
+
+    Idempotent upsert keyed on (booking, viewer_type, viewer_id). After
+    this, ``unread_count_for`` returns 0 for the viewer until the peer
+    sends another message.
+    """
+    n = now or datetime.now(timezone.utc)
+    BeautyChatRead.objects.update_or_create(
+        booking_id=booking.id,
+        viewer_type=viewer_type,
+        viewer_id=viewer_id,
+        defaults={'last_read_at': n},
+    )
+
+
+def unread_count_for(booking: BeautyBooking, *, viewer_type: str, viewer_id: int) -> int:
+    """Count messages from the *other* party newer than the viewer's last read.
+
+    Own messages never count. A missing read marker means everything from
+    the peer is unread.
+    """
+    qs = BeautyChatMessage.objects.filter(booking_id=booking.id).exclude(sender_type=viewer_type)
+    try:
+        marker = BeautyChatRead.objects.get(
+            booking_id=booking.id, viewer_type=viewer_type, viewer_id=viewer_id,
+        )
+    except BeautyChatRead.DoesNotExist:
+        return qs.count()
+    return qs.filter(created_at__gt=marker.last_read_at).count()

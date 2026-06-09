@@ -72,6 +72,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'detail', 'beauty_booking_detail',
             prompt='View booking', params={'id': b.id},
         )
+        # Re-book link (used by the past list's "Book again" action).
+        provider_link = h.screen_link(
+            'provider', 'beauty_provider_detail',
+            prompt='Book again', params={'id': b.service.provider.id},
+        )
         if b.status == BeautyBooking.STATUS_BOOKED and b.slot_at > now:
             in_grace_window = (
                 b.grace_period_ends_at is not None
@@ -83,6 +88,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             item['in_grace_window'] = in_grace_window
             row_links = {
                 'detail': detail_link,
+                'provider': provider_link,
+                'reschedule': h.screen_link(
+                    'reschedule', 'beauty_reschedule',
+                    prompt='Reschedule', params={'bookingId': b.id},
+                ),
                 'cancel': h.link(
                     'cancel',
                     method='POST',
@@ -100,7 +110,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             item['_links'] = row_links
             upcoming.append(item)
         else:
-            item['_links'] = {'detail': detail_link}
+            item['_links'] = {'detail': detail_link, 'provider': provider_link}
             past.append(item)
 
     # Upcoming: soonest first. Past: most-recent first.

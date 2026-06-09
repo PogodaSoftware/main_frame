@@ -1,0 +1,114 @@
+/* Admin Portal — slate-theme tokens, layout helpers, and atom-shared rules.
+ *
+ * Loaded globally from src/styles.scss so :root tokens reach <html> (component
+ * styleUrls are scoped by Angular emulated encapsulation and would never apply
+ * to :root). Keep this file purely declarative — no @use of component selectors.
+ */
+
+:root {
+  /* admin slate (internal-tool signal) */
+  --adm-slate:        #0E1620;
+  --adm-slate-2:      #19222E;
+  --adm-slate-3:      #2A3441;
+  --adm-slate-line:   rgba(255, 255, 255, 0.08);
+  --adm-slate-muted:  rgba(255, 255, 255, 0.55);
+  --adm-slate-text:   #E8ECF1;
+
+  /* admin accents */
+  --adm-red:          #B23A2D;
+  --adm-red-soft:     #FCE8E5;
+  --adm-amber:        #A57A1F;
+  --adm-amber-soft:   #FFF3DC;
+  --adm-green:        #2F7A47;
+  --adm-green-soft:   #E5F3EA;
+
+  /* type */
+  --adm-font-display: 'Cormorant Garamond', Georgia, serif;
+  --adm-font-body:    'Inter', system-ui, -apple-system, sans-serif;
+  --adm-font-mono:    ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+/* Mobile phone-frame shell — 390 baseline, max 430. Matches existing customer
+ * /business chrome so admin lives in the same visual proportion. */
+.adm-app {
+  width: 100%;
+  min-height: 100dvh;
+  height: 100dvh;
+  background: var(--adm-slate);
+  color: #fff;
+  font-family: var(--adm-font-body);
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+}
+
+@media screen and (min-width: 768px) {
+  .adm-app {
+    max-width: 430px;
+    margin: 0 auto;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* Light surface frame (CRM / Ledger / Tickets pages). Slate chrome stays at
+ * top + tab bar; body is light. */
+.adm-app.is-light {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.adm-body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.adm-body--scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Mono kbd-style IDs. */
+.adm-mono {
+  font-family: var(--adm-font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.2px;
+}
+
+/* Eyebrow caps label. */
+.adm-eyebrow {
+  font-family: var(--adm-font-body);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--adm-slate-muted);
+}
+
+.adm-eyebrow.on-light { color: var(--text-muted); }
+
+/* Display title (Cormorant). */
+.adm-display {
+  font-family: var(--adm-font-display);
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  line-height: 1.1;
+}
+
+/* Sub-header back chevron. */
+.adm-back {
+  height: 32px;
+  padding: 0 6px 0 4px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  font-family: var(--adm-font-body);
+  font-size: 13px;
+  font-weight: 500;
+}

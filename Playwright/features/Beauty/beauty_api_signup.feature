@@ -10,7 +10,7 @@ Feature: Beauty API Signup Endpoint
   Scenario: Reject duplicate customer email on signup
     Given a test customer account exists for duplicate check
     When I POST the same customer email to the signup endpoint again
-    Then the signup response status should be 400
+    Then the signup response status should be 409
     And the signup response should indicate the email already exists
 
   Scenario: Reject customer signup with a short password

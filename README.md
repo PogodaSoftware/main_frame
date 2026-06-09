@@ -404,3 +404,4 @@ cd Frontend/portfolioResume && npx serve dist/portfolio-resume-frontend/browser 
 
 - **WebGL in iframes**: Three.js 3D models may not render in Replit's browser preview (iframe) due to WebGL context limitations. They work correctly when accessed directly via the public URL.
 - **Backend startup delay**: The frontend may briefly show fallback data if the backend takes time to start. This is expected behavior and the page updates automatically once the API responds.
+

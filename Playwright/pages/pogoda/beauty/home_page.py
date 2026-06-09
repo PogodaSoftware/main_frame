@@ -11,8 +11,25 @@ home_page_root = "css=div.beauty-app"
 # Carousel and map sections on home.
 services_section = "css=div.beauty-app section.services-section"
 services_carousel = "css=div.beauty-app .services-carousel"
+home_carousel = "css=[data-testid='home-carousel']"
 carousel_item = "css=div.beauty-app button.carousel-item"
 map_section = "css=div.beauty-app section.map-section"
+
+# Home page search bar (above the carousel).
+home_search_section = "css=[data-testid='home-search']"
+home_search_input = "css=[data-testid='home-search-input']"
+home_search_status = "css=[data-testid='home-search-status']"
+home_search_results = "css=[data-testid='home-search-results']"
+home_search_result_card = "css=[data-testid='search-result-card']"
+home_search_future_badge = "css=[data-testid='home-search-future-badge']"
+home_search_empty = "css=[data-testid='home-search-empty']"
+home_search_rate_toast = "css=[data-testid='home-search-rate-toast']"
+home_search_error_toast = "css=[data-testid='home-search-error-toast']"
+
+# Pagination markers — must be absent.
+home_pagination_next = "css=button.pagination-next, button[aria-label='Next page']"
+home_pagination_prev = "css=button.pagination-prev, button[aria-label='Previous page']"
+home_pagination_numbers = "css=.pagination, ul.pagination li"
 
 # Bottom nav (auth-only). Tabs in DOM order: bookings, home, profile.
 bottom_nav = "css=div.beauty-app nav.bottom-nav"

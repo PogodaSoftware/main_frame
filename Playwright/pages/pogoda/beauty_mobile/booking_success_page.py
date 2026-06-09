@@ -1,0 +1,11 @@
+"""Locators for the RN booking confirmation screen (`(customer)/bookings/[id]/success`)."""
+
+booking_success_status = "css=[data-testid='booking-success-status']"
+booking_success_card = "css=[data-testid='booking-success-card']"
+booking_success_grace_strip = "css=[data-testid='booking-success-grace-strip']"
+booking_success_cancel_grace = "css=[data-testid='booking-success-cancel-grace']"
+booking_success_view_detail = "css=[data-testid='booking-success-view-detail']"
+booking_success_bookings = "css=[data-testid='booking-success-bookings']"
+booking_success_chat = "css=[data-testid='booking-success-chat']"
+booking_success_home = "css=[data-testid='booking-success-home']"
+booking_success_error = "css=[data-testid='booking-success-error']"

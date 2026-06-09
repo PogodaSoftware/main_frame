@@ -1,0 +1,11 @@
+"""Selectors for the Beauty Admin Portal — Audit log page (`/admin/portal/audit`)."""
+
+audit_page_root = "app-admin-portal-audit .adm-audit"
+audit_title = "app-admin-portal-audit .sub .title"
+audit_summary = "app-admin-portal-audit .sub .summary"
+event_rows = "app-admin-portal-audit .event"
+event_title = ".ev-title"
+event_meta = ".ev-meta"
+event_when = ".ev-when"
+empty_state = "app-admin-portal-audit .empty"
+empty_state_title = "app-admin-portal-audit .empty-title"

@@ -28,11 +28,13 @@ export interface ApplicationDto {
 export interface CategoryOption {
   value: string;
   label: string;
+  description?: string;
 }
 
 export interface ToolOption {
   value: string;
   label: string;
+  description?: string;
 }
 
 export interface WeeklyHourRow {

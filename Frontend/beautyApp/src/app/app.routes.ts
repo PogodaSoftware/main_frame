@@ -2,7 +2,12 @@ import { Routes } from '@angular/router';
 import { BeautyShellComponent } from './beauty/beauty-shell.component';
 import { BeautyWelcomeComponent } from './beauty/beauty-welcome.component';
 import { BeautyForgotComponent } from './beauty/beauty-forgot.component';
+import { BeautyGoogleAuthComponent } from './beauty/cust-web/beauty-google-auth.component';
 import { BeautyErrorComponent } from './beauty/beauty-error.component';
+import { BeautySearchComponent } from './beauty/beauty-search.component';
+import { BeautyReviewWriteComponent } from './beauty/beauty-review-write.component';
+import { BeautyBusinessReviewsComponent } from './beauty/beauty-business-reviews.component';
+import { BeautyFavoritesComponent } from './beauty/beauty-favorites.component';
 import { beautyAuthGuard, beautyBusinessAuthGuard } from './beauty/beauty-auth.guard';
 
 export const routes: Routes = [
@@ -22,6 +27,11 @@ export const routes: Routes = [
     path: 'forgot',
     component: BeautyForgotComponent,
     title: 'Beauty - Reset Password',
+  },
+  {
+    path: 'auth/oauth/google',
+    component: BeautyGoogleAuthComponent,
+    title: 'Beauty - Continue with Google',
   },
   {
     path: 'error',
@@ -120,10 +130,114 @@ export const routes: Routes = [
     data: { screen: 'beauty_admin_flags' },
   },
   {
-    path: 'admin/crm',
+    path: 'admin/portal/signin',
     component: BeautyShellComponent,
-    title: 'Beauty - CRM',
-    data: { screen: 'beauty_admin_crm' },
+    title: 'Beauty - Admin sign-in',
+    data: { screen: 'beauty_admin_portal_signin' },
+  },
+  {
+    path: 'admin/portal/2fa',
+    component: BeautyShellComponent,
+    title: 'Beauty - Admin 2FA',
+    data: { screen: 'beauty_admin_portal_2fa' },
+  },
+  {
+    path: 'admin/portal/magic',
+    component: BeautyShellComponent,
+    title: 'Beauty - Admin magic-link',
+    data: { screen: 'beauty_admin_portal_magic' },
+  },
+  {
+    path: 'admin/portal/ip-warning',
+    component: BeautyShellComponent,
+    title: 'Beauty - Network restricted',
+    data: { screen: 'beauty_admin_portal_ip_warning' },
+  },
+  {
+    path: 'admin/portal/dashboard',
+    component: BeautyShellComponent,
+    title: 'Beauty - Admin dashboard',
+    data: { screen: 'beauty_admin_portal_dashboard' },
+  },
+  {
+    path: 'admin/portal/dashboard/v2',
+    component: BeautyShellComponent,
+    title: 'Beauty - Admin dashboard (v2)',
+    data: { screen: 'beauty_admin_portal_dashboard_v2' },
+  },
+  {
+    path: 'admin/portal/crm',
+    component: BeautyShellComponent,
+    title: 'Beauty - Admin CRM',
+    data: { screen: 'beauty_admin_portal_crm' },
+  },
+  {
+    path: 'admin/portal/crm/tags',
+    component: BeautyShellComponent,
+    title: 'Beauty - Manage tags',
+    data: { screen: 'beauty_admin_portal_tag_manager' },
+  },
+  {
+    path: 'admin/portal/crm/suspend/:type/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Suspend confirm',
+    data: { screen: 'beauty_admin_portal_suspend' },
+  },
+  {
+    path: 'admin/portal/crm/customer/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Customer detail',
+    data: { screen: 'beauty_admin_portal_customer_detail' },
+  },
+  {
+    path: 'admin/portal/crm/provider/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Provider detail',
+    data: { screen: 'beauty_admin_portal_provider_detail' },
+  },
+  {
+    path: 'admin/portal/bookings',
+    component: BeautyShellComponent,
+    title: 'Beauty - Bookings ledger',
+    data: { screen: 'beauty_admin_portal_bookings' },
+  },
+  {
+    path: 'admin/portal/bookings/:id',
+    component: BeautyShellComponent,
+    title: 'Beauty - Booking',
+    data: { screen: 'beauty_admin_portal_booking_detail' },
+  },
+  {
+    path: 'admin/portal/tickets',
+    component: BeautyShellComponent,
+    title: 'Beauty - Support tickets',
+    data: { screen: 'beauty_admin_portal_tickets' },
+  },
+  {
+    path: 'admin/portal/team',
+    component: BeautyShellComponent,
+    title: 'Beauty - Admin team',
+    data: { screen: 'beauty_admin_portal_team' },
+  },
+  {
+    path: 'admin/portal/audit',
+    component: BeautyShellComponent,
+    title: 'Beauty - Audit log',
+    data: { screen: 'beauty_admin_portal_audit' },
+  },
+  {
+    path: 'search',
+    component: BeautySearchComponent,
+    title: 'Beauty - Search',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_search' },
+  },
+  {
+    path: 'saved',
+    component: BeautyFavoritesComponent,
+    title: 'Beauty - Saved',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_favorites' },
   },
   {
     path: 'category/:slug',
@@ -145,6 +259,13 @@ export const routes: Routes = [
     title: 'Beauty - Book',
     canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_book' },
+  },
+  {
+    path: 'bookings/:bookingId/review',
+    component: BeautyReviewWriteComponent,
+    title: 'Beauty - Leave Review',
+    canActivate: [beautyAuthGuard],
+    data: { screen: 'beauty_review_write' },
   },
   {
     path: 'bookings',
@@ -264,6 +385,13 @@ export const routes: Routes = [
     title: 'Beauty - Business Profile',
     canActivate: [beautyBusinessAuthGuard],
     data: { screen: 'beauty_business_profile' },
+  },
+  {
+    path: 'business/reviews',
+    component: BeautyBusinessReviewsComponent,
+    title: 'Beauty - Customer Reviews',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_reviews' },
   },
   {
     path: '**',

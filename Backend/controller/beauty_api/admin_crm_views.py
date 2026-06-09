@@ -1,22 +1,20 @@
 """
-Beauty Admin CRM Views
-======================
-Admin-only REST endpoints powering the CRM screen. Two endpoints:
+Beauty Admin Suspend View
+=========================
+Admin-only REST endpoint that suspends or reinstates a customer / business
+account. Used by the new admin portal (bulk suspend, suspend-confirm modal).
 
-    GET  /api/beauty/admin/crm/         — list customers + business providers
-                                          with search, filter, pagination.
     POST /api/beauty/admin/crm/suspend/ — suspend or unsuspend an account.
 
 Authorisation: a request is admin iff its (user_type, user_id) pair is in
-``BEAUTY_ADMIN_PRINCIPALS`` (same allowlist used by the feature flags
-admin). Suspending an account also invalidates every active session for
-that account so the user is signed out across all devices on the next
-authenticated request.
+``BEAUTY_ADMIN_PRINCIPALS`` (env var or `beauty_admin_principals` DB table).
+Suspending an account also invalidates every active session for that account
+so the user is signed out across all devices on the next authenticated
+request.
 """
 
 from datetime import datetime, timezone
 
-from django.db.models import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -24,13 +22,9 @@ from rest_framework.views import APIView
 from bff_api.services.auth_service import get_authenticated_user
 from bff_api.services.hateoas_service import is_beauty_admin
 
+from . import audit
 from .middleware import SESSION_COOKIE_NAME
 from .models import BeautySession, BeautyUser, BusinessProvider
-
-
-VALID_TYPES = ('all', 'customer', 'business')
-DEFAULT_PAGE_SIZE = 10
-MAX_PAGE_SIZE = 50
 
 
 def _require_admin(request) -> Response | None:
@@ -55,92 +49,6 @@ def _require_admin(request) -> Response | None:
     return None
 
 
-def _customer_row(u: BeautyUser) -> dict:
-    return {
-        'id': u.id,
-        'type': 'customer',
-        'email': u.email,
-        'name': '',
-        'created_at': u.created_at.isoformat(),
-        'is_suspended': bool(u.is_suspended),
-        'suspended_at': u.suspended_at.isoformat() if u.suspended_at else None,
-    }
-
-
-def _business_row(b: BusinessProvider) -> dict:
-    return {
-        'id': b.id,
-        'type': 'business',
-        'email': b.email,
-        'name': b.business_name,
-        'created_at': b.created_at.isoformat(),
-        'is_suspended': bool(b.is_suspended),
-        'suspended_at': b.suspended_at.isoformat() if b.suspended_at else None,
-    }
-
-
-def _clean_int(raw: str | None, default: int, *, lo: int = 1, hi: int = 1_000_000) -> int:
-    try:
-        v = int(raw) if raw is not None else default
-    except (TypeError, ValueError):
-        v = default
-    return max(lo, min(hi, v))
-
-
-class CrmListView(APIView):
-    """GET /api/beauty/admin/crm/?type=customer|business|all&q=...&page=1&page_size=10"""
-
-    def get(self, request):
-        err = _require_admin(request)
-        if err:
-            return err
-
-        kind = (request.GET.get('type') or 'all').strip().lower()
-        if kind not in VALID_TYPES:
-            kind = 'all'
-        q = (request.GET.get('q') or '').strip()
-        page = _clean_int(request.GET.get('page'), 1, lo=1)
-        page_size = _clean_int(
-            request.GET.get('page_size'), DEFAULT_PAGE_SIZE, lo=1, hi=MAX_PAGE_SIZE,
-        )
-
-        rows: list[dict] = []
-        # Build the unified result list as Python rows so customer + business
-        # records can sit side by side. The total counts on either query are
-        # cheap (we're just filtering on indexed string columns), so fetching
-        # both and merging is fine for an admin tool.
-        if kind in ('all', 'customer'):
-            cqs = BeautyUser.objects.all().order_by('-created_at')
-            if q:
-                cqs = cqs.filter(email__icontains=q)
-            rows.extend(_customer_row(u) for u in cqs)
-        if kind in ('all', 'business'):
-            bqs = BusinessProvider.objects.all().order_by('-created_at')
-            if q:
-                bqs = bqs.filter(Q(email__icontains=q) | Q(business_name__icontains=q))
-            rows.extend(_business_row(b) for b in bqs)
-
-        # Sort the merged list by created_at desc so cross-type rows interleave
-        # by recency rather than appearing as two stacked blocks.
-        rows.sort(key=lambda r: r['created_at'], reverse=True)
-        total = len(rows)
-        start = (page - 1) * page_size
-        end = start + page_size
-        page_items = rows[start:end]
-
-        return Response(
-            {
-                'items': page_items,
-                'total': total,
-                'page': page,
-                'page_size': page_size,
-                'total_pages': max(1, (total + page_size - 1) // page_size),
-                'filters': {'type': kind, 'q': q},
-            },
-            status=status.HTTP_200_OK,
-        )
-
-
 class CrmSuspendView(APIView):
     """POST /api/beauty/admin/crm/suspend/  body={type, id, suspended}"""
 
@@ -148,6 +56,9 @@ class CrmSuspendView(APIView):
         err = _require_admin(request)
         if err:
             return err
+        device_id = request.headers.get('X-Device-ID', '').strip()
+        cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
+        user = get_authenticated_user(cookie, device_id) or {}
 
         data = request.data or {}
         kind = (data.get('type') or '').strip().lower()
@@ -160,6 +71,20 @@ class CrmSuspendView(APIView):
         if kind not in ('customer', 'business'):
             return Response(
                 {'detail': 'type must be customer or business.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Self-suspend guard. Suspending an account deactivates its sessions,
+        # so an admin suspending their own principal would lock themselves
+        # out instantly. Refuse it. (Reinstate is unreachable while suspended,
+        # so we only need to block the suspend direction.)
+        if (
+            suspended
+            and kind == (user.get('user_type') or '').strip().lower()
+            and target_id == user.get('user_id')
+        ):
+            return Response(
+                {'detail': 'You cannot suspend your own account.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -185,6 +110,13 @@ class CrmSuspendView(APIView):
             BeautySession.objects.filter(
                 user_id=target_id, user_type=session_user_type, is_active=True,
             ).update(is_active=False)
+
+        audit.log_event(
+            request=request, user=user,
+            action='account.suspend' if suspended else 'account.reinstate',
+            target_type=kind, target_id=target_id,
+            meta={'reason': (data.get('reason') or '')[:255]},
+        )
 
         return Response(
             {

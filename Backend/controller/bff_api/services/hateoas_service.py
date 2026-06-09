@@ -189,6 +189,10 @@ def is_beauty_admin(user: dict | None) -> bool:
         the BEAUTY_ADMIN_PRINCIPALS allowlist.
 
     Email is deliberately not used — see `_admin_principal_allowlist`.
+
+    Side effect: touches BeautyAdminPrincipal.last_active_at (throttled to
+    once per 60 seconds) so the admin team page can show "Last active" for
+    each principal without a separate heartbeat endpoint.
     """
     if not user:
         return False
@@ -196,7 +200,140 @@ def is_beauty_admin(user: dict | None) -> bool:
     user_id = user.get('user_id')
     if user_type not in _VALID_ADMIN_USER_TYPES or not isinstance(user_id, int):
         return False
-    return (user_type, user_id) in _admin_principal_allowlist()
+    if (user_type, user_id) not in _admin_principal_allowlist():
+        return False
+    _touch_principal_last_active(user_type, user_id)
+    return True
+
+
+def admin_flagged_count() -> int:
+    """Accounts needing CRM review — business-cancelled bookings (refunds
+    owed / accounts to follow up). Same signal the dashboard surfaces as
+    'N flagged accounts need review'."""
+    try:
+        from beauty_api.models import BeautyBooking
+        return BeautyBooking.objects.filter(
+            status=BeautyBooking.STATUS_CANCELLED_BY_BUSINESS,
+        ).count()
+    except Exception:
+        return 0
+
+
+def admin_tab_badges() -> dict:
+    """
+    Real counts for the admin portal bottom tab bar.
+
+    Returns a dict that components splat into <adm-tab-bar [badges]>. Keys
+    map to tab IDs. Values are integers (rendered as a badge) or None
+    (hide the badge). We intentionally avoid fabricating signals — keys
+    we don't have a real source for resolve to None.
+    """
+    try:
+        from beauty_api.models import BeautyAdminTicket
+        open_tickets = BeautyAdminTicket.objects.exclude(
+            status=BeautyAdminTicket.STATUS_RESOLVED,
+        ).count()
+    except Exception:
+        open_tickets = None
+    # CRM badge = accounts needing review (flagged). None when zero so the
+    # badge hides rather than rendering "0".
+    flagged = admin_flagged_count()
+    return {
+        'home':     None,
+        'crm':      flagged or None,
+        'bookings': None,
+        'tickets':  open_tickets or None,
+        'team':     None,
+    }
+
+
+def admin_notif_count() -> int | None:
+    """
+    Header bell badge — count of admin attention items across the portal:
+    SLA-breached open tickets + flagged accounts needing review. Returns
+    None when there are zero so the badge hides instead of showing "0".
+    """
+    n = (admin_ticket_signals().get('sla_breach') or 0) + admin_flagged_count()
+    return n if n else None
+
+
+def admin_ticket_signals() -> dict:
+    """Real ticket signals for dashboard quick-link copy: open + SLA breach."""
+    try:
+        from datetime import datetime, timezone
+        from beauty_api.models import BeautyAdminTicket
+        base = BeautyAdminTicket.objects.exclude(status=BeautyAdminTicket.STATUS_RESOLVED)
+        return {
+            'open': base.count(),
+            'sla_breach': base.filter(sla_breach_at__lte=datetime.now(timezone.utc)).count(),
+        }
+    except Exception:
+        return {'open': 0, 'sla_breach': 0}
+
+
+def _touch_principal_last_active(user_type: str, user_id: int) -> None:
+    """Throttled UPDATE on BeautyAdminPrincipal.last_active_at."""
+    try:
+        from datetime import datetime, timedelta, timezone
+        from django.db.models import Q
+        from beauty_api.models import BeautyAdminPrincipal
+        now = datetime.now(timezone.utc)
+        cutoff = now - timedelta(seconds=60)
+        BeautyAdminPrincipal.objects.filter(
+            user_type=user_type, user_id=user_id,
+        ).filter(Q(last_active_at__isnull=True) | Q(last_active_at__lt=cutoff)).update(
+            last_active_at=now,
+        )
+    except Exception:
+        logger.debug('Failed to touch admin last_active_at', exc_info=True)
+
+
+def session_remaining_label(cookie_value: str | None, device_id: str | None) -> str:
+    """Return ``MM:SS`` (or ``HH:MM:SS`` for >1h) of remaining session lifetime.
+
+    Sourced from ``BeautySession.expires_at`` for the active token. Empty
+    string when no active session is found.
+    """
+    if not cookie_value or not device_id:
+        return ''
+    try:
+        import hashlib
+        from datetime import datetime, timezone
+        from beauty_api.models import BeautySession
+        token_hash = hashlib.sha256(cookie_value.encode()).hexdigest()
+        sess = BeautySession.objects.filter(
+            token_hash=token_hash,
+            device_id=device_id,
+            is_active=True,
+        ).order_by('-expires_at').first()
+        if not sess:
+            return ''
+        secs = int((sess.expires_at - datetime.now(timezone.utc)).total_seconds())
+        if secs <= 0:
+            return '00:00'
+        h, rem = divmod(secs, 3600)
+        m, s = divmod(rem, 60)
+        if h:
+            return f'{h:02d}:{m:02d}:{s:02d}'
+        return f'{m:02d}:{s:02d}'
+    except Exception:
+        return ''
+
+
+def admin_initials(user: dict | None) -> str:
+    """Two-letter initials from a user dict, falling back to ``AD``."""
+    if not user:
+        return 'AD'
+    email = (user.get('email') or '').strip()
+    if not email:
+        return 'AD'
+    local = email.split('@', 1)[0]
+    parts = [p for p in local.replace('.', ' ').replace('_', ' ').replace('-', ' ').split() if p]
+    if not parts:
+        return local[:2].upper() or 'AD'
+    if len(parts) == 1:
+        return parts[0][:2].upper()
+    return (parts[0][0] + parts[1][0]).upper()
 
 
 def is_business_login_enabled() -> bool:
@@ -262,7 +399,23 @@ SCREEN_ROUTES = {
     'beauty_business_providers': '/pogoda/beauty/admin/business-providers',
     'beauty_sessions': '/pogoda/beauty/admin/sessions',
     'beauty_admin_flags': '/pogoda/beauty/admin/flags',
-    'beauty_admin_crm': '/pogoda/beauty/admin/crm',
+    # Admin Portal (slate redesign — handoff May 2026). All routes mobile-only.
+    'beauty_admin_portal_signin':      '/pogoda/beauty/admin/portal/signin',
+    'beauty_admin_portal_2fa':         '/pogoda/beauty/admin/portal/2fa',
+    'beauty_admin_portal_magic':       '/pogoda/beauty/admin/portal/magic',
+    'beauty_admin_portal_ip_warning':  '/pogoda/beauty/admin/portal/ip-warning',
+    'beauty_admin_portal_dashboard':   '/pogoda/beauty/admin/portal/dashboard',
+    'beauty_admin_portal_dashboard_v2':'/pogoda/beauty/admin/portal/dashboard/v2',
+    'beauty_admin_portal_crm':         '/pogoda/beauty/admin/portal/crm',
+    'beauty_admin_portal_tag_manager': '/pogoda/beauty/admin/portal/crm/tags',
+    'beauty_admin_portal_suspend':     '/pogoda/beauty/admin/portal/crm/suspend/:type/:id',
+    'beauty_admin_portal_customer_detail': '/pogoda/beauty/admin/portal/crm/customer/:id',
+    'beauty_admin_portal_provider_detail': '/pogoda/beauty/admin/portal/crm/provider/:id',
+    'beauty_admin_portal_bookings':    '/pogoda/beauty/admin/portal/bookings',
+    'beauty_admin_portal_booking_detail': '/pogoda/beauty/admin/portal/bookings/:id',
+    'beauty_admin_portal_tickets':     '/pogoda/beauty/admin/portal/tickets',
+    'beauty_admin_portal_team':        '/pogoda/beauty/admin/portal/team',
+    'beauty_admin_portal_audit':       '/pogoda/beauty/admin/portal/audit',
     # Customer marketplace screens. `:slug` / `:id` are substituted by the
     # Angular shell from BFF link `params`.
     'beauty_category': '/pogoda/beauty/category/:slug',
@@ -286,6 +439,7 @@ SCREEN_ROUTES = {
     'beauty_business_change_password': '/pogoda/beauty/business/settings/password',
     'beauty_business_email_contact': '/pogoda/beauty/business/settings/contact',
     'beauty_business_profile': '/pogoda/beauty/business/profile',
+    'beauty_business_reviews': '/pogoda/beauty/business/reviews',
 }
 
 
@@ -471,6 +625,55 @@ def name_field(*, label: str = 'Name', placeholder: str = 'What should we call y
         autocomplete='given-name',
         autocapitalize='words',
     )
+
+
+def forgot_form(
+    *,
+    title: str = 'Reset password',
+    subtitle: str = (
+        "Enter the email tied to your account. "
+        "We'll send a link to reset your password."
+    ),
+    submit_href: str = '/api/beauty/auth/forgot/',
+    submit_prompt: str = 'Send reset link',
+    success_screen: str = 'beauty_login',
+    presentation: dict | None = None,
+    footer_links: list | None = None,
+) -> dict:
+    """Form schema for the customer Reset-Password screen."""
+    return {
+        'title': title,
+        'subtitle': subtitle,
+        'fields': [email_field(placeholder='you@example.com')],
+        'submit': link(
+            rel='submit',
+            href=submit_href,
+            method='POST',
+            prompt=submit_prompt,
+        ),
+        'success': screen_link('success', success_screen),
+        'presentation': presentation or {
+            'page_class': 'forgot-page',
+            'main_class': 'forgot-main',
+            'title_class': 'forgot-title',
+            'subtitle_class': 'forgot-subtitle',
+            'form_class': 'forgot-form',
+            'submit_class': 'btn-submit',
+            'header_brand_icon': '✨',
+            'header_brand_label': 'Beauty',
+            'hide_top_header': True,
+            'show_back_bar': True,
+            'show_brand_block': True,
+        },
+        'footer_links': footer_links or [],
+        # 404 = email not on file. Treated as silent success by the
+        # legacy Angular client to avoid leaking enumeration; the RN
+        # client mirrors that behavior. Surfacing 4xx here would defeat
+        # the purpose, so map only 5xx to a generic error.
+        'error_status_map': {500: 'Something went wrong. Please try again.'},
+        'error_default': 'Something went wrong. Please try again.',
+        'include_device_id': False,
+    }
 
 
 def signup_form(

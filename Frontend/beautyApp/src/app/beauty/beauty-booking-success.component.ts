@@ -1,10 +1,19 @@
 /**
  * BeautyBookingSuccessComponent (Presentational)
  * ----------------------------------------------
- * Confirmation screen rendered after a successful booking. Sparkle
- * disc with check, Cormorant headline, summary card (When / Where /
- * Stylist / Total), confirmation code chip with copy, and HATEOAS
- * action buttons supplied by the BFF (`bookings`, `detail`, `home`).
+ * Customer-web booking confirmation. Desktop layout per design
+ * `WebCustomerConfirmed`: shared CustTopNav, a centred success header, a
+ * details card (service + When / Paid / Reference), a free-cancel grace
+ * banner with a live countdown (amber while in-window, grey once expired),
+ * and an actions row (Add to calendar / Directions / Message studio / Done).
+ * Collapses on mobile. RN app untouched.
+ *
+ * Behaviour preserved & BFF-driven: live grace countdown from
+ * `grace_period_ends_at`, the `cancel_grace` POST (via confirm modal), the
+ * `.ics` calendar export, and HATEOAS nav (`bookings`, `home`, `chat_thread`).
+ *
+ * NOTE: "Paid" shows the service price and pay method "Card" — the BFF returns
+ * no tax/payment-instrument detail on this screen.
  */
 
 import {
@@ -22,8 +31,9 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
-import { formatSlotLocal } from './beauty-time.util';
 import { BeautyConfirmModalComponent } from './beauty-confirm-modal.component';
+import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
+import { BeautyHomeSearchComponent } from './beauty-home-search.component';
 
 interface SuccessBooking {
   id: number;
@@ -32,143 +42,78 @@ interface SuccessBooking {
   slot_label: string;
   grace_period_ends_at?: string | null;
   in_grace_window?: boolean;
-  service: {
-    id: number;
-    name: string;
-    price_cents: number;
-    duration_minutes: number;
-  };
-  provider: {
-    id: number;
-    name: string;
-    location_label: string;
-    timezone?: string;
-  };
+  service: { id: number; name: string; price_cents: number; duration_minutes: number; };
+  provider: { id: number; name: string; location_label: string; timezone?: string; };
 }
 
 @Component({
   selector: 'app-beauty-booking-success',
   standalone: true,
-  imports: [CommonModule, BeautyConfirmModalComponent],
+  imports: [CommonModule, BeautyConfirmModalComponent, CustTopNavComponent, BeautyHomeSearchComponent],
   template: `
-    <div class="beauty-app" *ngIf="booking as b">
-      <header class="sub-header">
-        <span class="sub-header-spacer"></span>
-        <span class="sub-header-title"></span>
-        <button
-          type="button"
-          class="share-btn"
-          aria-label="Share"
-          (click)="onShare()"
-        >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M16 6l-4-4-4 4M12 2v14"/>
-          </svg>
-        </button>
-      </header>
+    <div class="cust-confirm" *ngIf="booking as b">
+      <app-cust-top-nav active="" [links]="links" [signedIn]="true" (follow)="emit($event)">
+        <app-beauty-home-search topnav-search></app-beauty-home-search>
+      </app-cust-top-nav>
 
-      <main id="main" class="success-main">
-        <div class="hero">
-          <div class="sparkle-disc">
-            <div class="sparkle-ring"></div>
-            <svg class="sparkle-check" viewBox="0 0 24 24" fill="none" stroke="#1a3a52" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M5 12.5l4.5 4.5L19 7.5"/>
-            </svg>
+      <main id="main" class="confirm-main">
+        <div class="confirm-inner">
+          <div class="head">
+            <div class="check-disc" aria-hidden="true">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2F7A47" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4L19 7"/></svg>
+            </div>
+            <div class="eyebrow">Booking confirmed</div>
+            <h1 class="headline">{{ headline }}</h1>
+            <p class="sub">We sent a receipt and calendar invite to your email.</p>
           </div>
 
-          <div class="eyebrow">You're all set</div>
-          <h1 class="title">Booking confirmed</h1>
-          <p class="body">
-            You're booked for <strong>{{ b.service.name }}</strong>
-            at <strong>{{ b.provider.name }}</strong>.
-          </p>
-        </div>
+          <div class="card">
+            <div class="card-top">
+              <span class="thumb" [style.--hue]="heroHue"></span>
+              <div class="card-main">
+                <div class="svc-name">{{ b.service.name }}</div>
+                <div class="svc-at">at {{ b.provider.name }}<span *ngIf="b.provider.location_label"> · {{ b.provider.location_label }}</span></div>
+                <div class="facts">
+                  <div class="fact">
+                    <div class="fact-k">When</div>
+                    <div class="fact-v">{{ whenDate }}</div>
+                    <div class="fact-mono">{{ whenTimeDur }}</div>
+                  </div>
+                  <div class="fact">
+                    <div class="fact-k">Paid</div>
+                    <div class="fact-v mono">{{ paidLabel }}</div>
+                    <div class="fact-mono">Card</div>
+                  </div>
+                  <div class="fact">
+                    <div class="fact-k">Reference</div>
+                    <div class="fact-v mono">{{ confirmationCode(b.id) }}</div>
+                    <button type="button" class="ref-copy" (click)="copyCode(b.id)">{{ copied ? 'Copied' : 'Copy' }}</button>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        <section class="summary-card">
-          <div class="row">
-            <span class="row-label">When</span>
-            <span class="row-value">{{ formatLocal(b.slot_at, b.provider?.timezone) || b.slot_label }}</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Where</span>
-            <span class="row-value">{{ b.provider.location_label }}</span>
-          </div>
-          <div class="row">
-            <span class="row-label">Stylist</span>
-            <span class="row-value">{{ b.provider.name }}</span>
-          </div>
-          <div class="row last">
-            <span class="row-label">Total</span>
-            <span class="row-value mono">
-              \${{ (b.service.price_cents / 100).toFixed(2) }} · {{ b.service.duration_minutes }} min
-            </span>
-          </div>
-        </section>
+            <!-- Grace / cancel banner -->
+            <div class="grace grace--amber" *ngIf="links['cancel_grace'] && graceSecondsLeft > 0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A6A1F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/></svg>
+              <div class="grace-text">Free cancellation for <span class="grace-count" aria-live="off">{{ graceCountdownLabel }}</span> · full refund, no questions asked.</div>
+              <button type="button" class="btn btn--danger-outline btn--sm" (click)="askGraceCancel()" [disabled]="isCancelling">Cancel free</button>
+              <span class="sr-only" aria-live="polite">{{ graceExpiredAnnouncement }}</span>
+            </div>
+            <div class="grace grace--grey" *ngIf="!(links['cancel_grace'] && graceSecondsLeft > 0)">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6B6F77" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/></svg>
+              <div class="grace-text grace-text--grey">Free-cancel window closed. Manage or cancel this booking from My bookings.</div>
+            </div>
 
-        <div class="conf-chip">
-          <div class="conf-text">
-            <span class="conf-eyebrow">Confirmation</span>
-            <code class="conf-code">{{ confirmationCode(b.id) }}</code>
+            <!-- Actions -->
+            <div class="actions">
+              <button type="button" class="btn btn--secondary btn--md" (click)="addToCalendar()">Add to calendar</button>
+              <a class="btn btn--secondary btn--md" [href]="directionsUrl" target="_blank" rel="noopener">Directions →</a>
+              <button type="button" class="btn btn--secondary btn--md" (click)="emit(links['chat_thread'])" [disabled]="!links['chat_thread']">Message studio</button>
+              <span class="actions-spacer"></span>
+              <button type="button" class="btn btn--primary btn--md" (click)="emit(links['bookings'])" [disabled]="!links['bookings']">Done</button>
+            </div>
           </div>
-          <button type="button" class="conf-copy" (click)="copyCode(b.id)">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="9" y="9" width="13" height="13" rx="2"/>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-            </svg>
-            <span aria-live="polite">{{ copied ? 'Copied' : 'Copy' }}</span>
-          </button>
-        </div>
-
-        <div class="spacer"></div>
-
-        <div class="actions">
-          <button
-            type="button"
-            class="btn-primary"
-            (click)="emit(links['bookings'])"
-            [disabled]="!links['bookings']"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="16" rx="2.5"/>
-              <path d="M3 10h18M8 3v4M16 3v4"/>
-            </svg>
-            View my bookings
-          </button>
-          <div class="actions-row">
-            <button type="button" class="btn-secondary" (click)="addToCalendar()">
-              Add to calendar
-            </button>
-            <button type="button" class="btn-secondary" (click)="emit(links['home'])" [disabled]="!links['home']">
-              Back to home
-            </button>
-          </div>
-
-          <button
-            *ngIf="links['cancel_grace'] && graceSecondsLeft > 0"
-            type="button"
-            class="btn-grace"
-            (click)="askGraceCancel()"
-            [disabled]="isCancelling"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <circle cx="12" cy="12" r="9"/>
-              <path d="M12 7v5l3 2"/>
-            </svg>
-            <span>Cancel free</span>
-            <span class="grace-pill" aria-live="off" aria-hidden="true">{{ graceCountdownLabel }}</span>
-            <span class="sr-only" aria-live="polite">{{ graceExpiredAnnouncement }}</span>
-          </button>
-          <button
-            *ngIf="!graceSecondsLeft && links['cancel_grace']"
-            type="button"
-            class="btn-cancel-text"
-            (click)="askGraceCancel()"
-            [disabled]="isCancelling"
-          >Cancel booking</button>
-          <p
-            *ngIf="links['cancel_grace']"
-            class="grace-caption"
-          >Cancel within 5 minutes of booking and you won't be charged.</p>
         </div>
       </main>
 
@@ -185,208 +130,78 @@ interface SuccessBooking {
         (confirmed)="runGraceCancel()"
         (dismissed)="confirmOpen = false"
       />
-
-      <nav class="bottom-nav" aria-label="Primary">
-        <button type="button" class="nav-tab is-active" (click)="emit(links['bookings'])" [disabled]="!links['bookings']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="16" rx="2.5"/>
-            <path d="M3 10h18M8 3v4M16 3v4"/>
-          </svg>
-          <span class="nav-label">Bookings</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['home'])" [disabled]="!links['home']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 11l9-7 9 7v9a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9z"/>
-          </svg>
-          <span class="nav-label">Home</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['chats'])" [disabled]="!links['chats']" data-testid="nav-chat">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span class="nav-label">Chat</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['profile'])" [disabled]="!links['profile']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="8.5" r="3.8"/>
-            <path d="M4.5 21c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"/>
-          </svg>
-          <span class="nav-label">Profile</span>
-        </button>
-      </nav>
     </div>
   `,
   styles: [`
     :host {
       --surface: #F2F2F2; --surface-2: #E9E9EB; --line: #DCDCDF;
       --text: #0F1115; --text-muted: #6B6F77;
-      --baby-blue: #CFE3F5; --baby-blue-deep: #7DA8CF;
-      --ink: #0A0A0B;
+      --accent-blue: #CFE3F5; --accent-blue-deep: #7DA8CF;
+      --ink: #0A0A0B; --ink-soft: #1F1F22; --success: #2F7A47; --danger: #C0392B;
+      --hue: #5C4A3F;
       --font-body: 'Inter', system-ui, -apple-system, sans-serif;
       --font-display: 'Cormorant Garamond', Georgia, serif;
       --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+      display: block; min-height: 100dvh; background: var(--surface);
+      font-family: var(--font-body); color: var(--text);
     }
     * { box-sizing: border-box; }
     :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
+    .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
 
-    .beauty-app { display: flex; flex-direction: column; min-height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); }
+    .cust-confirm { display: flex; flex-direction: column; min-height: 100dvh; }
+    .confirm-main { flex: 1; padding: 48px 32px; }
+    .confirm-inner { max-width: 720px; margin: 0 auto; }
+    .mono { font-family: var(--font-mono); }
 
-    .sub-header { display: flex; align-items: center; height: 56px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
-    .sub-header-title { flex: 1; }
-    .sub-header-spacer { width: 36px; height: 36px; flex-shrink: 0; }
-    .share-btn { min-width: 44px; min-height: 44px; width: 44px; height: 44px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
-    .share-btn:hover { background: var(--surface-2); }
+    .head { text-align: center; margin-bottom: 28px; }
+    .check-disc { width: 72px; height: 72px; border-radius: 50%; background: #E5F3EA; display: grid; place-items: center; margin: 0 auto 18px; }
+    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; color: var(--success); }
+    .headline { margin: 10px 0 0; font-family: var(--font-display); font-size: 42px; font-weight: 500; line-height: 1.1; }
+    .sub { font-size: 14px; color: var(--text-muted); margin-top: 8px; }
 
-    .success-main { flex: 1; padding: 8px 20px 16px; display: flex; flex-direction: column; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 28px; }
+    .card-top { display: flex; gap: 18px; }
+    .thumb { width: 88px; height: 88px; border-radius: 12px; flex-shrink: 0;
+      background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--hue) 18%, transparent) 0, color-mix(in srgb, var(--hue) 18%, transparent) 8px, color-mix(in srgb, var(--hue) 28%, transparent) 8px, color-mix(in srgb, var(--hue) 28%, transparent) 16px), color-mix(in srgb, var(--hue) 42%, #fff); }
+    .card-main { flex: 1; min-width: 0; }
+    .svc-name { font-family: var(--font-display); font-size: 26px; font-weight: 500; }
+    .svc-at { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .facts { margin-top: 14px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .fact-k { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); }
+    .fact-v { font-size: 14px; font-weight: 600; margin-top: 2px; }
+    .fact-mono { font-family: var(--font-mono); font-size: 12px; color: var(--text); margin-top: 2px; }
+    .ref-copy { background: none; border: none; padding: 0; margin-top: 2px; font: inherit; font-size: 11px; font-weight: 600; color: #1a3a52; cursor: pointer; text-decoration: underline; }
 
-    .hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 14px 8px 20px; }
-    .sparkle-disc {
-      position: relative; width: 76px; height: 76px; border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #E8F1FA, #CFE3F5 65%, #B6D2EA);
-      display: grid; place-items: center;
-      box-shadow: 0 8px 24px rgba(125,168,207,0.30), inset 0 0 0 1px rgba(255,255,255,0.6);
-      margin-bottom: 16px;
-    }
-    .sparkle-ring { position: absolute; inset: 6px; border-radius: 50%; border: 1px dashed rgba(125,168,207,0.4); }
-    .sparkle-check { width: 32px; height: 32px; position: relative; z-index: 1; }
+    .grace { margin-top: 22px; padding: 14px; border-radius: 10px; display: flex; align-items: center; gap: 12px; }
+    .grace--amber { background: #FFF4DA; border: 1px solid rgba(165,122,31,0.25); }
+    .grace--grey { background: var(--surface); border: 1px solid var(--line); }
+    .grace-text { flex: 1; font-size: 13px; color: #8A6A1F; }
+    .grace-text--grey { color: var(--text-muted); }
+    .grace-count { font-family: var(--font-mono); font-weight: 700; }
 
-    .eyebrow {
-      font-size: 11px; font-weight: 600; color: #1a3a52;
-      text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 6px;
-    }
-    .title {
-      font-family: var(--font-display); font-size: 34px; font-weight: 500;
-      margin: 0 0 8px; letter-spacing: 0.2px; line-height: 1.05;
-    }
-    .body {
-      font-size: 13px; line-height: 1.55; color: var(--text-muted);
-      margin: 0; max-width: 290px;
-    }
-    .body strong { color: var(--text); font-weight: 600; }
+    .actions { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .actions-spacer { flex: 1; }
 
-    .summary-card {
-      background: #FFFFFF; border: 1px solid var(--line); border-radius: 14px;
-      margin-bottom: 16px; overflow: hidden;
-    }
-    .row {
-      padding: 12px 14px; display: flex; flex-direction: column; gap: 4px;
-      border-bottom: 1px solid var(--line);
-    }
-    .row.last { border-bottom: none; }
-    .row-label {
-      font-size: 10px; font-weight: 600; color: var(--text-muted);
-      text-transform: uppercase; letter-spacing: 1.2px;
-    }
-    .row-value { font-size: 14px; font-weight: 500; color: var(--text); line-height: 1.35; }
-    .row-value.mono { font-family: var(--font-mono); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; font-family: var(--font-body); font-weight: 600; cursor: pointer; border: 1px solid transparent; text-decoration: none; transition: background 150ms ease, border-color 150ms ease; }
+    .btn--md { height: 44px; padding: 0 18px; font-size: 14px; }
+    .btn--sm { height: 36px; padding: 0 14px; font-size: 13px; }
+    .btn--primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .btn--primary:hover:not(:disabled) { background: var(--ink-soft); border-color: var(--ink-soft); }
+    .btn--secondary { background: #fff; color: var(--text); border-color: var(--line); }
+    .btn--secondary:hover:not(:disabled) { border-color: var(--accent-blue-deep); }
+    .btn--danger-outline { background: #fff; color: var(--danger); border-color: rgba(192,57,43,0.4); }
+    .btn--danger-outline:hover:not(:disabled) { background: #FCE8E5; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
 
-    .conf-chip {
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      padding: 10px 14px; border-radius: 12px;
-      background: var(--baby-blue);
-      border: 1px solid rgba(125,168,207,0.4);
-      margin-bottom: 16px;
-    }
-    .conf-text { display: flex; flex-direction: column; gap: 2px; }
-    .conf-eyebrow {
-      font-size: 10px; font-weight: 600; color: #1a3a52;
-      text-transform: uppercase; letter-spacing: 1.2px; opacity: 0.75;
-    }
-    .conf-code { font-family: var(--font-mono); font-size: 13px; font-weight: 600; color: #1a3a52; }
-    .conf-copy {
-      height: 30px; padding: 0 12px; border-radius: 8px;
-      background: #FFFFFF; color: #1a3a52;
-      border: 1px solid rgba(125,168,207,0.55);
-      font-size: 11px; font-weight: 600; cursor: pointer;
-      font-family: var(--font-body);
-      display: inline-flex; align-items: center; gap: 5px;
-    }
-    .conf-copy:hover { background: #F4F9FD; }
-
-    .spacer { flex: 1; min-height: 12px; }
-
-    .actions { display: flex; flex-direction: column; gap: 8px; }
-    .btn-primary {
-      width: 100%; height: 48px; border-radius: 12px;
-      background: var(--ink); color: #fff;
-      border: 1px solid var(--ink);
-      font-size: 14px; font-weight: 600; letter-spacing: 0.2px; cursor: pointer;
-      font-family: var(--font-body);
-      box-shadow: 0 2px 8px rgba(15,17,21,0.18);
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .btn-primary:hover:not(:disabled) { background: #1F1F22; border-color: #1F1F22; }
-    .btn-primary:disabled { opacity: 0.55; cursor: not-allowed; }
-    .actions-row { display: flex; gap: 8px; }
-    .btn-secondary {
-      flex: 1; height: 44px; border-radius: 12px;
-      background: #FFFFFF; color: var(--text);
-      border: 1px solid var(--line);
-      font-size: 13px; font-weight: 600; letter-spacing: 0.2px; cursor: pointer;
-      font-family: var(--font-body);
-    }
-    .btn-secondary:hover:not(:disabled) { border-color: var(--baby-blue-deep); }
-    .btn-secondary:disabled { opacity: 0.55; cursor: not-allowed; }
-
-    .btn-grace {
-      width: 100%; height: 44px; border-radius: 12px;
-      background: var(--baby-blue);
-      color: #1a3a52;
-      border: 1px solid rgba(125,168,207,0.5);
-      font-family: var(--font-body);
-      font-size: 13px; font-weight: 600; letter-spacing: 0.2px; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .btn-grace:disabled { opacity: 0.55; cursor: not-allowed; }
-    .btn-grace .grace-pill {
-      font-family: var(--font-mono); font-size: 12px; font-weight: 600;
-      color: #1a3a52; background: #FFFFFF;
-      border: 1px solid rgba(125,168,207,0.55);
-      padding: 2px 8px; border-radius: 999px;
-      min-width: 46px; text-align: center;
-    }
-    .btn-cancel-text {
-      width: 100%; height: 44px; border-radius: 12px;
-      background: #FFFFFF; color: #C0392B;
-      border: 1px solid var(--line);
-      font-family: var(--font-body);
-      font-size: 13px; font-weight: 600; letter-spacing: 0.2px; cursor: pointer;
-    }
-    .btn-cancel-text:hover:not(:disabled) { background: #FCE8E5; }
-    .btn-cancel-text:disabled { opacity: 0.55; cursor: not-allowed; }
-    .grace-caption {
-      font-size: 11px; line-height: 1.5; color: var(--text-muted);
-      text-align: center; margin: -2px 0 0; padding: 0 8px;
-    }
-    .sr-only {
-      position: absolute !important; width: 1px !important; height: 1px !important;
-      padding: 0 !important; margin: -1px !important; overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
-    }
-
-    .bottom-nav {
-      display: flex; background: #FFFFFF; border-top: 1px solid var(--line);
-      box-shadow: 0 -2px 14px rgba(15,35,60,0.08); flex-shrink: 0;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    .nav-tab {
-      flex: 1; height: 64px; background: transparent; border: none; cursor: pointer;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-      position: relative; color: var(--text); font-family: var(--font-body);
-    }
-    .nav-tab.is-active { color: #1a3a52; }
-    .nav-tab.is-active .nav-dot { background: var(--baby-blue-deep); }
-    .nav-tab:disabled { opacity: 0.4; cursor: not-allowed; }
-    .nav-dot { position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
-    .nav-icon { width: 24px; height: 24px; }
-    .nav-label { font-size: 0.7rem; font-weight: 500; line-height: 1; letter-spacing: 0.1px; }
-
-    @media screen and (min-width: 768px) {
-      .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
+    @media (max-width: 720px) {
+      .confirm-main { padding: 28px 20px; }
+      .headline { font-size: 32px; }
+      .card-top { flex-direction: column; }
+      .facts { grid-template-columns: 1fr; gap: 12px; }
+      .actions { flex-direction: column; align-items: stretch; }
+      .actions-spacer { display: none; }
+      .btn--md { width: 100%; }
     }
   `],
 })
@@ -411,18 +226,35 @@ export class BeautyBookingSuccessComponent implements OnChanges, OnDestroy {
     this.isBrowser = isPlatformBrowser(platformId);
   }
 
-  ngOnChanges(_: SimpleChanges): void {
-    this.refreshGraceCountdown();
-  }
-
-  ngOnDestroy(): void {
-    this.stopGraceTimer();
-  }
+  ngOnChanges(_: SimpleChanges): void { this.refreshGraceCountdown(); }
+  ngOnDestroy(): void { this.stopGraceTimer(); }
 
   get booking(): SuccessBooking | null {
     return (this.data['booking'] as SuccessBooking) || null;
   }
 
+  get heroHue(): string { return '#5C4A3F'; }
+
+  get headline(): string {
+    const dow = this.formatPart({ weekday: 'long' });
+    return dow ? `See you ${dow}!` : 'You’re all set!';
+  }
+  get whenDate(): string {
+    return this.formatPart({ weekday: 'short', month: 'short', day: 'numeric' }) || (this.booking?.slot_label ?? '');
+  }
+  get whenTimeDur(): string {
+    const t = this.formatPart({ hour: 'numeric', minute: '2-digit' });
+    const dur = this.booking?.service.duration_minutes;
+    return [t, dur ? `${dur} min` : ''].filter(Boolean).join(' · ');
+  }
+  get paidLabel(): string {
+    const c = this.booking?.service.price_cents ?? 0;
+    return `$${(c / 100).toFixed(2)}`;
+  }
+  get directionsUrl(): string {
+    const q = encodeURIComponent(this.booking?.provider.location_label || this.booking?.provider.name || '');
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+  }
   get graceCountdownLabel(): string {
     const total = Math.max(0, this.graceSecondsLeft);
     const m = Math.floor(total / 60);
@@ -430,8 +262,16 @@ export class BeautyBookingSuccessComponent implements OnChanges, OnDestroy {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  formatLocal(iso: string | undefined | null, tz?: string | null): string {
-    return formatSlotLocal(iso, tz);
+  private formatPart(opts: Intl.DateTimeFormatOptions): string {
+    const iso = this.booking?.slot_at;
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const tz = this.booking?.provider.timezone;
+    const o: Intl.DateTimeFormatOptions = { ...opts };
+    if (tz) o.timeZone = tz;
+    try { return new Intl.DateTimeFormat(undefined, o).format(d); }
+    catch { return new Intl.DateTimeFormat(undefined, opts).format(d); }
   }
 
   confirmationCode(id: number): string {
@@ -449,15 +289,6 @@ export class BeautyBookingSuccessComponent implements OnChanges, OnDestroy {
     }
   }
 
-  onShare(): void {
-    const b = this.booking;
-    if (!b || typeof navigator === 'undefined') return;
-    const text = `Booked: ${b.service.name} at ${b.provider.name}`;
-    if ((navigator as any).share) {
-      (navigator as any).share({ title: 'Booking confirmed', text }).catch(() => {});
-    }
-  }
-
   addToCalendar(): void {
     const b = this.booking;
     if (!b || !this.isBrowser) return;
@@ -467,8 +298,7 @@ export class BeautyBookingSuccessComponent implements OnChanges, OnDestroy {
     const ics = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Beauty//EN', 'BEGIN:VEVENT',
       `UID:beauty-booking-${b.id}@beauty.local`,
-      `DTSTAMP:${fmt(new Date())}`,
-      `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
+      `DTSTAMP:${fmt(new Date())}`, `DTSTART:${fmt(start)}`, `DTEND:${fmt(end)}`,
       `SUMMARY:${b.service.name} at ${b.provider.name}`,
       `LOCATION:${b.provider.location_label}`,
       'END:VEVENT', 'END:VCALENDAR',
@@ -476,16 +306,11 @@ export class BeautyBookingSuccessComponent implements OnChanges, OnDestroy {
     const blob = new Blob([ics], { type: 'text/calendar' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `beauty-booking-${b.id}.ics`;
-    a.click();
+    a.href = url; a.download = `beauty-booking-${b.id}.ics`; a.click();
     URL.revokeObjectURL(url);
   }
 
-  askGraceCancel(): void {
-    if (this.isCancelling) return;
-    this.confirmOpen = true;
-  }
+  askGraceCancel(): void { if (!this.isCancelling) this.confirmOpen = true; }
 
   runGraceCancel(): void {
     const link = this.links['cancel_grace'];
@@ -493,29 +318,20 @@ export class BeautyBookingSuccessComponent implements OnChanges, OnDestroy {
     this.isCancelling = true;
     this.authService.follow(link).subscribe({
       next: () => {
-        this.isCancelling = false;
-        this.confirmOpen = false;
+        this.isCancelling = false; this.confirmOpen = false;
         const home = this.links['home'];
         if (home) this.followLink.emit(home);
       },
-      error: () => {
-        this.isCancelling = false;
-        this.confirmOpen = false;
-      },
+      error: () => { this.isCancelling = false; this.confirmOpen = false; },
     });
   }
 
-  emit(link: BffLink | null | undefined): void {
-    if (link) this.followLink.emit(link);
-  }
+  emit(link: BffLink | null | undefined): void { if (link) this.followLink.emit(link); }
 
   private refreshGraceCountdown(): void {
     this.stopGraceTimer();
     const ends = this.booking?.grace_period_ends_at;
-    if (!ends || !this.isBrowser) {
-      this.graceSecondsLeft = 0;
-      return;
-    }
+    if (!ends || !this.isBrowser) { this.graceSecondsLeft = 0; return; }
     const tick = () => {
       const remaining = Math.max(0, Math.floor((new Date(ends).getTime() - Date.now()) / 1000));
       const previouslyActive = this.graceWasActive;
@@ -532,9 +348,6 @@ export class BeautyBookingSuccessComponent implements OnChanges, OnDestroy {
   }
 
   private stopGraceTimer(): void {
-    if (this.graceTimer != null) {
-      clearInterval(this.graceTimer);
-      this.graceTimer = null;
-    }
+    if (this.graceTimer != null) { clearInterval(this.graceTimer); this.graceTimer = null; }
   }
 }

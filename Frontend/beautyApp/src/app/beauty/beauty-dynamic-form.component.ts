@@ -85,6 +85,7 @@ interface FieldState {
               </svg>
             </div>
             <div class="auth-brand-name">Beauty</div>
+            <div *ngIf="p.brand_block_badge" class="auth-brand-badge">{{ p.brand_block_badge }}</div>
           </div>
 
           <h1 *ngIf="form.title" [class]="p.title_class">{{ form.title }}</h1>

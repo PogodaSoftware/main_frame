@@ -1,20 +1,15 @@
-FROM node:22-alpine3.21 AS build
+FROM oven/bun:alpine AS build
 
 RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
-COPY package.json package-lock.json* ./
-RUN npm install && \
-    npm cache clean --force && \
-    rm -rf /root/.npm && \
-    rm -rf /tmp/*
+COPY package.json bun.lockb* ./
+RUN bun install
 
 COPY . .
 
-RUN npm run build && \
-    npm cache clean --force && \
-    rm -rf /root/.npm && \
+RUN bun run build && \
     rm -rf node_modules && \
     rm -rf /tmp/*
 

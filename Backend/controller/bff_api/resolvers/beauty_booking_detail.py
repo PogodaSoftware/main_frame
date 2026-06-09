@@ -61,6 +61,14 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     links: dict = {
         'self': h.self_link('beauty_booking_detail', params={'id': b.id}),
         'bookings': h.screen_link('bookings', 'beauty_bookings', prompt='Back to My Bookings'),
+        # Review-write submit target (action-link). The write screen posts the
+        # rating/body here; the endpoint enforces completed-appointment +
+        # one-review-per-service rules.
+        'submit_review': h.link(
+            rel='submit_review',
+            href=f'/api/beauty/protected/services/{b.service.id}/reviews/',
+            method='POST', prompt='Post review',
+        ),
         'provider': h.screen_link(
             'provider', 'beauty_provider_detail',
             prompt='View provider', params={'id': b.service.provider.id},

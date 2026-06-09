@@ -52,6 +52,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     chat_service.prune_expired_for(booking, now=now)
     active = chat_service.is_chat_active(booking, now=now)
     messages = chat_service.list_messages(booking)
+    # Opening the thread clears the viewer's unread count for it.
+    chat_service.mark_read(booking, viewer_type=user_type, viewer_id=user_id, now=now)
 
     if user_type == 'customer':
         peer = booking.service.provider.name or 'Business'

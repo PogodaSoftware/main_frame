@@ -19,6 +19,7 @@ my_bookings_action = "css=div.beauty-app main.profile-section .action-card butto
 notifications_action = "css=div.beauty-app main.profile-section .action-card button.action-row >> nth=1"
 payment_methods_action = "css=div.beauty-app main.profile-section .action-card button.action-row >> nth=2"
 sign_out_button = "css=div.beauty-app main.profile-section .action-card button.action-row.danger"
+saved_services_link = "css=[data-testid='profile-saved-link']"
 
 version_footer = "css=div.beauty-app main.profile-section .version-footer"
 
