@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -112,6 +112,7 @@ export default function ChatsListScreen() {
   const router = useRouter();
   const [env, setEnv] = useState<BffEnvelope<ChatsData> | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -138,6 +139,16 @@ export default function ChatsListScreen() {
   const data = env?.action === 'render' ? env.data : null;
   const links = (env?._links ?? {}) as Record<string, BffLink | undefined>;
   const threads = data?.threads ?? [];
+
+  // Client-side filter over provider name + service name + last message,
+  // mirroring the web Inbox search.
+  const q = query.trim().toLowerCase();
+  const filteredThreads = q
+    ? threads.filter((t) =>
+        [t.peer_name, t.service_name, t.last_message]
+          .some((f) => (f || '').toLowerCase().includes(q)),
+      )
+    : threads;
 
   const goHome = () => {
     if (links.home) navigateLink(router, links.home);
@@ -189,11 +200,37 @@ export default function ChatsListScreen() {
               <>
                 <View style={styles.searchRow}>
                   <Ionicons name="search" size={14} color={C.textMuted} />
-                  <Text style={styles.searchRowText}>Search conversations</Text>
+                  <TextInput
+                    style={styles.searchInput}
+                    value={query}
+                    onChangeText={setQuery}
+                    placeholder="Search conversations"
+                    placeholderTextColor={C.textMuted}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    returnKeyType="search"
+                    accessibilityLabel="Search conversations"
+                    testID="chats-search-input"
+                  />
+                  {query ? (
+                    <Pressable
+                      onPress={() => setQuery('')}
+                      hitSlop={8}
+                      accessibilityLabel="Clear search"
+                      testID="chats-search-clear"
+                    >
+                      <Ionicons name="close-circle" size={16} color={C.textMuted} />
+                    </Pressable>
+                  ) : null}
                 </View>
+                {filteredThreads.length === 0 ? (
+                  <Text style={styles.noMatch} testID="chats-search-empty">
+                    No conversations match “{query}”.
+                  </Text>
+                ) : null}
                 <View style={styles.listCard}>
-                  {threads.map((t, idx) => {
-                    const last = idx === threads.length - 1;
+                  {filteredThreads.map((t, idx) => {
+                    const last = idx === filteredThreads.length - 1;
                     const [c1, c2] = avatarColors(t.peer_name);
                     return (
                       <Pressable
@@ -286,6 +323,14 @@ const styles = StyleSheet.create({
     borderRadius: 10, height: 40, paddingHorizontal: 12, marginBottom: 12,
   },
   searchRowText: { color: C.textMuted, fontSize: 13, fontFamily: FONT_BODY },
+  searchInput: {
+    flex: 1, height: '100%', padding: 0,
+    color: C.text, fontSize: 13, fontFamily: FONT_BODY,
+  },
+  noMatch: {
+    color: C.textMuted, fontSize: 12, fontFamily: FONT_BODY,
+    paddingVertical: 8, paddingHorizontal: 2, marginBottom: 4,
+  },
 
   listCard: {
     backgroundColor: C.white, borderWidth: 1, borderColor: C.line,

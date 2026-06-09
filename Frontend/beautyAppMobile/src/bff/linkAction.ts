@@ -13,7 +13,10 @@ const SCREEN_TO_NATIVE_ROUTE: Record<string, string> = {
   beauty_business_home: '/business/home',
   beauty_search: '/(customer)/search',
   beauty_category: '/(customer)/category/[category]',
-  beauty_service_detail: '/(customer)/service/[id]',
+  // Legacy service-detail screen is retired — the calendar/time picker on the
+  // book screen is the canonical "choose a service slot" page. Route any
+  // lingering service-detail link straight to it.
+  beauty_service_detail: '/(customer)/book/[serviceId]',
   beauty_book: '/(customer)/book/[serviceId]',
   beauty_provider_detail: '/(customer)/provider/[id]',
   beauty_bookings: '/(customer)/bookings',
@@ -99,7 +102,7 @@ const SCREEN_PARAM_ALIAS: Record<string, Record<string, string>> = {
   beauty_category: { slug: 'category' },
   beauty_provider_detail: { id: 'id' },
   beauty_book: { id: 'serviceId', service_id: 'serviceId', serviceId: 'serviceId' },
-  beauty_service_detail: { id: 'id' },
+  beauty_service_detail: { id: 'serviceId' },
   beauty_booking_detail: { id: 'id' },
   beauty_booking_success: { bookingId: 'id', id: 'id' },
   beauty_reschedule: { bookingId: 'id' },

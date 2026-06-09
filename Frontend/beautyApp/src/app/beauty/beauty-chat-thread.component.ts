@@ -20,6 +20,7 @@ import { FormsModule } from '@angular/forms';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
 
 interface Message {
   id: number;
@@ -33,9 +34,10 @@ interface Message {
 @Component({
   selector: 'app-beauty-chat-thread',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CustTopNavComponent],
   template: `
-    <div class="beauty-app prov-shell" data-testid="chat-thread-root">
+    <div class="beauty-app prov-shell" [class.cust-desk]="!isBusiness" data-testid="chat-thread-root">
+      <app-cust-top-nav *ngIf="!isBusiness" active="messages" [links]="links" [signedIn]="true" (follow)="emit($event)"></app-cust-top-nav>
       <header class="thread-header">
         <button type="button" class="back-btn" (click)="emit(links['back'])"
                 aria-label="Back" data-testid="chat-back">
@@ -334,6 +336,18 @@ interface Message {
     @media screen and (min-width: 768px) {
       .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
     }
+
+    /* Customer desktop (CustTopNav chrome) — centered conversation column. */
+    .cust-desk.beauty-app { max-width: none; margin: 0; box-shadow: none; min-height: 100dvh; max-height: none; }
+    .cust-desk .thread-header,
+    .cust-desk .summary-wrap,
+    .cust-desk .messages-pane,
+    .cust-desk .composer,
+    .cust-desk .composer-disabled { max-width: 1280px; margin-left: auto; margin-right: auto; width: 100%; padding-left: 32px; padding-right: 32px; }
+    .cust-desk .thread-header { border-bottom: 1px solid var(--line); }
+    .cust-desk .messages-pane { min-height: 56vh; }
+    .cust-desk .composer { margin-bottom: 16px; }
+    .cust-desk .msg .bubble { max-width: 520px; }
   `],
 })
 export class BeautyChatThreadComponent implements OnChanges, AfterViewChecked {
@@ -369,6 +383,7 @@ export class BeautyChatThreadComponent implements OnChanges, AfterViewChecked {
   get viewerType(): 'customer' | 'business' {
     return (this.data['viewer_type'] as 'customer' | 'business') || 'customer';
   }
+  get isBusiness(): boolean { return this.viewerType === 'business'; }
   get composerPlaceholder(): string {
     return this.peerName ? `Message ${this.peerName.split(' ')[0]}…` : 'Message…';
   }

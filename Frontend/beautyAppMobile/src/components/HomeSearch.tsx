@@ -143,31 +143,45 @@ export function HomeSearch() {
 
   return (
     <View style={styles.wrap} testID="home-search">
-      <View style={styles.box}>
-        <Ionicons name="search" size={18} color={C.textMuted} />
-        <TextInput
-          style={styles.input}
-          value={query}
-          onChangeText={onChangeQuery}
-          placeholder="Search services..."
-          placeholderTextColor={C.textMuted}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-          accessibilityLabel="Search services"
-          testID="home-search-input"
-        />
-        {hasQuery ? (
-          <Pressable
-            onPress={() => onChangeQuery('')}
-            accessibilityRole="button"
-            accessibilityLabel="Clear search"
-            testID="home-search-clear"
-            hitSlop={8}
-          >
-            <Ionicons name="close-circle" size={18} color={C.textMuted} />
-          </Pressable>
-        ) : null}
+      <View style={styles.searchRow}>
+        <View style={styles.box}>
+          <Ionicons name="search" size={18} color={C.textMuted} />
+          <TextInput
+            style={styles.input}
+            value={query}
+            onChangeText={onChangeQuery}
+            placeholder="Search services..."
+            placeholderTextColor={C.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="search"
+            accessibilityLabel="Search services"
+            testID="home-search-input"
+          />
+          {hasQuery ? (
+            <Pressable
+              onPress={() => onChangeQuery('')}
+              accessibilityRole="button"
+              accessibilityLabel="Clear search"
+              testID="home-search-clear"
+              hitSlop={8}
+            >
+              <Ionicons name="close-circle" size={18} color={C.textMuted} />
+            </Pressable>
+          ) : null}
+        </View>
+        {/* Compact shortcut to the saved/favorites list, sitting right next to
+            the search bar. Kept short ("Fav") so it stays compact on phones. */}
+        <Pressable
+          onPress={() => router.push('/(customer)/favorites' as any)}
+          accessibilityRole="button"
+          accessibilityLabel="View favorites"
+          testID="home-favorites-btn"
+          style={({ pressed }) => [styles.favBtn, pressed && styles.favBtnPressed]}
+        >
+          <Ionicons name="heart" size={15} color={C.accentBlueDeep} />
+          <Text style={styles.favBtnText}>Fav</Text>
+        </Pressable>
       </View>
 
       {hasQuery ? (
@@ -237,11 +251,21 @@ export function HomeSearch() {
 
 const styles = StyleSheet.create({
   wrap: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 6, backgroundColor: C.surface },
+  searchRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   box: {
+    flex: 1,
     flexDirection: 'row', alignItems: 'center', gap: 8,
     backgroundColor: C.white, borderWidth: 1, borderColor: C.line,
     borderRadius: 12, paddingHorizontal: 12, height: 44,
   },
+  favBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    height: 44, paddingHorizontal: 14,
+    backgroundColor: C.white, borderWidth: 1, borderColor: C.line,
+    borderRadius: 12,
+  },
+  favBtnPressed: { backgroundColor: C.surface, borderColor: C.accentBlueDeep },
+  favBtnText: { fontSize: 13, fontFamily: FONT_BODY_SEMI, color: C.accentBlueText },
   input: {
     flex: 1, height: '100%', fontSize: 15, color: C.text,
     fontFamily: FONT_BODY, paddingVertical: 0,

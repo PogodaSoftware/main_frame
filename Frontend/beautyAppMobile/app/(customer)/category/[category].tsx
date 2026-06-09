@@ -131,12 +131,9 @@ export default function CategoryScreen() {
             <Ionicons name="chevron-back" size={22} color={C.text} />
           </Pressable>
           <View style={{ flex: 1 }} />
-          <Pressable
-            accessibilityLabel="Save category"
-            style={({ pressed }) => [styles.iconBtn, pressed && styles.iconBtnPressed]}
-          >
-            <Ionicons name="heart-outline" size={20} color={C.text} />
-          </Pressable>
+          {/* Favoriting lives on the individual service (provider page / search
+              card), not the whole category — the category-level heart was a
+              no-op, so it's removed. */}
         </View>
 
         <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollContent}>

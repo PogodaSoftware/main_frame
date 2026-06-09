@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { BeautyShellComponent } from './beauty/beauty-shell.component';
 import { BeautyWelcomeComponent } from './beauty/beauty-welcome.component';
 import { BeautyForgotComponent } from './beauty/beauty-forgot.component';
+import { BeautyGoogleAuthComponent } from './beauty/cust-web/beauty-google-auth.component';
 import { BeautyErrorComponent } from './beauty/beauty-error.component';
 import { BeautySearchComponent } from './beauty/beauty-search.component';
 import { BeautyReviewWriteComponent } from './beauty/beauty-review-write.component';
@@ -26,6 +27,11 @@ export const routes: Routes = [
     path: 'forgot',
     component: BeautyForgotComponent,
     title: 'Beauty - Reset Password',
+  },
+  {
+    path: 'auth/oauth/google',
+    component: BeautyGoogleAuthComponent,
+    title: 'Beauty - Continue with Google',
   },
   {
     path: 'error',

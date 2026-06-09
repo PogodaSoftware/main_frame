@@ -77,14 +77,15 @@ html, body {
 }
 
 /* ---------------------------------------------------------------------------
- * Mobile phone-frame container
+ * Desktop phone-frame container (business portal only)
  *
- * Customer screens already wrap their content in `.beauty-app`. The business
- * portal screens use `.biz-app` — this rule mirrors the same desktop framing
- * so the visual proportions match across both portals.
+ * Customer screens are being redesigned to full-width responsive desktop
+ * layouts (Customer Web parity pass), so `.beauty-app` is NO LONGER capped —
+ * each customer page now owns its own responsive width. The business portal
+ * (`.biz-app` / `.business-shell`) keeps the centered phone-frame until it is
+ * redesigned too.
  * --------------------------------------------------------------------------- */
 @media screen and (min-width: 768px) {
-  .beauty-app,
   .biz-app,
   .business-shell {
     max-width: var(--phone-max);
@@ -93,6 +94,78 @@ html, body {
     min-height: 100dvh;
   }
 }
+
+/* ---------------------------------------------------------------------------
+ * Customer-web auth split-pane (CustAuthLayout `.cust-auth`)
+ *
+ * The customer auth forms (login / signup / forgot) reuse the schema-driven
+ * dynamic form, which renders its own mobile full-page chrome. When that form
+ * is projected into the desktop split-pane (`.cust-auth`), neutralise its page
+ * frame, hide its own brand/back chrome (the hero pane brands), web-size the
+ * title, and switch the submit to ink. Global rules so they pierce the child
+ * component's view encapsulation (scoped ::ng-deep did not apply here).
+ * Scoped to `.cust-auth` so business auth + book/reschedule are untouched.
+ * --------------------------------------------------------------------------- */
+.cust-auth .login-page,
+.cust-auth .signup-page {
+  max-width: none !important;
+  min-height: auto !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.cust-auth .login-header,
+.cust-auth .signup-header,
+.cust-auth .auth-back-bar,
+.cust-auth .auth-brand-block { display: none !important; }
+.cust-auth .login-main,
+.cust-auth .signup-main { padding: 0 !important; }
+.cust-auth .login-title,
+.cust-auth .signup-title { font-size: 38px !important; margin-top: 0 !important; margin-bottom: 8px !important; }
+.cust-auth .login-subtitle,
+.cust-auth .signup-subtitle { font-size: 14px !important; margin-bottom: 32px !important; }
+.cust-auth .form-input { height: 40px !important; }
+.cust-auth .btn-login,
+.cust-auth .btn-continue {
+  height: 44px !important;
+  background: #0A0A0B !important;
+  border-color: #0A0A0B !important;
+  box-shadow: none !important;
+}
+.cust-auth .btn-login:hover,
+.cust-auth .btn-continue:hover { background: #1F1F22 !important; border-color: #1F1F22 !important; }
+
+/* ---------------------------------------------------------------------------
+ * Customer-web top-nav search (CustTopNav `.cust-topnav`)
+ *
+ * The live home-search (BeautyHomeSearchComponent) is projected into the
+ * top-nav search pill. Neutralise its own box chrome so it blends into the
+ * pill, hide its inline status line, and float its results/empty/toast as a
+ * dropdown anchored to the pill. Global so they pierce the child component's
+ * view encapsulation (same reason as `.cust-auth`). Scoped to `.cust-topnav`.
+ * --------------------------------------------------------------------------- */
+.cust-topnav .search { position: relative; }
+.cust-topnav .home-search { padding: 0 !important; flex: 1; min-width: 0; }
+.cust-topnav .home-search-box {
+  background: transparent !important; border: none !important;
+  height: 40px !important; padding: 0 !important;
+}
+.cust-topnav .home-search-box:focus-within { outline: none !important; }
+.cust-topnav .home-search-icon { display: none !important; }
+.cust-topnav .home-search-input { font-size: 14px !important; }
+.cust-topnav .home-search-status { display: none !important; }
+.cust-topnav .home-search-results,
+.cust-topnav .home-search-empty,
+.cust-topnav .home-search-toast {
+  position: absolute !important; top: calc(100% + 12px); left: 0;
+  width: 440px; max-width: 80vw; z-index: 200;
+  background: #fff; border: 1px solid #DCDCDF; border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(15, 35, 60, 0.16);
+  max-height: 62vh; overflow: auto; margin: 0 !important;
+}
+.cust-topnav .home-search-results { padding: 8px !important; }
+.cust-topnav .home-search-empty,
+.cust-topnav .home-search-toast { padding: 14px !important; }
 
 /* ---------------------------------------------------------------------------
  * Button system

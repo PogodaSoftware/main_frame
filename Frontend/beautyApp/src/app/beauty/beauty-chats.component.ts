@@ -5,6 +5,7 @@
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { BffLink } from './beauty-bff.types';
 import { BeautyProviderSubHeaderComponent } from './provider/prov-sub-header.component';
@@ -13,6 +14,8 @@ import { resolveTabLink } from './provider/prov-tab-nav';
 import { BeautyProviderCardComponent } from './provider/prov-card.component';
 import { BeautyProviderButtonComponent } from './provider/prov-btn.component';
 import { BeautyProviderEmptyHintComponent } from './provider/prov-empty-hint.component';
+import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
+import { BeautyHomeSearchComponent } from './beauty-home-search.component';
 
 interface ChatThread {
   booking_id: number;
@@ -34,15 +37,21 @@ interface ChatThread {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     BeautyProviderSubHeaderComponent,
     BeautyProviderTabBarComponent,
     BeautyProviderCardComponent,
     BeautyProviderButtonComponent,
     BeautyProviderEmptyHintComponent,
+    CustTopNavComponent,
+    BeautyHomeSearchComponent,
   ],
   template: `
-    <div class="beauty-app prov-shell" data-testid="chats-root">
-      <app-prov-sub-header back="Dashboard" title="Messages"
+    <div class="beauty-app prov-shell" [class.cust-desk]="!isBusiness" data-testid="chats-root">
+      <app-cust-top-nav *ngIf="!isBusiness" active="messages" [links]="links" [signedIn]="true" (follow)="emit($event)">
+        <app-beauty-home-search topnav-search></app-beauty-home-search>
+      </app-cust-top-nav>
+      <app-prov-sub-header *ngIf="isBusiness" back="Dashboard" title="Messages"
                            (backClick)="emit(links['home'])"></app-prov-sub-header>
 
       <main id="main" class="prov-body">
@@ -52,15 +61,18 @@ interface ChatThread {
         </div>
 
         <ng-container *ngIf="threads.length; else emptyState">
-          <div class="search-row" aria-hidden="true">
+          <div class="search-row">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
               <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.4-4.4"/>
             </svg>
-            <span>Search conversations</span>
+            <input class="search-input" type="search" autocomplete="off"
+                   placeholder="Search conversations"
+                   aria-label="Search conversations"
+                   [(ngModel)]="query"/>
           </div>
-          <app-prov-card padding="0 14px" class="list-card">
-            <button *ngFor="let t of threads; let last = last" type="button"
+          <app-prov-card padding="0 14px" class="list-card" *ngIf="filteredThreads.length; else noMatch">
+            <button *ngFor="let t of filteredThreads; let last = last" type="button"
                     class="conv-row" [class.last]="last" [class.is-inactive]="!t.is_active"
                     [attr.data-testid]="'chat-thread-' + t.booking_id"
                     (click)="open(t)">
@@ -80,6 +92,9 @@ interface ChatThread {
               </div>
             </button>
           </app-prov-card>
+          <ng-template #noMatch>
+            <div class="no-match" data-testid="chats-no-match">No conversations match “{{ query }}”.</div>
+          </ng-template>
         </ng-container>
 
         <ng-template #emptyState>
@@ -94,31 +109,6 @@ interface ChatThread {
 
       <app-prov-tab-bar *ngIf="isBusiness"
                         active="messages" [badges]="tabBadges" (tabClick)="onTab($event)"></app-prov-tab-bar>
-
-      <nav *ngIf="!isBusiness" class="bottom-nav" aria-label="Primary">
-        <button type="button" class="nav-tab" (click)="emit(links['home'])" [disabled]="!links['home']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 11l9-7 9 7v9a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9z"/>
-          </svg>
-          <span class="nav-label">Home</span>
-        </button>
-        <button type="button" class="nav-tab is-active" data-testid="nav-chat">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 12a8 8 0 0 1-11.6 7.1L4 21l1.9-5.4A8 8 0 1 1 21 12z"/>
-          </svg>
-          <span class="nav-label">Messages</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['profile'])" [disabled]="!links['profile']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="8.5" r="3.8"/>
-            <path d="M4.5 21c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"/>
-          </svg>
-          <span class="nav-label">Profile</span>
-        </button>
-      </nav>
     </div>
   `,
   styles: [`
@@ -167,6 +157,13 @@ interface ChatThread {
       color: var(--text-muted);
       font-size: 13px;
     }
+    .search-input {
+      flex: 1; min-width: 0; height: 100%;
+      border: none; background: transparent; outline: none;
+      font-family: var(--font-body); font-size: 13px; color: var(--text);
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .no-match { padding: 24px 4px; text-align: center; font-size: 13px; color: var(--text-muted); }
 
     .list-card { display: block; }
     .conv-row {
@@ -255,6 +252,22 @@ interface ChatThread {
     @media screen and (min-width: 768px) {
       .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
     }
+
+    /* Customer desktop (CustTopNav chrome) — overrides the mobile phone-frame. */
+    .cust-desk.beauty-app { max-width: none; margin: 0; box-shadow: none; min-height: 100dvh; }
+    .cust-desk .prov-body { max-width: 1280px; width: 100%; margin: 0 auto; padding: 32px; }
+    .cust-desk .title-block { text-align: center; }
+    .cust-desk .page-title { font-size: 42px; }
+    .cust-desk .page-sub { font-size: 14px; }
+    .cust-desk .search-row { height: 44px; border-radius: 999px; max-width: 420px; margin-left: auto; margin-right: auto; justify-content: center; }
+    .cust-desk .conv-row { padding: 16px 0; }
+    .cust-desk .avatar { width: 48px; height: 48px; font-size: 20px; }
+    .cust-desk .conv-name { font-size: 15px; }
+    .cust-desk .conv-preview { font-size: 13px; }
+    @media screen and (max-width: 920px) {
+      .cust-desk .prov-body { padding: 20px; }
+      .cust-desk .page-title { font-size: 30px; }
+    }
   `],
 })
 export class BeautyChatsComponent {
@@ -262,8 +275,19 @@ export class BeautyChatsComponent {
   @Input() links: Record<string, BffLink> = {};
   @Output() followLink = new EventEmitter<BffLink>();
 
+  query = '';
+
   get threads(): ChatThread[] {
     return (this.data['threads'] as ChatThread[]) || [];
+  }
+
+  get filteredThreads(): ChatThread[] {
+    const q = this.query.trim().toLowerCase();
+    if (!q) return this.threads;
+    return this.threads.filter((t) =>
+      [t.peer_name, t.service_name, t.last_message]
+        .some((f) => (f || '').toLowerCase().includes(q)),
+    );
   }
 
   get viewerType(): 'customer' | 'business' {

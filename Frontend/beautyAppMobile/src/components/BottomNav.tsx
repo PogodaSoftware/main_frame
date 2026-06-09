@@ -60,7 +60,12 @@ export function BottomNav({ active, variant = 'default' }: BottomNavProps) {
           <Pressable
             key={tab.key}
             onPress={() => {
-              if (!isActive) router.replace(tab.path as any);
+              // Always navigate — sub-pages (book, provider, booking-detail,
+              // category) render BottomNav with active="home" even though they
+              // aren't the home screen, so guarding on `!isActive` made the
+              // Home tab a dead no-op there. Re-pressing the genuine active tab
+              // just re-loads it, which is harmless.
+              router.replace(tab.path as any);
             }}
             style={{ flex: 1 }}
           >
