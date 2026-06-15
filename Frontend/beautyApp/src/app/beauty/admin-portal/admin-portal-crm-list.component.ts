@@ -71,11 +71,11 @@ interface StatusBucket { id: 'All' | 'Active' | 'Pending' | 'Suspended' | 'Flagg
             [sub]="headerSub"
             [tabs]="tabs" [activeTab]="type" (tabSelect)="onType($any($event))">
             <div slot="actions" class="aw-hactions">
+              <!-- Single tag entry point. The old "Add tag" header button was a
+                   web-only duplicate of "Manage tags" (both open the tag
+                   manager); RN has no such button. Per-account tag assignment
+                   lives on the customer/provider detail pages, not here. -->
               <button type="button" class="aw-btn aw-btn--sec" (click)="onManage()">Manage tags</button>
-              <button type="button" class="aw-btn aw-btn--pri" (click)="onManage()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-                Add tag
-              </button>
             </div>
           </app-admin-web-page-header>
 

@@ -23,6 +23,7 @@ import {
   Output,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 import { BffLink } from '../beauty-bff.types';
 import { BeautyBffService } from '../beauty-bff.service';
@@ -46,16 +47,19 @@ const NOTIF_ROUTE: Record<string, string> = {
 @Component({
   selector: 'app-admin-web-topbar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="awt-bar">
-      <div class="awt-search" role="search">
+      <form class="awt-search" role="search" (submit)="onSearch($event)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6F77" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
         </svg>
-        <span class="awt-search-ph">{{ searchPlaceholder }}</span>
-      </div>
+        <input class="awt-search-input" type="search" [(ngModel)]="searchQuery" name="q"
+               [placeholder]="searchPlaceholder" [attr.aria-label]="searchPlaceholder"
+               autocomplete="off" />
+        <button type="button" class="awt-search-clear" *ngIf="searchQuery" (click)="clearSearch()" aria-label="Clear search">×</button>
+      </form>
 
       <div class="awt-spacer"></div>
 
@@ -117,7 +121,10 @@ const NOTIF_ROUTE: Record<string, string> = {
       background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
       height: 36px; padding: 0 12px;
     }
-    .awt-search-ph { flex: 1; font-size: 0.8125rem; color: var(--text-muted); }
+    .awt-search-input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--font-body); font-size: 0.8125rem; color: var(--text); min-width: 0; }
+    .awt-search-input::placeholder { color: var(--text-muted); }
+    .awt-search-input::-webkit-search-cancel-button { display: none; }
+    .awt-search-clear { background: #fff; border: 1px solid var(--line); border-radius: 999px; width: 18px; height: 18px; color: var(--text-muted); cursor: pointer; font-size: 0.8125rem; line-height: 1; display: grid; place-items: center; padding: 0; flex-shrink: 0; }
     .awt-spacer { flex: 1; }
 
     .awt-notifwrap { position: relative; }
@@ -173,6 +180,7 @@ export class BeautyAdminWebTopbarComponent implements OnInit {
   @Input() adminEmail = 'maria@beauty.io';
   @Output() follow = new EventEmitter<BffLink>();
 
+  searchQuery = '';
   notifItems: AdminNotifItem[] = [];
   notifUnread = 0;
   notifOpen = false;
@@ -208,6 +216,20 @@ export class BeautyAdminWebTopbarComponent implements OnInit {
       error: () => { this.notifLoading = false; this.cdr.markForCheck(); },
     });
   }
+
+  /** Global search → jump to the CRM list filtered by the query (the CRM
+   * resolver reads `q`). Empty query just opens the unfiltered CRM list. */
+  onSearch(e: Event): void {
+    e.preventDefault();
+    const q = (this.searchQuery || '').trim();
+    const route = '/admin/portal/crm' + (q ? '?q=' + encodeURIComponent(q) : '');
+    this.follow.emit({
+      rel: 'search', href: null, method: 'NAV',
+      screen: 'beauty_admin_portal_crm', route, prompt: 'Search',
+    });
+  }
+
+  clearSearch(): void { this.searchQuery = ''; }
 
   toggleNotif(e: Event): void {
     e.stopPropagation();

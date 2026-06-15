@@ -25,15 +25,17 @@ from pytest_bdd import given, scenarios, then, when
 
 from Playwright.Hooks.hooks import goto_route
 from Playwright.pages.pogoda.beauty.admin_portal_team_page import (
+    admin_drawer,
+    admin_drawer_rolechip,
+    admin_drawer_save,
     admin_kebab,
-    admin_menu_revoke,
-    admin_menu_role_select,
-    admin_menu_save,
+    admin_row_email,
     admin_rows,
+    invite_button,
     invite_email_input,
     invite_role_chip,
     invite_rows,
-    invite_send_button,
+    invite_row_email,
     team_header_title,
     team_page_root,
     team_summary,
@@ -198,13 +200,13 @@ def open_team_page(page):
 
 @then("the team page should render")
 def team_renders(page):
-    expect(page.locator(team_header_title)).to_contain_text("Admin team")
+    expect(page.locator(team_header_title)).to_contain_text("Team")
 
 
 @then("the roster should list every seeded admin")
 def roster_lists_seeded(page):
     page.wait_for_selector(admin_rows, timeout=5000)
-    emails = page.locator(f"{admin_rows} .row-text .r-email").all_inner_texts()
+    emails = page.locator(f"{admin_rows} {admin_row_email}").all_inner_texts()
     tag = _STATE["tag"]
     seeded = {_STATE["owner"]["email"], _STATE["lead"]["email"], _STATE["agent"]["email"]}
     missing = [e for e in seeded if e not in emails]
@@ -226,14 +228,17 @@ def header_counts(page):
 
 @when('I fill the invite composer with "new_invite@beauty-test.com" as "Support agent"')
 def fill_invite(page):
+    # Open the owner-only invite composer, then fill it.
+    page.locator(invite_button).click()
+    expect(page.locator(invite_email_input)).to_be_visible(timeout=5000)
     page.locator(invite_email_input).fill("new_invite@beauty-test.com")
     page.locator(invite_role_chip, has_text="Support agent").click()
 
 
 @when('I click "Send invite"')
 def click_send_invite(page):
-    page.locator(invite_send_button).click()
-    page.wait_for_timeout(1200)
+    page.get_by_role("button", name="Send invite →").click()
+    page.wait_for_timeout(1300)
 
 
 @then('a BeautyAdminInvite row should exist for "new_invite@beauty-test.com"')
@@ -261,7 +266,7 @@ def invite_visible_in_ui(page):
     # Re-resolve the page so the new invite renders.
     goto_route(page, "beauty_admin_portal_team")
     page.wait_for_selector(invite_rows, timeout=5000)
-    emails = page.locator(f"{invite_rows} .row-text .r-name").all_inner_texts()
+    emails = page.locator(f"{invite_rows} {invite_row_email}").all_inner_texts()
     assert "new_invite@beauty-test.com" in emails, f"Saw invites: {emails}"
 
 
@@ -285,9 +290,10 @@ def open_kebab_lead(page):
 
 @when('I pick "Risk analyst" and click Save')
 def pick_risk_save(page):
-    page.locator(admin_menu_role_select).select_option(value="risk_analyst")
-    page.locator(admin_menu_save).click()
-    page.wait_for_timeout(1200)
+    expect(page.locator(admin_drawer)).to_be_visible(timeout=5000)
+    page.locator(admin_drawer_rolechip, has_text="Risk analyst").click()
+    page.locator(admin_drawer_save, has_text="Save role").click()
+    page.wait_for_timeout(1300)
 
 
 @then('the principal\'s role in the DB should be "risk_analyst"')
@@ -318,9 +324,10 @@ def open_kebab_agent(page):
 
 @when('I click "Revoke admin"')
 def click_revoke(page):
-    # window.confirm blocks; auto-accept it.
-    page.once("dialog", lambda d: d.accept())
-    page.locator(admin_menu_revoke).click()
+    # Two-step inline confirm (no native dialog): arm → confirm.
+    expect(page.locator(admin_drawer)).to_be_visible(timeout=5000)
+    page.get_by_role("button", name="Revoke admin", exact=True).click()
+    page.get_by_role("button", name="Confirm revoke").click()
     page.wait_for_timeout(1500)
 
 

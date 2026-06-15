@@ -1,38 +1,36 @@
-"""Selectors for the Beauty Admin Portal — Team page (`/admin/portal/team`).
+"""Selectors for the Beauty Admin Portal — Team & access (`/admin/portal/team`).
 
-Kept minimal and stable: prefer CSS classes the component already ships
-(`.adm-team`, `.row`, `.role-pill`, etc.) rather than reaching for ARIA
-labels that may shift across copy edits.
+Desktop redesign selectors (shared admin-web chrome). Prefer the stable
+component CSS classes (`.aw-trow`, `.aw-drawer`, `.aw-rolechip`, …) over ARIA
+labels that shift with copy edits.
 """
 
-team_page_root = "app-admin-portal-team .adm-team"
-team_header_title = "app-admin-portal-team .sub .title"
-team_summary = "app-admin-portal-team .sub .summary"
-invite_button = "app-admin-portal-team button.new-btn"
+team_page_root = "app-admin-portal-team .aw-shell"
+team_header_title = "app-admin-portal-team .awph-title"
+team_summary = "app-admin-portal-team .awph-sub"
 
-# Admin roster rows
-admin_rows = "app-admin-portal-team main .row:not(.invite-row)"
-admin_row_name = ".row-text .r-name"
-admin_row_email = ".row-text .r-email"
-admin_row_role_pill = ".row-text .role-pill"
-admin_kebab = ".kebab"
-admin_menu = ".menu"
-admin_menu_role_select = ".menu select"
-admin_menu_save = ".menu button.mb:not(.danger)"
-admin_menu_revoke = ".menu button.mb.danger"
+# Header actions
+invite_button = "app-admin-portal-team .aw-hactions .aw-btn--pri"
 
-# Pending invite rows
-invite_rows = "app-admin-portal-team main .row.invite-row"
-invite_row_email = ".row-text .r-name"
+# Admin roster rows (the matrix lives in a separate <table>, so scope to the trow)
+admin_rows = "app-admin-portal-team .aw-trow"
+admin_row_email = ".aw-id-email"
+admin_row_role_pill = ".aw-rolepill"
+admin_kebab = ".aw-kebab"
+
+# Inline row drawer (role change + revoke)
+admin_drawer = "app-admin-portal-team .aw-drawer"
+admin_drawer_rolechip = "app-admin-portal-team .aw-drawer .aw-rolechip"
+admin_drawer_save = "app-admin-portal-team .aw-drawer .aw-btn--pri"
 
 # Invite composer
-invite_email_input = "app-admin-portal-team .invite-wrap input.ti"
-invite_role_chip = "app-admin-portal-team .role-chips .role-chip"
-invite_send_button = "app-admin-portal-team .invite-wrap adm-btn[variant='primary'] button"
+invite_email_input = "app-admin-portal-team #invite-email"
+invite_role_chip = "app-admin-portal-team .aw-composer-panel .aw-rolechip"
+
+# Pending invite rows
+invite_rows = "app-admin-portal-team .aw-invite-row"
+invite_row_email = ".aw-id-name"
 
 # Permission matrix
-matrix_root = "app-admin-portal-team .matrix-wrap"
-matrix_row = "app-admin-portal-team .matrix-wrap .m-row"
-
-# Tab bar
-tab_bar = "app-admin-portal-team adm-tab-bar"
+matrix_root = "app-admin-portal-team .aw-matrix"
+matrix_row = "app-admin-portal-team .aw-matrix tbody tr"

@@ -47,6 +47,43 @@ def is_chat_active(booking: BeautyBooking, *, now: datetime | None = None) -> bo
     return n < chat_expires_at(booking)
 
 
+_MESSAGEABLE_CANDIDATE_LIMIT = 20  # enough to cover any realistic 24h window
+
+
+def find_messageable_booking(target_type: str, target_id: int) -> BeautyBooking | None:
+    """Most-recent booking whose chat thread is still deliverable for a target.
+
+    "Deliverable" = not cancelled AND within the 24h post-service window
+    (``is_chat_active``). ``target_type`` is ``'customer'`` (``target_id`` =
+    ``BeautyUser.id``) or ``'business'`` (``target_id`` = ``BusinessProvider.id``,
+    the same key ``can_user_access`` compares). Returns ``None`` if none.
+
+    Single source of truth for both the admin send path and the detail
+    resolvers' button gate, so they never disagree.
+    """
+    base = (
+        BeautyBooking.objects
+        .select_related('service', 'service__provider', 'customer')
+        .exclude(status__in=BeautyBooking.CANCELLED_STATUSES)
+        .order_by('-slot_at')
+    )
+    if target_type == 'customer':
+        qs = base.filter(customer_id=target_id)
+    elif target_type == 'business':
+        qs = base.filter(service__provider__business_provider_id=target_id)
+    else:
+        return None
+    for booking in qs[:_MESSAGEABLE_CANDIDATE_LIMIT]:
+        if is_chat_active(booking):
+            return booking
+    return None
+
+
+def has_messageable_thread(target_type: str, target_id: int) -> bool:
+    """True if an admin can deliver an in-app message to this target."""
+    return find_messageable_booking(target_type, target_id) is not None
+
+
 def prune_expired_for(booking: BeautyBooking, *, now: datetime | None = None) -> int:
     """Delete this booking's messages if past the 24h post-service window."""
     n = now or datetime.now(timezone.utc)

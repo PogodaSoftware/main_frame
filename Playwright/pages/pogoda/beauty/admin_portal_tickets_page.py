@@ -1,0 +1,12 @@
+"""Selectors for the Beauty Admin Portal — Support tickets (`/admin/portal/tickets`)."""
+
+tk_root = "app-admin-portal-tickets .aw-shell"
+tk_rows = "app-admin-portal-tickets .aw-trow"
+tk_new_btn = "app-admin-portal-tickets .aw-hactions .aw-btn--pri"
+tk_composer = "app-admin-portal-tickets .aw-composer-panel"
+tk_composer_subject = "app-admin-portal-tickets .aw-composer-panel input.aw-ti"
+tk_composer_body = "app-admin-portal-tickets .aw-composer-panel textarea.aw-ti"
+tk_composer_create = "app-admin-portal-tickets .aw-composer-panel .aw-btn--pri"
+tk_status_tabs = "app-admin-portal-tickets .awph-tab"
+tk_drawer = "app-admin-portal-tickets .aw-drawer"
+tk_drawer_status = "app-admin-portal-tickets .aw-dsel"

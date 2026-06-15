@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from django.db.models import Avg, Count, Sum
 
+from beauty_api import chat_service
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminNote, BeautyAdminTag, BeautyAdminTagAssignment, BeautyBooking,
@@ -151,14 +152,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         .first()
     )
 
-    has_active_booking = False
-    if provider_profile_id is not None:
-        has_active_booking = (
-            BeautyBooking.objects
-            .filter(service__provider_id=provider_profile_id)
-            .exclude(status__in=BeautyBooking.CANCELLED_STATUSES)
-            .exists()
-        )
+    # Key on bp.id (BusinessProvider id) — the SAME key the admin send path +
+    # can_user_access use — so the button gate and actual delivery agree.
+    has_thread = chat_service.has_messageable_thread('business', bp.id)
 
     notes_qs = BeautyAdminNote.objects.filter(target_type='business', target_id=bp.id).order_by('-created_at')[:25]
 
@@ -177,7 +173,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'last_seen_label': _humanize_relative(last_session.created_at) if last_session else '—',
             'is_suspended': bp.is_suspended,
             'verified': bool(profile and bp.business_name),
-            'has_active_booking': has_active_booking,
+            'has_active_booking': has_thread,
+            'has_messageable_thread': has_thread,
             'attached_tags': [
                 {'id': a.tag.slug, 'label': a.tag.label, 'color': a.tag.color, 'tone': a.tag.tone}
                 for a in BeautyAdminTagAssignment.objects
@@ -191,6 +188,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                     assignments__user_type='business',
                     assignments__user_id=bp.id,
                 ).order_by('label')[:4]
+            ],
+            'available_tags': [
+                {'id': t.slug, 'label': t.label, 'color': t.color, 'tone': t.tone}
+                for t in BeautyAdminTag.objects.exclude(
+                    assignments__user_type='business',
+                    assignments__user_id=bp.id,
+                ).order_by('label')
             ],
             'performance': performance,
             'services': services,

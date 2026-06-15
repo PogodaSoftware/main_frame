@@ -7,6 +7,7 @@ from decimal import Decimal
 
 from django.db.models import Count, Sum
 
+from beauty_api import chat_service
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminAuditEvent, BeautyAdminNote, BeautyAdminTag, BeautyAdminTagAssignment,
@@ -212,6 +213,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         ],
     }
 
+    has_thread = chat_service.has_messageable_thread('customer', target.id)
+
     return {
         'action': 'render',
         'screen': 'beauty_admin_portal_customer_detail',
@@ -238,6 +241,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                     assignments__user_id=target.id,
                 ).order_by('label')[:4]
             ],
+            'available_tags': [
+                {'id': t.slug, 'label': t.label, 'color': t.color, 'tone': t.tone}
+                for t in BeautyAdminTag.objects.exclude(
+                    assignments__user_type='customer',
+                    assignments__user_id=target.id,
+                ).order_by('label')
+            ],
             'lifetime_stats': lifetime_stats,
             'bookings': bk_rows,
             'total_bookings': total_bookings,
@@ -253,7 +263,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 }
                 for n in BeautyAdminNote.objects.filter(target_type='customer', target_id=target.id).order_by('-created_at')[:25]
             ],
-            'has_active_booking': BeautyBooking.objects.filter(customer_id=target.id).exclude(status__in=BeautyBooking.CANCELLED_STATUSES).exists(),
+            'has_active_booking': has_thread,
+            'has_messageable_thread': has_thread,
             'risk_score': risk_score,
             'risk_label': risk_label,
             'tab_badges': h.admin_tab_badges(),

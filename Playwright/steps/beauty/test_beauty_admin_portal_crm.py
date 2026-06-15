@@ -23,6 +23,9 @@ from Playwright.pages.pogoda.beauty.admin_portal_crm_page import (
     crm_rows,
     crm_root,
     crm_search,
+    crm_tabs,
+    hactions_add_tag,
+    manage_tags_btn,
     row_checkbox,
     status_chips,
 )
@@ -144,3 +147,34 @@ def select_and_bulk_suspend(page):
 def suspend_confirm_opens(page):
     page.wait_for_url("**/admin/portal/crm/suspend/**", timeout=10000)
     assert "/admin/portal/crm/suspend/" in page.url
+
+
+@then('there should be no "Add tag" button in the header actions area')
+def no_add_tag_button(page):
+    # Scope to .aw-hactions; match exact text "Add tag" so "Manage tags" is not caught.
+    buttons = page.locator(hactions_add_tag)
+    add_tag_count = 0
+    for i in range(buttons.count()):
+        if buttons.nth(i).inner_text().strip() == "Add tag":
+            add_tag_count += 1
+    assert add_tag_count == 0, (
+        f"Expected 0 buttons with exact text 'Add tag' in .aw-hactions, found {add_tag_count}"
+    )
+
+
+@when('I click the "Manage tags" header button')
+def click_manage_tags(page):
+    page.locator(manage_tags_btn, has_text="Manage tags").click()
+
+
+@then("I should land on the tag manager page")
+def on_tag_manager_page(page):
+    page.wait_for_url("**/admin/portal/crm/tags**", timeout=10000)
+    assert "/admin/portal/crm/tags" in page.url
+
+
+@when("I switch to the Business providers tab")
+def switch_to_providers_tab(page):
+    page.locator(crm_tabs, has_text="Business providers").click()
+    # Stale-while-revalidate refetch for the providers type
+    page.wait_for_timeout(1200)

@@ -142,7 +142,27 @@ interface DetailTag { id: string; label: string; color: string; tone: string; }
                           (click)="onAssignTag(t.id)" [attr.aria-label]="'Attach tag ' + t.label">
                     <span class="aw-tdot" [style.background]="t.color"></span>{{ t.label }}<span class="aw-plus mono">+</span>
                   </button>
+                  <button type="button" class="aw-tsug aw-tpick-toggle" (click)="toggleTagPicker()"
+                          [attr.aria-expanded]="tagPickerOpen" aria-label="Add any tag">
+                    <span class="aw-plus mono">+</span> Add tag
+                  </button>
                   <a class="aw-link" (click)="onManageTags($event)" href="#">Manage tags →</a>
+                </div>
+
+                <!-- Full tag picker: attach ANY existing tag, not just the suggested few. -->
+                <div class="aw-tpicker" *ngIf="tagPickerOpen">
+                  <input class="aw-tpick-search" type="text" [(ngModel)]="tagFilter"
+                         placeholder="Find a tag…" aria-label="Filter tags" autocomplete="off" />
+                  <div class="aw-tpick-list">
+                    <button type="button" *ngFor="let t of filteredAvailableTags" class="aw-tpick-item"
+                            (click)="onAssignTag(t.id)" [attr.aria-label]="'Attach tag ' + t.label">
+                      <span class="aw-tdot" [style.background]="t.color"></span>{{ t.label }}
+                    </button>
+                    <div *ngIf="!filteredAvailableTags.length" class="aw-muted aw-tpick-empty">
+                      {{ availableTags.length ? 'No tags match.' : 'All tags attached.' }}
+                      <a class="aw-link" (click)="onManageTags($event)" href="#">Manage tags →</a>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -380,6 +400,14 @@ interface DetailTag { id: string; label: string; color: string; tone: string; }
     .aw-tchip .aw-x { margin-left: 2px; font-family: var(--font-mono); font-size: 0.625rem; opacity: 0.7; }
     .aw-tsug { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-family: var(--font-body); font-size: 0.625rem; color: var(--text); cursor: pointer; }
     .aw-tsug .aw-plus { color: var(--text-muted); }
+    .aw-tpick-toggle { border-style: dashed; font-weight: 600; }
+    .aw-tpicker { margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 8px; }
+    .aw-tpick-search { width: 100%; height: 32px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0 10px; font-family: var(--font-body); font-size: 0.75rem; color: var(--text); outline: none; margin-bottom: 8px; }
+    .aw-tpick-search:focus { border-color: var(--text); }
+    .aw-tpick-list { display: flex; flex-wrap: wrap; gap: 6px; max-height: 168px; overflow-y: auto; }
+    .aw-tpick-item { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-family: var(--font-body); font-size: 0.625rem; font-weight: 600; color: var(--text); cursor: pointer; }
+    .aw-tpick-item:hover { background: var(--surface); }
+    .aw-tpick-empty { padding: 8px 2px; font-size: 0.6875rem; }
     .aw-link { font-size: 0.75rem; color: var(--text); font-weight: 600; cursor: pointer; text-decoration: none; }
 
     /* right column */
@@ -455,6 +483,9 @@ export class AdminPortalCustomerDetailComponent {
 
   exportNotice: string | null = null;
 
+  tagPickerOpen = false;
+  tagFilter = '';
+
   constructor(
     private location: Location,
     private auth: BeautyAuthService,
@@ -490,6 +521,12 @@ export class AdminPortalCustomerDetailComponent {
   get statusLabel(): string { return this.isSuspended ? 'Suspended' : 'Active'; }
   get attachedTags(): DetailTag[] { return (this.d['attached_tags'] as DetailTag[]) ?? []; }
   get suggestedTags(): DetailTag[] { return (this.d['suggested_tags'] as DetailTag[]) ?? []; }
+  /** Full catalog of unattached tags (resolver `available_tags`) for the picker. */
+  get availableTags(): DetailTag[] { return (this.d['available_tags'] as DetailTag[]) ?? []; }
+  get filteredAvailableTags(): DetailTag[] {
+    const q = this.tagFilter.trim().toLowerCase();
+    return q ? this.availableTags.filter((t) => t.label.toLowerCase().includes(q)) : this.availableTags;
+  }
   get lifetimeStats(): LifetimeStat[] { return (this.d['lifetime_stats'] as LifetimeStat[]) ?? []; }
   get bookings(): BookingRow[] { return (this.d['bookings'] as BookingRow[]) ?? []; }
   get totalBookings(): number { return (this.d['total_bookings'] as number) ?? this.bookings.length; }
@@ -568,11 +605,15 @@ export class AdminPortalCustomerDetailComponent {
   }
 
   // ---- inline tag assign/unassign (RN parity) ----
+  toggleTagPicker(): void { this.tagPickerOpen = !this.tagPickerOpen; if (!this.tagPickerOpen) this.tagFilter = ''; }
+
   onAssignTag(slug: string): void {
     const link = this.links['tag_assign_template'];
     if (!link?.href) return;
     const id = (this.d['id'] as number) ?? 0;
     const call: BffLink = { ...link, href: link.href.replace(':slug', slug) };
+    // Close the picker on attach; refetch refreshes attached/available lists.
+    this.tagPickerOpen = false; this.tagFilter = '';
     this.auth.follow(call, { type: 'customer', id }, true).subscribe({
       next: () => this.refetch(),
       error: () => this.refetch(),

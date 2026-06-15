@@ -63,14 +63,16 @@ def _initials(name: str, email: str) -> str:
         parts = [p for p in src.split() if p]
         if len(parts) >= 2:
             return (parts[0][:1] + parts[-1][:1]).upper()
-        return src[:2].upper()
+        init = src[:2].upper()
+        return (init * 2)[:2] if init else 'AA'
     if email:
         local = email.split('@', 1)[0]
         bits = re.split(r'[._-]', local)
         bits = [b for b in bits if b]
         if len(bits) >= 2:
             return (bits[0][:1] + bits[1][:1]).upper()
-        return local[:2].upper()
+        init = local[:2].upper()
+        return (init * 2)[:2] if init else 'AA'
     return 'AA'
 
 

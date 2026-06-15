@@ -29,6 +29,11 @@ from Playwright.pages.pogoda.beauty.admin_portal_customer_detail_page import (
     cd_root,
     cd_suggested,
     cd_tabs,
+    cd_tpick_item,
+    cd_tpick_search,
+    cd_tpick_toggle,
+    cd_tpicker,
+    cd_tsug_only,
 )
 from .beauty_utils import (
     BACKEND_URL,
@@ -85,6 +90,12 @@ def admin_on_detail(page):
     _shell("from beauty_api.models import BeautyAdminTag; "
            f"BeautyAdminTag.objects.get_or_create(slug='{slug}', defaults={{'label':'E2E {tag}','color':'#A06B2C','tone':'#F4E7D6'}}); print('ok')")
 
+    # Seed a second deterministic tag for the full picker scenarios.
+    pick_slug = f"e2epick-{tag}"
+    pick_label = f"E2EPick {tag}"
+    _shell("from beauty_api.models import BeautyAdminTag; "
+           f"BeautyAdminTag.objects.get_or_create(slug='{pick_slug}', defaults={{'label':'{pick_label}','color':'#0F1115','tone':'#E9E9EB'}}); print('ok')")
+
     login = requests.post(f"{BACKEND_URL}/api/beauty/login/",
                           json={"email": admin_email, "password": password, "device_id": TEST_DEVICE_ID}, timeout=10)
     assert login.status_code == 200, f"Login failed: {login.text}"
@@ -94,7 +105,8 @@ def admin_on_detail(page):
     }])
     page.add_init_script(f"window.localStorage.setItem('beauty_device_id', '{TEST_DEVICE_ID}');")
     _STATE.update({"admin_email": admin_email, "target_email": target_email,
-                   "principal_id": principal_id, "target_id": target_id, "slug": slug})
+                   "principal_id": principal_id, "target_id": target_id,
+                   "slug": slug, "pick_slug": pick_slug, "pick_label": pick_label})
     yield _STATE
 
     _shell("from beauty_api.models import BeautyAdminPrincipal; "
@@ -102,7 +114,7 @@ def admin_on_detail(page):
     _shell("from beauty_api.models import BeautyAdminTagAssignment, BeautyAdminTag, BeautyAdminNote; "
            f"BeautyAdminTagAssignment.objects.filter(user_type='customer', user_id={target_id}).delete(); "
            f"BeautyAdminNote.objects.filter(target_type='customer', target_id={target_id}).delete(); "
-           f"BeautyAdminTag.objects.filter(slug='{_STATE['slug']}').delete(); print('ok')")
+           f"BeautyAdminTag.objects.filter(slug__in=['{_STATE['slug']}', '{_STATE['pick_slug']}']).delete(); print('ok')")
     delete_test_users(admin_email)
     delete_test_users(target_email)
 
@@ -192,3 +204,65 @@ def click_risk_tab(page):
 @then("the Risk signals panel should show")
 def risk_panel_shown(page):
     expect(page.locator(cd_right_h3, has_text="Risk signals")).to_be_visible(timeout=5000)
+
+
+# ---------------------------------------------------------------------------
+# Full tag picker scenarios
+# ---------------------------------------------------------------------------
+
+@when("I open the tag picker")
+def open_tag_picker(page):
+    page.locator(cd_tpick_toggle).click()
+    expect(page.locator(cd_tpicker)).to_be_visible(timeout=5000)
+
+
+@then("the picker panel should be visible")
+def picker_visible(page):
+    expect(page.locator(cd_tpicker)).to_be_visible()
+
+
+@then("the picker should list more available tags than the suggested cap")
+def picker_has_more_than_suggested(page):
+    # The dev DB has ~15 tags total; available_tags has no 4-item cap.
+    # We assert picker items > suggested chips (non-toggle) AND > 4.
+    picker_count = page.locator(cd_tpick_item).count()
+    suggested_count = page.locator(cd_tsug_only).count()
+    assert picker_count > 4, (
+        f"Expected picker to show >4 available tags, got {picker_count}. "
+        "Is available_tags being emitted by the resolver?"
+    )
+    assert picker_count > suggested_count, (
+        f"Expected picker ({picker_count}) to show more tags than suggested ({suggested_count})."
+    )
+
+
+@when("I type the seeded tag label fragment into the picker search")
+def type_tag_search(page):
+    # "E2EPick" is unique to the seeded pick tag — narrows results to exactly it.
+    page.locator(cd_tpick_search).fill("E2EPick")
+
+
+@then("the seeded tag should appear in the picker results")
+def seeded_tag_in_results(page):
+    expect(
+        page.locator(cd_tpick_item, has_text=_STATE["pick_label"])
+    ).to_be_visible(timeout=5000)
+
+
+@when("I click the seeded tag in the picker")
+def click_seeded_in_picker(page):
+    # Narrow to the seeded tag first so the click is unambiguous.
+    page.locator(cd_tpick_search).fill("E2EPick")
+    page.locator(cd_tpick_item, has_text=_STATE["pick_label"]).first.click()
+
+
+@then("the picker should be closed")
+def picker_closed(page):
+    expect(page.locator(cd_tpicker)).not_to_be_visible(timeout=8000)
+
+
+@then("the seeded tag should appear as an attached chip")
+def seeded_tag_attached(page):
+    expect(
+        page.locator(cd_attached, has_text=_STATE["pick_label"])
+    ).to_be_visible(timeout=10000)

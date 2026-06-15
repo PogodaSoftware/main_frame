@@ -25,7 +25,8 @@ from rest_framework.views import APIView
 from bff_api.services.auth_service import get_authenticated_user
 from bff_api.services.hateoas_service import is_beauty_admin
 
-from . import audit
+from . import audit, chat_service
+from .chat_views import _broadcast_message
 from .middleware import SESSION_COOKIE_NAME
 from .models import (
     BeautyAdminInvite, BeautyAdminNote, BeautyAdminPrincipal, BeautyAdminTag,
@@ -280,25 +281,13 @@ def _send_admin_chat(request, user, target_type: str, target_id: int, data) -> R
     if target_type == 'customer':
         if not BeautyUser.objects.filter(id=target_id).exists():
             return Response({'detail': 'Customer not found.'}, status=status.HTTP_404_NOT_FOUND)
-        bookings_qs = (
-            BeautyBooking.objects
-            .filter(customer_id=target_id)
-            .exclude(status__in=BeautyBooking.CANCELLED_STATUSES)
-            .order_by('-slot_at')
-        )
     elif target_type == 'business':
         if not BusinessProvider.objects.filter(id=target_id).exists():
             return Response({'detail': 'Business provider not found.'}, status=status.HTTP_404_NOT_FOUND)
-        bookings_qs = (
-            BeautyBooking.objects
-            .filter(service__provider__business_provider_id=target_id)
-            .exclude(status__in=BeautyBooking.CANCELLED_STATUSES)
-            .order_by('-slot_at')
-        )
     else:
         return Response({'detail': 'Bad target_type.'}, status=status.HTTP_400_BAD_REQUEST)
 
-    booking = bookings_qs.first()
+    booking = chat_service.find_messageable_booking(target_type, target_id)
     if booking is None:
         return Response(
             {'detail': 'No active booking thread to deliver into.'},
@@ -311,6 +300,8 @@ def _send_admin_chat(request, user, target_type: str, target_id: int, data) -> R
         sender_id=user.get('user_id') or 0,
         body=body,
     )
+    payload = chat_service.serialize_message(msg)
+    _broadcast_message(booking, payload)
     audit.log_event(
         request=request, user=user, action='message.send',
         target_type=target_type, target_id=target_id,

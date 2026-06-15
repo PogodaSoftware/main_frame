@@ -18,3 +18,14 @@ Feature: Beauty Admin Portal — CRM list (desktop)
   Scenario: Bulk Suspend routes to the audited suspend-confirm modal
     When I select the first account and click bulk Suspend
     Then the suspend-confirm screen for that account should open
+
+  Scenario: No "Add tag" header button on the Customers CRM list
+    Then there should be no "Add tag" button in the header actions area
+
+  Scenario: "Manage tags" header button is present and navigates to the tag manager
+    When I click the "Manage tags" header button
+    Then I should land on the tag manager page
+
+  Scenario: No "Add tag" header button on the Providers tab either
+    When I switch to the Business providers tab
+    Then there should be no "Add tag" button in the header actions area
