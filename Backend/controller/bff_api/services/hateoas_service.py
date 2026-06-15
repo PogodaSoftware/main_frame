@@ -430,6 +430,8 @@ SCREEN_ROUTES = {
     'beauty_chat_thread': '/pogoda/beauty/chats/:bookingId',
     # Business portal screens.
     'beauty_business_home': '/pogoda/beauty/business',
+    'beauty_business_messages': '/pogoda/beauty/business/messages',
+    'beauty_business_notifications': '/pogoda/beauty/business/notifications',
     'beauty_business_services': '/pogoda/beauty/business/services',
     'beauty_business_service_form': '/pogoda/beauty/business/services/:serviceId/edit',
     'beauty_business_service_new': '/pogoda/beauty/business/services/new',

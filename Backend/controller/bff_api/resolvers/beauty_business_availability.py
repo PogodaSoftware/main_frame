@@ -10,6 +10,7 @@ Auth required — non-business users are redirected to the business login.
 """
 
 from beauty_api.availability_service import ensure_storefront, get_weekly_hours
+from beauty_api.timezone_utils import resolve_timezone
 from ..services import hateoas_service as h
 from ..services.application_gate import (
     redirect_to_wizard_if_incomplete,
@@ -32,7 +33,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'action': 'render',
         'screen': 'beauty_business_availability',
         'data': {
+            'business': {
+                'email': business.email,
+                'business_name': business.business_name,
+            },
             'storefront': {'id': storefront.id, 'name': storefront.name},
+            'timezone': resolve_timezone(storefront),
+            'timezone_explicit': bool((storefront.timezone or '').strip()),
             'weekly_hours': weekly,
             'submit_method': 'PUT',
             'submit_href': '/api/beauty/protected/business/availability/',

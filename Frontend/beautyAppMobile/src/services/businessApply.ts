@@ -33,8 +33,11 @@ export async function submitApplication(href: string, acceptTos = true): Promise
 export async function putWeeklyHours(
   href: string,
   rows: WeeklyHourRow[],
+  timezone?: string,
 ): Promise<unknown> {
-  const resp = await api.put(href, { weekly_hours: rows });
+  const body: Record<string, unknown> = { weekly_hours: rows };
+  if (timezone) body.timezone = timezone;
+  const resp = await api.put(href, body);
   return resp.data;
 }
 

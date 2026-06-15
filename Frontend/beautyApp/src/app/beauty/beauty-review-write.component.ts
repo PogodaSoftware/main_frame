@@ -25,6 +25,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { environment } from '../../environments/environment';
 import { BeautyAuthService } from './beauty-auth.service';
+import { BffLink } from './beauty-bff.types';
+import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
 
 interface MyBookingService {
   id: number;
@@ -45,21 +47,15 @@ interface MyBooking {
 @Component({
   selector: 'app-beauty-review-write',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CustTopNavComponent],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
-    <div class="beauty-app" data-testid="review-write-root">
-      <header class="sub-header">
-        <button type="button" class="back-btn" aria-label="Back" (click)="goBack()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </button>
-        <h1 class="sub-header-title">Leave a review</h1>
-        <span class="sub-header-spacer-flex"></span>
-      </header>
+    <div class="beauty-app cust-desk" data-testid="review-write-root">
+      <app-cust-top-nav active="bookings" [signedIn]="true" (follow)="onNav($event)"></app-cust-top-nav>
 
-      <main id="main">
+      <main id="main" class="rw-main">
+      <div class="rw-inner">
+        <h1 class="rw-h1">Leave a review</h1>
         <ng-container *ngIf="loading">
           <div class="status">Loading…</div>
         </ng-container>
@@ -127,6 +123,7 @@ interface MyBooking {
         <div *ngIf="!loading && !booking" class="status" data-testid="rw-load-error">
           Could not load booking.
         </div>
+      </div>
       </main>
     </div>
   `,
@@ -185,8 +182,14 @@ interface MyBooking {
       background: #FCE8E6; color: #B3261E; border: 1px solid #F4C7C3;
       font-size: 13px;
     }
-    @media screen and (min-width: 768px) {
-      .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
+    /* Desktop (cust-top-nav chrome) — web is desktop-only; RN is mobile. */
+    .rw-main { flex: 1; }
+    .rw-inner { max-width: 640px; margin: 0 auto; padding: 28px 24px 48px; width: 100%; }
+    .rw-h1 { font-family: var(--font-display); font-size: 38px; font-weight: 500; margin: 0 0 14px; }
+    .rw-inner .card { margin: 0 0 14px; }
+    @media screen and (max-width: 720px) {
+      .rw-inner { padding: 16px 16px 32px; }
+      .rw-h1 { font-size: 28px; }
     }
   `],
 })
@@ -220,6 +223,11 @@ export class BeautyReviewWriteComponent implements OnInit {
 
   goBack(): void {
     if (isPlatformBrowser(this.platformId)) window.history.back();
+  }
+
+  /** cust-top-nav emits NAV links; route directly (this page isn't SDUI). */
+  onNav(link: BffLink): void {
+    if (link?.route) this.router.navigateByUrl(link.route);
   }
 
   private loadBooking(): void {

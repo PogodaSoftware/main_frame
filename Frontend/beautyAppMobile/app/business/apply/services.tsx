@@ -9,6 +9,7 @@ import { resolve } from '@/services/bff';
 import { isRedirect, type BffEnvelope } from '@/bff/types';
 import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { patchApplicationStep } from '@/services/businessApply';
+import { useAutosave } from '@/hooks/useAutosave';
 import {
   ChoiceRow,
   HeadedCard,
@@ -80,6 +81,13 @@ export default function ApplyServicesScreen() {
 
   const options: CategoryOption[] = env?.action === 'render' ? (env.data?.category_options ?? []) : [];
 
+  const saveState = useAutosave({
+    href: env?.action === 'render' ? env.data?.submit_href : undefined,
+    step: 'services',
+    fields: { selected_categories: selected },
+    skip: !env || env.action !== 'render' || submitting || selected.length === 0,
+  });
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -90,6 +98,7 @@ export default function ApplyServicesScreen() {
         continueDisabled={selected.length === 0 || submitting}
         continueLoading={submitting}
         error={error}
+        saveState={saveState}
       >
         <HeadedCard head="Pick at least one">
           {options.map((opt, idx) => (

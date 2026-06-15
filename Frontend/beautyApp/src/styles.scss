@@ -168,6 +168,24 @@ html, body {
 .cust-topnav .home-search-toast { padding: 14px !important; }
 
 /* ---------------------------------------------------------------------------
+ * Admin Portal — web desktop scope (`.admin-web`)
+ *
+ * Shared utilities for the slate admin desktop surface (dashboard + post-auth
+ * pages). Global so they pierce the standalone chrome components' view
+ * encapsulation. Mirrors the `.prov-web` / `.cust-topnav` pattern.
+ * --------------------------------------------------------------------------- */
+.admin-web .sr-only {
+  position: absolute !important; width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important; overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important;
+}
+
+/* Collapse the slate rail on narrow desktop / tablet widths. */
+@media screen and (max-width: 960px) {
+  .admin-web app-admin-web-sidebar { display: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
  * Button system
  * --------------------------------------------------------------------------- */
 .btn {

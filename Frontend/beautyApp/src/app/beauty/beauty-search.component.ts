@@ -37,6 +37,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { environment } from '../../environments/environment';
 import { BeautyAuthService } from './beauty-auth.service';
+import { BffLink } from './beauty-bff.types';
+import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
 
 interface SearchProvider {
   id: number;
@@ -70,21 +72,15 @@ const PAGE_SIZE = 20;
 @Component({
   selector: 'app-beauty-search',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CustTopNavComponent],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
-    <div class="beauty-app" data-testid="beauty-search-root">
-      <header class="sub-header">
-        <button type="button" class="back-btn" aria-label="Back" (click)="goBack()">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </button>
-        <h1 class="sub-header-title">Search</h1>
-        <span class="sub-header-spacer-flex"></span>
-      </header>
+    <div class="beauty-app cust-desk" data-testid="beauty-search-root">
+      <app-cust-top-nav active="home" [signedIn]="true" (follow)="onNav($event)"></app-cust-top-nav>
 
-      <main id="main">
+      <main id="main" class="search-main">
+      <div class="search-inner">
+        <h1 class="search-h1">Search</h1>
         <section class="search-bar">
           <label class="sr-only" for="beauty-search-input">Search services</label>
           <input
@@ -208,6 +204,7 @@ const PAGE_SIZE = 20;
           data-testid="search-end-marker">
           No more results
         </div>
+      </div>
       </main>
     </div>
   `,
@@ -326,8 +323,18 @@ const PAGE_SIZE = 20;
       color: var(--text-muted); font-size: 13px;
     }
     .infinite-sentinel { width: 100%; height: 1px; }
-    @media screen and (min-width: 768px) {
-      .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
+
+    /* Desktop (cust-top-nav chrome) — web is desktop-only; RN is mobile. */
+    .search-main { flex: 1; }
+    .search-inner { max-width: 760px; margin: 0 auto; padding: 28px 24px 48px; width: 100%; }
+    .search-h1 { font-family: var(--font-display); font-size: 38px; font-weight: 500; margin: 0 0 12px; }
+    .search-bar { padding: 0 0 8px; }
+    .search-status { padding: 6px 0 12px; }
+    .results { margin: 0; }
+    .rate-toast, .error-toast { margin: 0 0 12px; }
+    @media screen and (max-width: 720px) {
+      .search-inner { padding: 16px 16px 32px; }
+      .search-h1 { font-size: 28px; }
     }
   `],
 })
@@ -395,6 +402,11 @@ export class BeautySearchComponent implements OnInit, AfterViewInit, OnDestroy {
 
   goBack(): void {
     if (isPlatformBrowser(this.platformId)) window.history.back();
+  }
+
+  /** cust-top-nav emits NAV links; route directly (this page isn't SDUI). */
+  onNav(link: BffLink): void {
+    if (link?.route) this.router.navigateByUrl(link.route);
   }
 
   toggleFavorite(ev: Event, svc: SearchService): void {

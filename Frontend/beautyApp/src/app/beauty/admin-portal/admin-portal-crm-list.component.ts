@@ -1,25 +1,28 @@
 /**
  * AdminPortalCrmListComponent — `/admin/portal/crm`
  *
- * Handles D1 (customers), D2 (providers), D3 (tag filter), D5 (bulk),
- * D7 (underline chip variant) via input flags. Visual D6 suspend modal
- * routes to its own component; D4 tag manager too.
+ * Desktop redesign (web) per `web-admin-pages.jsx` WebAdminCRM. Shared slate
+ * chrome (sidebar + topbar + session strip) + a content area: page header with
+ * Customers/Providers tabs, a white filter strip (search · status chips · real
+ * tag chips · advanced filters · sort), an optional slate bulk-action bar, a
+ * real `<table>`, and a pagination footer.
+ *
+ * Drives every list variant (customers/providers, status, tag, advanced
+ * filters, search, bulk) through the existing query-param re-resolve contract.
+ * The @Input/@Output contract and screen key are unchanged; tags now come from
+ * the resolver (`data.tags`) rather than a hardcoded fixture.
  */
 
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { BffLink } from '../beauty-bff.types';
-import {
-  AdmStatusBarComponent,
-  AdmHomeIndicatorComponent,
-  AdmTopHeaderComponent,
-  AdmTabBarComponent,
-  AdmAvatarComponent,
-  AdmStatusChipComponent,
-  AdmFilterChipComponent,
-} from './atoms';
+import { BeautyBffService } from '../beauty-bff.service';
+import { BeautyAdminWebSidebarComponent, AdminWebNav } from '../admin-web/admin-web-sidebar.component';
+import { BeautyAdminWebTopbarComponent } from '../admin-web/admin-web-topbar.component';
+import { BeautyAdminWebSessionBarComponent } from '../admin-web/admin-web-session-bar.component';
+import { BeautyAdminWebPageHeaderComponent, AdminWebTab } from '../admin-web/admin-web-page-header.component';
 
 interface CrmRow {
   id: number;
@@ -27,7 +30,7 @@ interface CrmRow {
   name: string;
   email: string;
   status: 'Active' | 'Suspended' | 'Pending' | 'Deleted' | 'Flagged';
-  tags: ('VIP' | 'Verified' | 'AtRisk')[];
+  tags: string[];
   meta1: string;
   meta2: string;
   meta3: string;
@@ -35,7 +38,6 @@ interface CrmRow {
 }
 
 interface CrmTag { id: string; label: string; color: string; tone: string; count: number; }
-
 interface StatusBucket { id: 'All' | 'Active' | 'Pending' | 'Suspended' | 'Flagged' | 'Deleted'; count: number; }
 
 @Component({
@@ -44,400 +46,453 @@ interface StatusBucket { id: 'All' | 'Active' | 'Pending' | 'Suspended' | 'Flagg
   imports: [
     CommonModule,
     FormsModule,
-    AdmStatusBarComponent,
-    AdmHomeIndicatorComponent,
-    AdmTopHeaderComponent,
-    AdmTabBarComponent,
-    AdmAvatarComponent,
-    AdmStatusChipComponent,
-    AdmFilterChipComponent,
+    BeautyAdminWebSidebarComponent,
+    BeautyAdminWebTopbarComponent,
+    BeautyAdminWebSessionBarComponent,
+    BeautyAdminWebPageHeaderComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="adm-app is-light adm-crm">
-      <adm-status-bar tone="slate"></adm-status-bar>
-      <adm-top-header [notifCount]="notifCount"></adm-top-header>
+    <div class="admin-web aw-shell">
+      <app-admin-web-sidebar [active]="sidebarActive"
+        [adminName]="adminName" [adminEmail]="adminEmail" [badges]="navBadges"
+        (follow)="followLink.emit($event)"></app-admin-web-sidebar>
 
-      <div class="session" role="status">
-        <span class="left">
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/>
-          </svg>
-          Session ends in <span class="mono">14:32</span>
-        </span>
-        <a href="#" (click)="$event.preventDefault()">Extend</a>
-      </div>
+      <div class="aw-col">
+        <app-admin-web-topbar [notifCount]="notifCount" [adminName]="adminName" [adminEmail]="adminEmail"
+          (follow)="followLink.emit($event)"></app-admin-web-topbar>
+        <app-admin-web-session-bar [sessionRemaining]="sessionRemaining"
+          (follow)="followLink.emit($event)"></app-admin-web-session-bar>
 
-      <main class="body adm-body--scroll" role="main">
+        <main class="aw-main" role="main">
+          <app-admin-web-page-header
+            [breadcrumb]="['CRM', type === 'providers' ? 'Providers' : 'Customers']"
+            [title]="type === 'providers' ? 'Business providers' : 'Customers'"
+            [sub]="headerSub"
+            [tabs]="tabs" [activeTab]="type" (tabSelect)="onType($any($event))">
+            <div slot="actions" class="aw-hactions">
+              <button type="button" class="aw-btn aw-btn--sec" (click)="onManage()">Manage tags</button>
+              <button type="button" class="aw-btn aw-btn--pri" (click)="onManage()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+                Add tag
+              </button>
+            </div>
+          </app-admin-web-page-header>
 
-        <!-- Customer/Provider segmented tabs -->
-        <div class="seg-wrap">
-          <div class="seg">
-            <button type="button" class="seg-tab" [class.is-on]="type === 'customers'" (click)="onType('customers')">
-              Customers <span class="seg-count adm-mono">{{ fmt(counts.customers) }}</span>
+          <!-- Filter strip -->
+          <div class="aw-filter">
+            <div class="aw-search">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B6F77" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input [ngModel]="search" (ngModelChange)="onSearchInput($event)" name="q"
+                     placeholder="Search name, email, phone, ID…"
+                     (keydown.enter)="onSearchSubmit()" aria-label="Search accounts" />
+              <button type="button" class="aw-search-clear" *ngIf="search" (click)="clearSearch()" aria-label="Clear search">×</button>
+            </div>
+            <button type="button" class="aw-chip" *ngFor="let b of statusBuckets"
+                    [class.is-on]="activeStatus === b.id" (click)="onStatus(b.id)">
+              {{ b.id }}<span class="aw-chip-count" *ngIf="b.count">{{ fmt(b.count) }}</span>
             </button>
-            <button type="button" class="seg-tab" [class.is-on]="type === 'providers'" (click)="onType('providers')">
-              Providers <span class="seg-count adm-mono">{{ fmt(counts.providers) }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Filter row -->
-        <div class="filter-row">
-          <div class="search">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B6F77" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
-            </svg>
-            <input [(ngModel)]="search" name="q" placeholder="Search name, email, phone, ID, business…"
-                   (keydown.enter)="onSearchSubmit()"
-                   (blur)="onSearchSubmit()" />
-            <button type="button" class="search-clear" *ngIf="search" (click)="clearSearch()" aria-label="Clear search">×</button>
-            <span class="kbd adm-mono" *ngIf="!search">⌘K</span>
-          </div>
-
-          <div class="row-h" [class.underline-row]="chipStyle === 'underline'">
-            <adm-filter-chip *ngFor="let b of statusBuckets"
-                             [active]="activeStatus === b.id"
-                             [count]="b.count"
-                             [style]="chipStyle"
-                             (press)="onStatus(b.id)">
-              {{ b.id }}
-            </adm-filter-chip>
-          </div>
-
-          <div class="tag-head">
-            <span class="adm-eyebrow on-light">Tags</span>
-            <span class="rule"></span>
-            <button type="button" class="manage" (click)="onManage()">
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/></svg>
-              Manage
-            </button>
-          </div>
-          <div class="row-h tag-row">
-            <button *ngFor="let t of tagsFor()" type="button" class="tchip"
-                    [class.is-active]="activeTagIds.includes(t.id)"
+            <span class="aw-divider"></span>
+            <button type="button" class="aw-tagchip" *ngFor="let t of tagList"
+                    [class.is-on]="activeTagIds.includes(t.id)"
                     [style.background]="activeTagIds.includes(t.id) ? t.color : t.tone"
                     [style.color]="activeTagIds.includes(t.id) ? '#fff' : t.color"
                     [style.borderColor]="activeTagIds.includes(t.id) ? t.color : (t.color + '33')"
-                    (click)="onTag(t.id)"
-                    [attr.aria-pressed]="activeTagIds.includes(t.id)">
-              <span class="dot" [style.background]="activeTagIds.includes(t.id) ? '#fff' : t.color"></span>
-              {{ t.label }}
+                    (click)="onTag(t.id)" [attr.aria-pressed]="activeTagIds.includes(t.id)">
+              <span class="aw-tagdot" [style.background]="activeTagIds.includes(t.id) ? '#fff' : t.color"></span>{{ t.label }}
             </button>
-            <button type="button" class="add-tag" (click)="onManage()">+ Tag</button>
+            <button type="button" class="aw-tag-add" (click)="onManage()">+ Tag</button>
+            <span class="aw-grow"></span>
+            <button type="button" class="aw-chip" *ngFor="let f of advancedFilters"
+                    [class.is-on]="isAdvancedActive(f.key)" (click)="toggleAdvanced(f)">{{ f.label }}</button>
           </div>
 
-          <div class="row-h">
-            <adm-filter-chip *ngFor="let f of advancedFilters"
-                             [active]="f.active"
-                             (press)="toggleAdvanced(f)">
-              {{ f.label }}
-            </adm-filter-chip>
+          <!-- Bulk action bar -->
+          <div class="aw-bulkbar" *ngIf="selected.size > 0">
+            <span class="aw-bb-count">{{ selected.size }} selected</span>
+            <span class="aw-grow"></span>
+            <button type="button" class="aw-bb-btn" (click)="onBulkTag()">Tag</button>
+            <button type="button" class="aw-bb-btn is-danger" (click)="onBulkSuspend()">Suspend</button>
+            <button type="button" class="aw-bb-clear" (click)="clearSel()">Clear ×</button>
           </div>
-        </div>
 
-        <!-- Result count + sort -->
-        <div class="result-row">
-          <span class="adm-mono cnt">{{ fmt(filteredTotal) }} results</span>
-          <button type="button" class="sort">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
-            Newest first <span class="caret">▾</span>
-          </button>
-        </div>
+          <!-- Result count + live loading indicator -->
+          <div class="aw-resultrow">
+            <span class="mono">{{ fmt(filteredTotal) }} results</span>
+            <span class="aw-loading" *ngIf="loading"><span class="aw-spin" aria-hidden="true"></span> updating…</span>
+          </div>
 
-        <!-- Rows -->
-        <div class="rows" [class.is-bulk]="bulk">
-          <div *ngFor="let r of rows" class="row" role="link" tabindex="0"
-               (click)="openDetail(r)"
-               (keydown.enter)="openDetail(r)"
-               (keydown.space)="openDetail(r); $event.preventDefault()"
-               [attr.aria-label]="'Open ' + r.name + ' detail'">
-            <input *ngIf="bulk" type="checkbox" class="bulk-cb" [checked]="selected.has(r.id)"
-                   (click)="$event.stopPropagation()" (change)="toggleSel(r.id)"
-                   [attr.aria-label]="'Select ' + r.name" />
-            <adm-avatar [initials]="r.initials" [size]="36" [kind]="type === 'providers' ? 'provider' : 'customer'"></adm-avatar>
-            <div class="ri">
-              <div class="ri-h">
-                <span class="ri-name">{{ r.name }}</span>
-                <adm-status-chip *ngFor="let t of r.tags" [status]="$any(t)"></adm-status-chip>
-              </div>
-              <div class="ri-email adm-mono">{{ r.email }}</div>
-              <div class="ri-meta">
-                <span>{{ r.meta1 }}</span><span class="sep">·</span>
-                <span>{{ r.meta2 }}</span><span class="sep">·</span>
-                <span>{{ r.meta3 }}</span>
+          <!-- Table -->
+          <div class="aw-tablewrap" [class.is-stale]="loading">
+            <div class="aw-card">
+              <table class="aw-table">
+                <thead>
+                  <tr>
+                    <th class="c-cb"><span class="sr-only">Select</span></th>
+                    <th class="c-acct">Account</th>
+                    <th class="c-tags">Tags</th>
+                    <th class="c-status">Status</th>
+                    <th class="c-life">Lifetime</th>
+                    <th class="c-bk">Bookings</th>
+                    <th class="c-seen">Last seen</th>
+                    <th class="c-act"><span class="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let r of rows" class="aw-trow" (click)="openDetail(r)"
+                      role="link" tabindex="0" (keydown.enter)="openDetail(r)"
+                      [attr.aria-label]="'Open ' + r.name + ' detail'">
+                    <td class="c-cb" (click)="$event.stopPropagation()">
+                      <input type="checkbox" [checked]="selected.has(r.id)" (change)="toggleSel(r.id)"
+                             [attr.aria-label]="'Select ' + r.name" />
+                    </td>
+                    <td class="c-acct">
+                      <div class="aw-acct">
+                        <span class="aw-avatar" [class.provider]="type === 'providers'" aria-hidden="true">{{ r.initials }}</span>
+                        <span class="aw-acct-text">
+                          <span class="aw-acct-name">{{ r.name }}</span>
+                          <span class="aw-acct-sub mono">{{ r.email }} · {{ idLabel(r) }}</span>
+                        </span>
+                      </div>
+                    </td>
+                    <td class="c-tags">
+                      <span class="aw-schip" *ngFor="let t of r.tags" [ngClass]="statusClass(t)">{{ t }}</span>
+                    </td>
+                    <td class="c-status"><span class="aw-schip" [ngClass]="statusClass(r.status)">{{ r.status }}</span></td>
+                    <td class="c-life mono">{{ r.lifetime }}</td>
+                    <td class="c-bk mono">{{ r.meta2 }}</td>
+                    <td class="c-seen mono">{{ r.meta3 }}</td>
+                    <td class="c-act" (click)="$event.stopPropagation()">
+                      <button type="button" class="aw-kebab" (click)="openSuspend(r)"
+                              [attr.aria-label]="(r.status === 'Suspended' ? 'Reinstate ' : 'Suspend ') + r.name">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!rows.length"><td colspan="8" class="aw-empty">No accounts match these filters.</td></tr>
+                </tbody>
+              </table>
+              <div class="aw-tfoot">
+                <span class="mono">Showing 1–{{ rows.length }} of {{ fmt(filteredTotal) }}</span>
+                <span class="mono" *ngIf="filteredTotal > rows.length">Refine filters to narrow results</span>
               </div>
             </div>
-            <div class="ri-right">
-              <adm-status-chip [status]="$any(r.status)"></adm-status-chip>
-              <div class="ri-life adm-mono">{{ r.lifetime }}</div>
-            </div>
-            <button type="button" class="kebab" (click)="openSuspend(r); $event.stopPropagation()" [attr.aria-label]="(r.status === 'Suspended' ? 'Reinstate ' : 'Suspend ') + r.name">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg>
-            </button>
           </div>
-        </div>
-
-        <div class="loader" *ngIf="filteredTotal > rows.length">
-          <span class="spinner"></span>
-          Loading more · <span class="adm-mono">{{ fmt(filteredTotal - rows.length) }} left</span>
-        </div>
-      </main>
-
-      <!-- Bulk action bar (floats above tab bar when bulk=true) -->
-      <div class="bulk-bar" *ngIf="bulk && selected.size > 0">
-        <span class="bb-count">{{ selected.size }} selected</span>
-        <span class="grow"></span>
-        <button type="button" class="bb-btn" (click)="onBulkTag()">Tag</button>
-        <button type="button" class="bb-btn" (click)="onBulkMessage()">Message</button>
-        <button type="button" class="bb-btn is-danger" (click)="onBulkSuspend()">Suspend</button>
+        </main>
       </div>
-
-      <adm-tab-bar active="crm" [badges]="tabBadges" (select)="onTab($event)"></adm-tab-bar>
-      <adm-home-indicator tone="slate"></adm-home-indicator>
     </div>
   `,
   styles: [`
-    :host { display: block; min-height: 100dvh; background: var(--surface); }
-    .adm-crm { min-height: 100dvh; }
+    :host {
+      --line: #DCDCDF; --text: #0F1115; --text-muted: #6B6F77;
+      --surface: #F2F2F2; --surface-2: #E9E9EB; --green: #2F7A47; --danger: #C0392B; --amber: #8A6A1F;
+      --admin-red: #B23A2D;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+      --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+      display: block; min-height: 100dvh;
+    }
+    * { box-sizing: border-box; }
+    .mono { font-family: var(--font-mono); }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
-    .session { display: flex; align-items: center; justify-content: space-between; background: #FFF4DA; border-bottom: 1px solid rgba(165,122,31,0.18); padding: 6px 14px; font-size: 11px; color: #8A6A1F; flex-shrink: 0; }
-    .session .left { display: inline-flex; align-items: center; gap: 6px; }
-    .session .mono { font-family: var(--adm-font-mono); font-weight: 700; }
-    .session a { color: #8A6A1F; text-decoration: underline; text-underline-offset: 2px; font-weight: 600; }
+    .aw-shell { display: flex; width: 100%; height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); overflow: hidden; }
+    .aw-col { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .aw-main { flex: 1; overflow: auto; background: var(--surface); }
 
-    .seg-wrap { padding: 10px 14px 0; background: var(--surface); border-bottom: 1px solid var(--line); }
-    .seg { display: flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 12px; margin-bottom: 10px; }
-    .seg-tab { flex: 1; height: 34px; border: none; cursor: pointer; border-radius: 9px; background: transparent; color: var(--text-muted); font-family: var(--adm-font-body); font-size: 13px; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-    .seg-tab.is-on { background: #fff; color: var(--text); font-weight: 600; box-shadow: 0 1px 3px rgba(15,17,21,0.10); }
-    .seg-count { font-size: 10px; font-weight: 600; color: var(--text-muted); background: var(--surface); padding: 1px 5px; border-radius: 999px; line-height: 1.2; }
-    .seg-tab.is-on .seg-count { background: var(--surface); }
+    .aw-hactions { display: flex; gap: 8px; align-items: center; }
+    .aw-btn { height: 38px; padding: 0 14px; border-radius: 10px; font-family: var(--font-body); font-size: 0.8125rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; line-height: 1; }
+    .aw-btn--sec { background: #fff; color: var(--text); border: 1px solid var(--line); }
+    .aw-btn--pri { background: #0F1115; color: #fff; border: 1px solid #0F1115; }
+    .aw-btn--sm { height: 32px; padding: 0 12px; font-size: 0.75rem; }
+    .aw-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .filter-row { background: var(--surface); border-bottom: 1px solid var(--line); padding: 0 14px 10px; }
-    .search { display: flex; align-items: center; gap: 8px; background: #fff; border: 1px solid var(--line); border-radius: 10px; height: 40px; padding: 0 12px; margin-bottom: 10px; }
-    .search input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--adm-font-body); font-size: 13px; color: var(--text); }
-    .search input::placeholder { color: var(--text-muted); }
-    .kbd { padding: 2px 5px; border-radius: 4px; background: var(--surface); color: var(--text-muted); font-size: 10px; }
-    .search-clear { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; width: 20px; height: 20px; color: var(--text-muted); cursor: pointer; font-size: 14px; line-height: 1; display: grid; place-items: center; padding: 0; }
+    .aw-filter {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+      padding: 14px 28px; background: #fff; border-bottom: 1px solid var(--line);
+    }
+    .aw-search { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 36px; padding: 0 12px; min-width: 280px; }
+    .aw-search input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--font-body); font-size: 0.8125rem; color: var(--text); }
+    .aw-search input::placeholder { color: var(--text-muted); }
+    .aw-search-clear { background: #fff; border: 1px solid var(--line); border-radius: 999px; width: 20px; height: 20px; color: var(--text-muted); cursor: pointer; line-height: 1; display: grid; place-items: center; padding: 0; }
+    .aw-grow { flex: 1; }
+    .aw-divider { width: 1px; height: 24px; background: var(--line); }
 
-    .row-h { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; padding-bottom: 2px; }
-    .row-h.underline-row { gap: 12px; padding-bottom: 0; }
-    .tag-row { gap: 6px; }
+    .aw-chip { background: #fff; color: var(--text); border: 1px solid var(--line); border-radius: 999px; height: 30px; padding: 0 12px; font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; line-height: 1; }
+    .aw-chip:hover { border-color: #0F1115; }
+    .aw-chip.is-on { background: #0F1115; color: #fff; border-color: #0F1115; }
+    .aw-chip-count { font-family: var(--font-mono); font-size: 0.625rem; font-weight: 600; color: var(--text-muted); background: var(--surface); padding: 1px 5px; border-radius: 999px; }
+    .aw-chip.is-on .aw-chip-count { color: #fff; background: rgba(255,255,255,0.18); }
 
-    .tag-head { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding-top: 2px; }
-    .tag-head .adm-eyebrow { flex-shrink: 0; }
-    .tag-head .rule { flex: 1; height: 1px; background: var(--line); }
-    .manage { height: 22px; padding: 0 8px; border-radius: 6px; background: #fff; border: 1px solid var(--line); font-family: var(--adm-font-body); font-size: 10px; font-weight: 600; color: var(--text); cursor: pointer; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px; }
+    .aw-tagchip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px; border: 1px solid; font-family: var(--font-body); font-size: 0.6875rem; font-weight: 600; cursor: pointer; white-space: nowrap; line-height: 1.2; }
+    .aw-tagdot { width: 6px; height: 6px; border-radius: 50%; }
+    .aw-tag-add { padding: 5px 10px; border-radius: 999px; background: #fff; border: 1px dashed var(--line); font-family: var(--font-body); font-size: 0.6875rem; color: var(--text-muted); cursor: pointer; }
 
-    .tchip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; border: 1px solid; font-family: var(--adm-font-body); font-size: 11px; font-weight: 600; line-height: 1.2; white-space: nowrap; flex-shrink: 0; }
-    .tchip .dot { width: 6px; height: 6px; border-radius: 50%; }
-    .add-tag { padding: 4px 9px; border-radius: 999px; background: #fff; border: 1px dashed var(--line); font-family: var(--adm-font-body); font-size: 11px; color: var(--text-muted); cursor: pointer; flex-shrink: 0; }
+    .aw-bulkbar { background: #0F1115; color: #fff; padding: 10px 28px; display: flex; align-items: center; gap: 14px; }
+    .aw-bb-count { font-size: 0.75rem; font-weight: 600; }
+    .aw-bb-btn { height: 30px; padding: 0 12px; border-radius: 8px; background: #fff; color: #0F1115; border: 1px solid #fff; font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; cursor: pointer; }
+    .aw-bb-btn.is-danger { background: transparent; color: #fff; border-color: rgba(255,255,255,0.4); }
+    .aw-bb-clear { background: transparent; border: none; color: rgba(255,255,255,0.7); font-size: 0.75rem; cursor: pointer; }
 
-    .result-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #ECECEE; background: #fff; }
-    .result-row .cnt { font-size: 11px; color: var(--text-muted); }
-    .sort { border: none; background: transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; font-family: var(--adm-font-body); font-size: 11.5px; color: var(--text); font-weight: 600; }
-    .sort .caret { font-size: 9px; opacity: 0.6; }
+    .aw-resultrow { display: flex; align-items: center; gap: 12px; padding: 12px 28px 0; }
+    .aw-resultrow .mono { font-size: 0.6875rem; color: var(--text-muted); }
+    .aw-loading { display: inline-flex; align-items: center; gap: 6px; font-size: 0.6875rem; color: var(--text-muted); }
+    .aw-spin { width: 11px; height: 11px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--text); display: inline-block; animation: aw-spin 0.7s linear infinite; }
+    @keyframes aw-spin { to { transform: rotate(360deg); } }
 
-    .rows { background: #fff; }
-    .rows .row { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #ECECEE; cursor: pointer; }
-    .rows .row:hover { background: var(--surface); }
-    .ri { flex: 1; min-width: 0; }
-    .ri-h { display: flex; align-items: center; gap: 6px; }
-    .ri-name { font-family: var(--adm-font-body); font-size: 13.5px; font-weight: 600; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ri-email { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .ri-meta { display: flex; gap: 10px; margin-top: 4px; font-size: 10.5px; color: var(--text-muted); }
-    .ri-meta .sep { opacity: 0.4; }
-    .ri-right { text-align: right; flex-shrink: 0; }
-    .ri-life { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
-    .kebab { width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; display: grid; place-items: center; color: var(--text-muted); }
+    .aw-tablewrap { padding: 12px 28px 28px; transition: opacity 120ms ease; }
+    .aw-tablewrap.is-stale { opacity: 0.6; }
+    .aw-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .aw-table { width: 100%; border-collapse: collapse; }
+    .aw-table thead tr { background: var(--surface); border-bottom: 1px solid var(--line); }
+    .aw-table th { padding: 10px 14px; font-family: var(--font-body); font-size: 0.625rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); text-align: left; }
+    .aw-table th.c-cb, .aw-table td.c-cb { width: 40px; text-align: center; }
+    .aw-table th.c-act, .aw-table td.c-act { width: 56px; text-align: center; }
+    .aw-table th.c-tags { width: 170px; }
+    .aw-table th.c-status { width: 110px; }
+    .aw-table th.c-life, .aw-table th.c-bk { width: 110px; }
+    .aw-table th.c-seen { width: 130px; }
+    .aw-trow { border-bottom: 1px solid var(--surface); height: 56px; cursor: pointer; }
+    .aw-trow:last-child { border-bottom: none; }
+    .aw-trow:hover { background: var(--surface); }
+    .aw-table td { padding: 8px 14px; font-size: 0.8125rem; color: var(--text); vertical-align: middle; }
+    .aw-table td.mono { font-family: var(--font-mono); font-size: 0.75rem; color: var(--text-muted); }
 
-    .bulk-cb { width: 18px; height: 18px; accent-color: #0F1115; }
+    .aw-acct { display: flex; align-items: center; gap: 10px; }
+    .aw-avatar { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; background: linear-gradient(135deg, #C8A57E, #6B4F3A); color: #fff; display: grid; place-items: center; font-size: 0.6875rem; font-weight: 700; box-shadow: 0 0 0 1px var(--line); }
+    .aw-avatar.provider { background: linear-gradient(135deg, #CFE3F5, #7DA8CF); }
+    .aw-acct-text { min-width: 0; }
+    .aw-acct-name { display: block; font-size: 0.8125rem; font-weight: 600; color: var(--text); }
+    .aw-acct-sub { display: block; font-size: 0.625rem; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-    .loader { padding: 16px 14px 24px; text-align: center; background: #fff; font-family: var(--adm-font-body); font-size: 11px; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 8px; }
-    .spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--text); display: inline-block; animation: spin 0.7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .aw-schip { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; font-family: var(--font-body); font-size: 0.625rem; font-weight: 700; letter-spacing: 0.4px; text-transform: uppercase; line-height: 1; margin-right: 4px; }
+    .s-green { background: #E5F3EA; color: var(--green); }
+    .s-red { background: #FCE8E5; color: var(--danger); }
+    .s-amber { background: #FFF4DA; color: var(--amber); }
+    .s-grey { background: var(--surface-2); color: var(--text-muted); }
+    .s-gold { background: #F1E8DA; color: #7A5A1F; }
 
-    .bulk-bar { position: fixed; left: 12px; right: 12px; bottom: calc(64px + env(safe-area-inset-bottom) + 14px); background: #0F1115; color: #fff; border-radius: 14px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; box-shadow: 0 12px 32px rgba(15,17,21,0.35); }
-    .bulk-bar .bb-count { font-size: 12px; font-weight: 600; }
-    .bulk-bar .grow { flex: 1; }
-    .bb-btn { height: 30px; padding: 0 10px; border-radius: 8px; background: rgba(255,255,255,0.10); color: #fff; border: none; font-family: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
-    .bb-btn.is-danger { background: var(--adm-red); font-weight: 700; }
+    .aw-kebab { width: 28px; height: 28px; border: none; background: transparent; cursor: pointer; display: grid; place-items: center; color: var(--text-muted); border-radius: 6px; }
+    .aw-kebab:hover { background: var(--surface-2); }
 
-    @media screen and (min-width: 768px) {
-      .bulk-bar { max-width: 406px; margin: 0 auto; left: 0; right: 0; }
+    .aw-empty { padding: 32px 14px; text-align: center; color: var(--text-muted); font-size: 0.8125rem; }
+    .aw-tfoot { padding: 12px 18px; border-top: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; background: #F8F8F8; }
+    .aw-tfoot .mono { font-size: 0.6875rem; color: var(--text-muted); }
+    .aw-pager { display: flex; gap: 6px; }
+
+    :host *:focus-visible { outline: 2px solid var(--admin-red); outline-offset: 2px; border-radius: 6px; }
+
+    @media screen and (max-width: 1100px) {
+      .aw-table th.c-life, .aw-table td.c-life, .aw-table th.c-bk, .aw-table td.c-bk { display: none; }
     }
   `],
 })
 export class AdminPortalCrmListComponent {
-  get notifCount(): number { return (this.data['notif_count'] as number) ?? 0; }
-  @Input() data: Record<string, unknown> = {};
+  private _data: Record<string, unknown> = {};
+  @Input() set data(v: Record<string, unknown>) {
+    this._data = v || {};
+    this.local = null;          // a shell re-resolve wins; drop the stale local copy
+    this.seedParams(this._data);
+  }
+  get data(): Record<string, unknown> { return this._data; }
   @Input() links: Record<string, BffLink> = {};
-  @Input() type: 'customers' | 'providers' = 'customers';
-  @Input() chipStyle: 'pill' | 'underline' = 'pill';
-  @Input() bulk = false;
-  @Input() activeTagIds: string[] = [];
   @Output() followLink = new EventEmitter<BffLink>();
   @Output() bulkSuspend = new EventEmitter<{ type: 'customers' | 'providers'; ids: number[] }>();
 
+  /**
+   * Local stale-while-revalidate copy. Filter changes update this in place via
+   * a quiet BFF refetch — NO router navigation, so the shell never re-mounts
+   * and the screen never flickers. Mirrors the RN CRM (`crm/index.tsx`), whose
+   * comment notes that navigating per filter "flashed the dark Stack background".
+   */
+  private local: Record<string, unknown> | null = null;
+  private get d(): Record<string, unknown> { return this.local ?? this._data; }
+
+  loading = false;
   search = '';
-  private lastDataQ = '';
+  private currentParams: Record<string, string> = {};
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
   selected = new Set<number>();
 
-  get activeStatus(): StatusBucket['id'] {
-    return ((this.data['active_status'] as StatusBucket['id']) ?? 'All');
+  constructor(private bff: BeautyBffService, private cdr: ChangeDetectorRef) {}
+
+  // The shell used to bind these as @Inputs; the component now derives them
+  // from the live (local-or-shell) data so a self-refetch updates them too.
+  get type(): 'customers' | 'providers' { return (this.d['type'] as 'customers' | 'providers') ?? 'customers'; }
+  get chipStyle(): 'pill' | 'underline' { return (this.d['chip_style'] as 'pill' | 'underline') ?? 'pill'; }
+  get bulk(): boolean { return Boolean(this.d['bulk']); }
+  get activeTagIds(): string[] { return (this.d['active_tag_ids'] as string[]) ?? []; }
+
+  // ── Chrome ──
+  get notifCount(): number | null { return (this.d['notif_count'] as number | null) ?? null; }
+  get adminName(): string { return (this.d['first_name'] as string) || 'Maria R.'; }
+  get adminEmail(): string { return (this.d['admin_email'] as string) || 'maria@beauty.io'; }
+  get sessionRemaining(): string { return (this.d['session_remaining'] as string) ?? '14:32'; }
+  get sidebarActive(): AdminWebNav { return this.type === 'providers' ? 'crm-providers' : 'crm-customers'; }
+  get navBadges(): Record<string, number> {
+    const badges = (this.d['tab_badges'] as Record<string, number | null>) ?? {};
+    const out: Record<string, number> = {};
+    if (badges['tickets']) out['tickets'] = badges['tickets'] as number;
+    return out;
   }
 
-  get queryValue(): string { return (this.data['q'] as string) ?? ''; }
-  isAdvancedActive(key: string): boolean { return Boolean(this.data[key]); }
-
-  ngDoCheck(): void {
-    // Sync the search box with the resolver-supplied `q` value any time the
-    // resolver re-runs (back/forward, manual URL edit, or our own navigate).
-    const incoming = this.queryValue;
-    if (incoming !== this.lastDataQ) {
-      this.lastDataQ = incoming;
-      this.search = incoming;
-    }
-    // Sync each backend-wired advanced filter's active flag from data.
-    for (const f of this.advancedFilters) {
-      const want = this.isAdvancedActive(f.key);
-      if (f.active !== want) f.active = want;
-    }
+  get tabs(): AdminWebTab[] {
+    return [
+      { id: 'customers', label: 'Customers', count: this.counts.customers },
+      { id: 'providers', label: 'Business providers', count: this.counts.providers },
+    ];
   }
-  advancedFilters: { key: string; label: string; active: boolean }[] = [
-    { key: 'signup_30d', label: 'Sign-up: Last 30d', active: false },
-    { key: 'active_7d',  label: 'Last active: 7d',   active: false },
-    { key: 'spend_high', label: 'Spend: High',       active: false },
-    { key: 'has_bk',     label: 'Has bookings',      active: false },
+  get headerSub(): string {
+    return this.type === 'providers'
+      ? `${this.fmt(this.counts.providers)} registered businesses`
+      : `${this.fmt(this.counts.customers)} customers`;
+  }
+
+  // ── Data ──
+  get activeStatus(): StatusBucket['id'] { return ((this.d['active_status'] as StatusBucket['id']) ?? 'All'); }
+  get queryValue(): string { return (this.d['q'] as string) ?? ''; }
+  isAdvancedActive(key: string): boolean { return Boolean(this.d[key]); }
+
+  readonly advancedFilters: { key: string; label: string }[] = [
+    { key: 'signup_30d', label: 'Sign-up: 30d' },
+    { key: 'active_7d',  label: 'Active: 7d' },
+    { key: 'spend_high', label: 'Spend: High' },
+    { key: 'has_bk',     label: 'Has bookings' },
   ];
-
   private readonly advancedKeys = ['signup_30d', 'active_7d', 'spend_high', 'has_bk'];
 
-  get rows(): CrmRow[] { return (this.data['rows'] as CrmRow[]) ?? []; }
+  get rows(): CrmRow[] { return (this.d['rows'] as CrmRow[]) ?? []; }
   get counts(): { customers: number; providers: number } {
-    return (this.data['counts'] as { customers: number; providers: number }) ?? { customers: 0, providers: 0 };
+    return (this.d['counts'] as { customers: number; providers: number }) ?? { customers: 0, providers: 0 };
   }
   get filteredTotal(): number {
-    const v = this.data['filtered_total'];
+    const v = this.d['filtered_total'];
     if (typeof v === 'number') return v;
     return this.type === 'customers' ? this.counts.customers : this.counts.providers;
   }
   get statusBuckets(): StatusBucket[] {
     const total = this.filteredTotal;
-    return (this.data['status_buckets'] as StatusBucket[]) ?? [
-      { id: 'All',       count: total },
-      { id: 'Active',    count: total },
-      { id: 'Pending',   count: 0 },
-      { id: 'Suspended', count: 0 },
-      { id: 'Flagged',   count: 0 },
-      { id: 'Deleted',   count: 0 },
+    return (this.d['status_buckets'] as StatusBucket[]) ?? [
+      { id: 'All', count: total }, { id: 'Active', count: total },
+      { id: 'Pending', count: 0 }, { id: 'Suspended', count: 0 },
+      { id: 'Flagged', count: 0 }, { id: 'Deleted', count: 0 },
     ];
   }
+  /** Real tags from the resolver (falls back to empty). */
+  get tagList(): CrmTag[] { return (this.d['tags'] as CrmTag[]) ?? []; }
 
-  readonly tags: CrmTag[] = [
-    { id: 'vip',        label: 'VIP',          color: '#A06B2C', tone: '#F4E7D6', count: 184  },
-    { id: 'verified',   label: 'Verified',     color: '#2F7A47', tone: '#E5F3EA', count: 9620 },
-    { id: 'at-risk',    label: 'At-risk',      color: '#C0392B', tone: '#FCE8E5', count: 38   },
-    { id: 'press',      label: 'Press / PR',   color: '#0F1115', tone: '#E9E9EB', count: 12   },
-    { id: 'investor',   label: 'Investor',     color: '#5C4A8A', tone: '#ECE6F5', count: 6    },
-    { id: 'featured',   label: 'Featured',     color: '#7DA8CF', tone: '#E6F0FA', count: 24   },
-    { id: 'beta',       label: 'Beta program', color: '#1F6E7A', tone: '#DCEEF1', count: 88   },
-    { id: 'win-back',   label: 'Win-back',     color: '#8A6A1F', tone: '#F1E8DA', count: 410  },
-    { id: 'chargeback', label: 'Chargeback',   color: '#C0392B', tone: '#FCE8E5', count: 17   },
-  ];
+  fmt(n: number): string { return (n ?? 0).toLocaleString(); }
+  idLabel(r: CrmRow): string { return `${this.type === 'providers' ? 'prov' : 'cust'}_${r.id}`; }
 
-  tagsFor(): CrmTag[] { return this.tags; }
-
-  fmt(n: number): string { return n.toLocaleString(); }
-
-  toggleSel(id: number): void {
-    if (this.selected.has(id)) this.selected.delete(id); else this.selected.add(id);
-  }
-
-  /** Build a query string from current filter state + override `extra`. */
-  private buildQuery(extra: Record<string, string | null>): string {
-    const cur: Record<string, string> = { type: this.type };
-    if (this.chipStyle === 'underline') cur['chip'] = 'underline';
-    if (this.bulk) cur['bulk'] = '1';
-    if (this.activeStatus !== 'All') cur['status'] = this.activeStatus.toLowerCase();
-    if (this.activeTagIds.length) cur['tag'] = this.activeTagIds[0];
-    if (this.queryValue) cur['q'] = this.queryValue;
-    for (const k of this.advancedKeys) {
-      if (this.isAdvancedActive(k)) cur[k] = '1';
-    }
-    for (const [k, v] of Object.entries(extra)) {
-      if (v === null) delete cur[k];
-      else cur[k] = v;
-    }
-    return new URLSearchParams(cur).toString();
-  }
-
-  private navWith(extra: Record<string, string | null>): void {
-    const link: BffLink = {
-      rel: 'filter', href: null, method: 'NAV',
-      screen: 'beauty_admin_portal_crm',
-      route: '/pogoda/beauty/admin/portal/crm?' + this.buildQuery(extra),
-      prompt: null,
+  statusClass(s: string): string {
+    const map: Record<string, string> = {
+      Active: 's-green', Verified: 's-green',
+      Suspended: 's-red', Cancelled: 's-red', AtRisk: 's-red',
+      Pending: 's-amber', Flagged: 's-amber',
+      Deleted: 's-grey', VIP: 's-gold',
     };
-    this.followLink.emit(link);
+    return map[s] || 's-grey';
   }
 
-  onStatus(id: StatusBucket['id']): void {
-    this.navWith({ status: id === 'All' ? null : id.toLowerCase() });
+  toggleSel(id: number): void { if (this.selected.has(id)) this.selected.delete(id); else this.selected.add(id); }
+  clearSel(): void { this.selected.clear(); }
+
+  // ── Filter state: local params + quiet refetch (no navigation) ──
+
+  /** Seed local filter params + search box from a freshly shell-resolved envelope. */
+  private seedParams(d: Record<string, unknown>): void {
+    const p: Record<string, string> = {};
+    p['type'] = (d['type'] as string) || 'customers';
+    if ((d['chip_style'] as string) === 'underline') p['chip'] = 'underline';
+    if (d['bulk']) p['bulk'] = '1';
+    const status = (d['active_status'] as string) || 'All';
+    if (status !== 'All') p['status'] = status.toLowerCase();
+    const tags = (d['active_tag_ids'] as string[]) || [];
+    if (tags.length) p['tag'] = tags[0];
+    if (d['q']) p['q'] = d['q'] as string;
+    for (const k of this.advancedKeys) { if (d[k]) p[k] = '1'; }
+    this.currentParams = p;
+    this.search = (d['q'] as string) || '';
   }
 
-  onTag(id: string): void {
-    const next = this.activeTagIds.includes(id) ? null : id;
-    this.navWith({ tag: next });
+  /** Merge `extra` into the params and quietly refetch in place. */
+  private navWith(extra: Record<string, string | null>): void {
+    const next: Record<string, string> = { ...this.currentParams };
+    for (const [k, v] of Object.entries(extra)) { if (v === null || v === '') delete next[k]; else next[k] = v; }
+    this.currentParams = next;
+    this.refetch();
   }
 
-  toggleAdvanced(f: { key: string; active: boolean }): void {
-    if (this.advancedKeys.includes(f.key)) {
-      const next = !f.active;
-      this.navWith({ [f.key]: next ? '1' : null });
-      return;
-    }
-    // visual-only fallback for keys without backend wiring yet.
-    f.active = !f.active;
+  /** Stale-while-revalidate: keep current rows visible, fetch, swap in place. */
+  private refetch(): void {
+    this.loading = true;
+    this.cdr.markForCheck();
+    this.bff.resolve('beauty_admin_portal_crm', this.currentParams).subscribe({
+      next: (resp) => {
+        if (resp && resp.action === 'render' && resp.data) {
+          this.local = resp.data as Record<string, unknown>;
+        }
+        this.loading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.loading = false; this.cdr.markForCheck(); },
+    });
   }
 
+  onStatus(id: StatusBucket['id']): void { this.navWith({ status: id === 'All' ? null : id.toLowerCase() }); }
+  onTag(id: string): void { this.navWith({ tag: this.activeTagIds.includes(id) ? null : id }); }
+  toggleAdvanced(f: { key: string }): void {
+    this.navWith({ [f.key]: this.isAdvancedActive(f.key) ? null : '1' });
+  }
+
+  /** Live, debounced search — fires ~250ms after the user stops typing. */
+  onSearchInput(value: string): void {
+    this.search = value;
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.searchTimer = setTimeout(() => {
+      const v = (this.search || '').trim();
+      if (v !== this.queryValue) this.navWith({ q: v || null });
+    }, 250);
+  }
+  /** Enter → submit immediately (skip the debounce). */
   onSearchSubmit(): void {
+    if (this.searchTimer) clearTimeout(this.searchTimer);
     const v = (this.search || '').trim();
     if (v === this.queryValue) return;
     this.navWith({ q: v || null });
   }
-
   clearSearch(): void {
     this.search = '';
-    this.onSearchSubmit();
+    if (this.searchTimer) clearTimeout(this.searchTimer);
+    this.navWith({ q: null });
   }
 
-  onBulkTag(): void {
-    // Open tag manager. Apply-to-selection wiring lands with assignment model.
-    const link = this.links['manage_tags'];
-    if (link) this.followLink.emit(link);
-  }
+  onBulkTag(): void { const link = this.links['manage_tags']; if (link) this.followLink.emit(link); }
 
-  onBulkMessage(): void {
-    // Placeholder — broadcast composer ships with the in-app messaging slice.
-    alert('Bulk message composer coming with messaging slice. ' + this.selected.size + ' recipients staged.');
-  }
-
+  /**
+   * Bulk suspend → open the single-target suspend confirm modal (audited
+   * reason + focus-trap) for the first selected row. Mirrors RN: there is no
+   * batch endpoint, and silently suspending without the reason modal would
+   * violate the destructive-action contract.
+   */
   onBulkSuspend(): void {
-    if (!this.selected.size) return;
-    this.bulkSuspend.emit({ type: this.type, ids: Array.from(this.selected) });
+    const firstId = Array.from(this.selected)[0];
+    if (firstId == null) return;
+    const kind = this.type === 'customers' ? 'customer' : 'business';
+    this.followLink.emit({
+      rel: 'suspend_confirm', href: null, method: 'NAV',
+      screen: 'beauty_admin_portal_suspend',
+      route: `/pogoda/beauty/admin/portal/crm/suspend/${kind}/${firstId}`,
+      prompt: null, params: { type: kind, id: firstId },
+    });
   }
 
   onType(t: 'customers' | 'providers'): void {
     if (t === this.type) return;
-    const link = this.links[t === 'customers' ? 'customers' : 'providers'];
-    if (link) this.followLink.emit(link);
+    this.selected.clear();
+    this.navWith({ type: t });
   }
-
-  onManage(): void {
-    const link = this.links['manage_tags'];
-    if (link) this.followLink.emit(link);
-  }
+  onManage(): void { const link = this.links['manage_tags']; if (link) this.followLink.emit(link); }
 
   openDetail(r: CrmRow): void {
     const link = this.links[this.type === 'customers' ? 'customer_detail' : 'provider_detail'];
@@ -447,22 +502,11 @@ export class AdminPortalCrmListComponent {
 
   openSuspend(r: CrmRow): void {
     const kind = this.type === 'customers' ? 'customer' : 'business';
-    const link: BffLink = {
+    this.followLink.emit({
       rel: 'suspend_confirm', href: null, method: 'NAV',
       screen: 'beauty_admin_portal_suspend',
       route: `/pogoda/beauty/admin/portal/crm/suspend/${kind}/${r.id}`,
-      prompt: null,
-      params: { type: kind, id: r.id },
-    };
-    this.followLink.emit(link);
-  }
-
-  onTab(kind: string): void {
-    const link = this.links[kind === 'crm' ? 'self' : kind];
-    if (link) this.followLink.emit(link);
-  }
-
-  get tabBadges(): Record<string, number | string | null> {
-    return (this.data['tab_badges'] as Record<string, number | string | null>) ?? {};
+      prompt: null, params: { type: kind, id: r.id },
+    });
   }
 }

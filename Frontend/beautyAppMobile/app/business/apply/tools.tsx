@@ -8,6 +8,7 @@ import { resolve } from '@/services/bff';
 import { isRedirect, type BffEnvelope } from '@/bff/types';
 import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { patchApplicationStep } from '@/services/businessApply';
+import { useAutosave } from '@/hooks/useAutosave';
 import {
   ChoiceRow,
   HeadedCard,
@@ -75,6 +76,13 @@ export default function ApplyToolsScreen() {
 
   const options: ToolOption[] = env?.action === 'render' ? (env.data?.tool_options ?? []) : [];
 
+  const saveState = useAutosave({
+    href: env?.action === 'render' ? env.data?.submit_href : undefined,
+    step: 'tools',
+    fields: { third_party_tools: selected },
+    skip: !env || env.action !== 'render' || submitting,
+  });
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -84,6 +92,8 @@ export default function ApplyToolsScreen() {
         onContinue={onContinue}
         continueLoading={submitting}
         error={error}
+        saveState={saveState}
+        centerTitle
       >
         <HeadedCard head="Optional integrations">
           {options.map((opt, idx) => (

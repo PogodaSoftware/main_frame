@@ -38,15 +38,14 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     storefront = ensure_storefront(business)
     reviews_qs = (
         BeautyReview.objects
-        .select_related('booking__customer', 'booking__service')
-        .filter(booking__service__provider=storefront)
+        .select_related('customer', 'service')
+        .filter(service__provider=storefront)
         .order_by('-created_at')
     )
 
     items = []
     for rv in reviews_qs:
-        booking = rv.booking
-        email = booking.customer.email if booking and booking.customer else ''
+        email = rv.customer.email if rv.customer_id else ''
         item = {
             'id': rv.id,
             'rating': rv.rating,
@@ -56,7 +55,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 'initial': _initial(email),
                 'display_name': _display_name(email),
             },
-            'service': {'name': booking.service.name if booking and booking.service else ''},
+            'service': {'name': rv.service.name if rv.service_id else ''},
             'business_reply': rv.business_reply or '',
             'business_reply_at': rv.business_reply_at.isoformat() if rv.business_reply_at else None,
             # Reply link is always present: the same endpoint creates AND edits

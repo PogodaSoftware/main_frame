@@ -124,6 +124,26 @@ export class BeautyAuthService {
       );
   }
 
+  /** The signed-in principal's type, or null if unauthenticated. Used by
+   *  the route guards to keep customer and business contexts fully apart. */
+  sessionType(): Observable<'customer' | 'business' | null> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return of(null);
+    }
+    return this.http
+      .get<{ user_type?: string }>(`${this.apiBase}/api/beauty/protected/me/`, {
+        withCredentials: true,
+        headers: this.getAuthHeaders(),
+      })
+      .pipe(
+        map((me) =>
+          me?.user_type === 'business' ? 'business'
+          : me?.user_type === 'customer' ? 'customer'
+          : null),
+        catchError(() => of(null)),
+      );
+  }
+
   // ── Cookie auto-refresh ────────────────────────────────────
   //
   // The backend's auth cookie is HttpOnly so we cannot inspect it from

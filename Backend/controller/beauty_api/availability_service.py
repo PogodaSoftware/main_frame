@@ -26,7 +26,9 @@ Public functions
 """
 
 from datetime import datetime, date, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 
+from .timezone_utils import resolve_zoneinfo
 from .models import (
     BeautyBooking,
     BeautyProvider,
@@ -173,6 +175,14 @@ def _overlaps(start: datetime, end: datetime, busy: list[tuple[datetime, datetim
     return False
 
 
+def _provider_zone(provider: BeautyProvider) -> ZoneInfo:
+    """Storefront's effective zone (column -> location -> default), via the
+    single canonical resolver. Weekly hours are wall-clock in this zone;
+    converting per concrete date with zoneinfo keeps slots DST-correct.
+    """
+    return resolve_zoneinfo(provider)
+
+
 def compute_slots(
     service: BeautyService,
     *,
@@ -189,15 +199,19 @@ def compute_slots(
     step = max(int(slot_step_minutes or DEFAULT_SLOT_STEP_MINUTES), 5)
 
     weekly = {row.day_of_week: row for row in provider.availability.all()}
+    tz = _provider_zone(provider)
     now = datetime.now(timezone.utc)
 
-    # We compute slots in UTC for parity with the rest of the codebase.
-    today: date = now.date()
+    # Iterate the provider's *local* calendar days so wall-clock hours
+    # (e.g. "10:00") map to the correct UTC instant per date. zoneinfo
+    # applies the right offset for each concrete day, so this is DST-correct.
+    now_local = now.astimezone(tz)
+    today: date = now_local.date()
     end_date: date = today + timedelta(days=days_ahead)
     busy = _provider_busy_intervals(
         provider.id,
-        datetime.combine(today, time.min, tzinfo=timezone.utc),
-        datetime.combine(end_date, time.min, tzinfo=timezone.utc),
+        datetime.combine(today, time.min, tzinfo=tz).astimezone(timezone.utc),
+        datetime.combine(end_date + timedelta(days=1), time.min, tzinfo=tz).astimezone(timezone.utc),
         exclude_booking_id=exclude_booking_id,
     )
 
@@ -210,23 +224,21 @@ def compute_slots(
             cursor += timedelta(days=1)
             continue
         if row.is_24h:
-            # Open the full UTC day. Using the next day's midnight as the
-            # close boundary lets a service consume the last minutes too.
-            open_at = datetime.combine(cursor, time(0, 0), tzinfo=timezone.utc)
-            close_at = datetime.combine(cursor + timedelta(days=1), time(0, 0), tzinfo=timezone.utc)
+            # Full local day: local midnight to next local midnight, in UTC.
+            open_at = datetime.combine(cursor, time(0, 0), tzinfo=tz).astimezone(timezone.utc)
+            close_at = datetime.combine(cursor + timedelta(days=1), time(0, 0), tzinfo=tz).astimezone(timezone.utc)
         else:
-            open_at = datetime.combine(cursor, row.start_time, tzinfo=timezone.utc)
-            close_at = datetime.combine(cursor, row.end_time, tzinfo=timezone.utc)
+            open_at = datetime.combine(cursor, row.start_time, tzinfo=tz).astimezone(timezone.utc)
+            close_at = datetime.combine(cursor, row.end_time, tzinfo=tz).astimezone(timezone.utc)
         slot = open_at
         while slot + timedelta(minutes=duration) <= close_at:
             if slot > now and not _overlaps(slot, slot + timedelta(minutes=duration), busy):
-                # Label is intentionally a UTC fallback only — the
-                # client renders the canonical `value` (ISO with TZ
-                # offset) in the customer's local timezone so an
-                # out-of-town customer sees their own clock.
+                # `value` is the canonical UTC instant (ISO + offset); the
+                # client renders it in the viewer's local tz. `label` is a
+                # provider-local fallback for non-tz-aware consumers.
                 results.append({
                     'value': slot.isoformat(),
-                    'label': slot.strftime('%a %b %-d · %-I:%M %p UTC'),
+                    'label': slot.astimezone(tz).strftime('%a %b %-d · %-I:%M %p'),
                 })
             slot += timedelta(minutes=step)
         cursor += timedelta(days=1)
@@ -254,21 +266,25 @@ def is_slot_available(
     duration = max(int(service.duration_minutes or 60), 15)
     end_at = slot_at + timedelta(minutes=duration)
 
+    # Weekly hours are wall-clock in the provider's zone — evaluate the
+    # slot against the local day/hours, not the UTC day.
+    tz = _provider_zone(provider)
+    slot_local = slot_at.astimezone(tz)
     weekly = {row.day_of_week: row for row in provider.availability.all()}
-    row = weekly.get(slot_at.weekday())
+    row = weekly.get(slot_local.weekday())
     if row is None or row.is_closed:
         return False, 'The provider is closed on that day.'
 
     if not row.is_24h:
-        open_at = datetime.combine(slot_at.date(), row.start_time, tzinfo=timezone.utc)
-        close_at = datetime.combine(slot_at.date(), row.end_time, tzinfo=timezone.utc)
+        open_at = datetime.combine(slot_local.date(), row.start_time, tzinfo=tz).astimezone(timezone.utc)
+        close_at = datetime.combine(slot_local.date(), row.end_time, tzinfo=tz).astimezone(timezone.utc)
         if slot_at < open_at or end_at > close_at:
             return False, 'Slot is outside business hours.'
 
     busy = _provider_busy_intervals(
         provider.id,
-        datetime.combine(slot_at.date(), time.min, tzinfo=timezone.utc),
-        datetime.combine(slot_at.date() + timedelta(days=1), time.min, tzinfo=timezone.utc),
+        datetime.combine(slot_local.date(), time.min, tzinfo=tz).astimezone(timezone.utc),
+        datetime.combine(slot_local.date() + timedelta(days=1), time.min, tzinfo=tz).astimezone(timezone.utc),
         exclude_booking_id=exclude_booking_id,
     )
     if _overlaps(slot_at, end_at, busy):

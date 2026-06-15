@@ -50,6 +50,7 @@ import { BeautyBookingDetailComponent } from './beauty-booking-detail.component'
 import { BeautyRescheduleComponent } from './beauty-reschedule.component';
 import { BeautyProfileComponent } from './beauty-profile.component';
 import { BeautyChatsComponent } from './beauty-chats.component';
+import { BeautyProviderMessagesComponent } from './prov-web/beauty-provider-messages.component';
 import { BeautyChatThreadComponent } from './beauty-chat-thread.component';
 import { BeautyBusinessDashboardComponent } from './beauty-business-dashboard.component';
 import { BeautyBusinessServicesComponent } from './beauty-business-services.component';
@@ -136,6 +137,7 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBusinessSettingsComponent,
     BeautyBusinessChangePasswordComponent,
     BeautyBusinessProfileComponent,
+    BeautyProviderMessagesComponent,
     BeautyBusinessEmailContactComponent,
     BeautyProviderNewMessageToastComponent,
   ],
@@ -254,10 +256,6 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         *ngIf="bffResponse!.screen === 'beauty_admin_portal_crm'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
-        [type]="adminPortalCrmType"
-        [chipStyle]="adminPortalCrmChip"
-        [bulk]="adminPortalCrmBulk"
-        [activeTagIds]="adminPortalCrmTags"
         (bulkSuspend)="onAdminPortalBulkSuspend($event)"
         (followLink)="followLink($event)"
       />
@@ -393,6 +391,12 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
       />
+      <app-beauty-provider-messages
+        *ngIf="bffResponse!.screen === 'beauty_business_messages'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
       <app-beauty-business-home
         *ngIf="bffResponse!.screen === 'beauty_business_home'"
         [data]="bffResponse!.data ?? {}"
@@ -487,10 +491,6 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
   @ViewChild('adminPortalTeam') adminPortalTeamRef?: AdminPortalTeamComponent;
   adminPortalSigninError: string | null = null;
   adminPortal2faError: string | null = null;
-  adminPortalCrmType: 'customers' | 'providers' = 'customers';
-  adminPortalCrmChip: 'pill' | 'underline' = 'pill';
-  adminPortalCrmBulk = false;
-  adminPortalCrmTags: string[] = [];
 
   private currentScreen = 'beauty_home';
   private currentParams: Record<string, string | number> = {};
@@ -897,13 +897,6 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
 
   private applyResponse(response: BffResponse): void {
     this.isLoading = false;
-    if (response.action === 'render' && response.screen === 'beauty_admin_portal_crm') {
-      const d = (response.data ?? {}) as Record<string, unknown>;
-      this.adminPortalCrmType = (d['type'] as 'customers' | 'providers') ?? 'customers';
-      this.adminPortalCrmChip = (d['chip_style'] as 'pill' | 'underline') ?? 'pill';
-      this.adminPortalCrmBulk = Boolean(d['bulk']);
-      this.adminPortalCrmTags = (d['active_tag_ids'] as string[]) ?? [];
-    }
     if (response.action === 'render' && response.screen === 'beauty_admin_flags') {
       const data = (response.data ?? {}) as Record<string, unknown>;
       this.adminFlags = (data['flags'] as AdminFlag[]) ?? [];

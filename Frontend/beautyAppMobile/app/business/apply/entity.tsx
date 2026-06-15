@@ -11,6 +11,7 @@ import { resolve } from '@/services/bff';
 import { isRedirect, type BffEnvelope } from '@/bff/types';
 import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { patchApplicationStep } from '@/services/businessApply';
+import { useAutosave } from '@/hooks/useAutosave';
 import {
   ChoiceRow,
   HeadedCard,
@@ -135,6 +136,28 @@ export default function ApplyEntityScreen() {
     }
   }, [env, router, entityType, itin, firstName, lastName, businessName, addr1, addr2, city, stateCode, postalCode]);
 
+  const derivedBusinessName =
+    entityType === 'person'
+      ? `${firstName.trim()} ${lastName.trim()}`.trim()
+      : businessName;
+  const saveState = useAutosave({
+    href: env?.action === 'render' ? env.data?.submit_href : undefined,
+    step: 'entity',
+    fields: {
+      entity_type: entityType,
+      applicant_first_name: firstName,
+      applicant_last_name: lastName,
+      business_name: derivedBusinessName,
+      address_line1: addr1,
+      address_line2: addr2,
+      city,
+      state: stateCode,
+      postal_code: postalCode,
+      ...(itin ? { itin } : {}),
+    },
+    skip: !env || env.action !== 'render' || submitting,
+  });
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -145,6 +168,7 @@ export default function ApplyEntityScreen() {
         continueDisabled={submitting}
         continueLoading={submitting}
         error={error}
+        saveState={saveState}
       >
         <HeadedCard head="Are you applying as…">
           <ChoiceRow

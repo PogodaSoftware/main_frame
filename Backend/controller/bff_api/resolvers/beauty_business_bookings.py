@@ -55,6 +55,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'customer_email': b.customer.email,
         }
         if b.status == BeautyBooking.STATUS_BOOKED and b.slot_at > now:
+            item['_links'] = {
+                'cancel': h.link(
+                    rel='cancel',
+                    href=f'/api/beauty/protected/business/bookings/{b.id}/cancel/',
+                    method='POST', prompt='Cancel booking',
+                ),
+            }
             upcoming.append(item)
         else:
             past.append(item)
@@ -63,6 +70,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'action': 'render',
         'screen': 'beauty_business_bookings',
         'data': {
+            'business': {
+                'email': business.email,
+                'business_name': business.business_name,
+            },
             'storefront': {'id': storefront.id, 'name': storefront.name},
             'upcoming': upcoming,
             'past': past,

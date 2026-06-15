@@ -278,7 +278,7 @@ function TimeInput({ value, onChange, eyebrow, accessibilityLabel }: { value: st
 }
 
 const styles = StyleSheet.create({
-  quickset: { marginBottom: 14 },
+  quickset: { marginTop: 20, marginBottom: 14 },
   qsLabel: {
     fontSize: 11, fontWeight: '600', letterSpacing: 0.6,
     color: beautyTokens.textMuted, marginBottom: 6,
@@ -320,11 +320,12 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: 'transparent',
     alignItems: 'center', justifyContent: 'center',
   },
-  segSelected: { backgroundColor: '#FFFFFF', borderColor: beautyTokens.line },
-  segSelectedClosed: { backgroundColor: beautyTokens.dangerBg, borderColor: 'rgba(192,57,43,0.33)' },
+  // Selected (Open or Closed) = ink fill per the desktop design.
+  segSelected: { backgroundColor: beautyTokens.text, borderColor: beautyTokens.text },
+  segSelectedClosed: { backgroundColor: beautyTokens.text, borderColor: beautyTokens.text },
   segText: { fontSize: 11, fontWeight: '600', color: beautyTokens.textMuted, fontFamily: beautyTokens.fontBody },
-  segTextSelected: { color: beautyTokens.text },
-  segTextClosed: { color: beautyTokens.danger },
+  segTextSelected: { color: '#FFFFFF' },
+  segTextClosed: { color: '#FFFFFF' },
 
   timePair: { flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 'auto' },
   dash: { color: beautyTokens.textMuted, fontSize: 11 },

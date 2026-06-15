@@ -10,12 +10,8 @@ import { FormsModule } from '@angular/forms';
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
 import { BeautyConfirmModalComponent } from './beauty-confirm-modal.component';
-import { BeautyProviderSubHeaderComponent } from './provider/prov-sub-header.component';
-import { BeautyProviderTabBarComponent, ProviderTab } from './provider/prov-tab-bar.component';
-import { resolveTabLink } from './provider/prov-tab-nav';
-import { BeautyProviderCardComponent } from './provider/prov-card.component';
-import { BeautyProviderButtonComponent } from './provider/prov-btn.component';
-import { BeautyProviderEmptyHintComponent } from './provider/prov-empty-hint.component';
+import { BeautyProvWebSidebarComponent, ProvWebNav } from './prov-web/prov-web-sidebar.component';
+import { BeautyProvWebTopbarComponent } from './prov-web/prov-web-topbar.component';
 
 interface ServiceRow {
   id: number;
@@ -43,81 +39,104 @@ const CATEGORY_HUE: Record<string, string> = {
     CommonModule,
     FormsModule,
     BeautyConfirmModalComponent,
-    BeautyProviderSubHeaderComponent,
-    BeautyProviderTabBarComponent,
-    BeautyProviderCardComponent,
-    BeautyProviderButtonComponent,
-    BeautyProviderEmptyHintComponent,
+    BeautyProvWebSidebarComponent,
+    BeautyProvWebTopbarComponent,
   ],
   template: `
-    <div class="beauty-app prov-shell">
-      <app-prov-sub-header back="Dashboard" title="Services"
-                           (backClick)="emit(links['business_home'])">
-        <app-prov-btn slot="right" variant="primary" size="sm"
-                      (clicked)="emit(links['add'])"
-                      [disabled]="!links['add']">
-          Add service
-        </app-prov-btn>
-      </app-prov-sub-header>
+    <div class="pw-shell">
+      <app-prov-web-sidebar
+        active="services"
+        [businessName]="business?.business_name || 'Your storefront'"
+        [email]="business?.email || ''"
+        [storefrontLive]="storefrontOpen"
+        [badges]="navBadges"
+        (follow)="emit($event)">
+      </app-prov-web-sidebar>
 
-      <main id="main" class="prov-body">
-        <ng-container *ngIf="services.length; else emptyState">
-          <div class="list-head">
-            <span class="count-eyebrow">{{ services.length }} {{ services.length === 1 ? 'SERVICE' : 'SERVICES' }}</span>
-            <label class="sort-select" aria-label="Sort services">
-              <span class="sort-eyebrow">Sort:</span>
-              <select [(ngModel)]="sortKey" name="sort-key">
-                <option value="name-asc">Name A → Z</option>
-                <option value="name-desc">Name Z → A</option>
-                <option value="price-asc">Price low → high</option>
-                <option value="price-desc">Price high → low</option>
-                <option value="time-asc">Time short → long</option>
-                <option value="time-desc">Time long → short</option>
-              </select>
-            </label>
-          </div>
-          <app-prov-card padding="0 14px">
-            <div *ngFor="let s of sortedServices; let last = last" class="svc-row" [class.last]="last">
-              <div class="swatch" [style.background]="swatchBg(s.category)" aria-hidden="true"></div>
-              <div class="svc-info">
-                <div class="svc-name">{{ s.name }}</div>
-                <div class="svc-meta">
-                  <span class="cat-eyebrow">{{ s.category_label }}</span>
-                  <span class="dot">·</span>
-                  <span class="mono">{{ s.duration_minutes }} min(s)</span>
-                  <span class="dot">·</span>
-                  <span class="mono price">\${{ formatPrice(s) }}</span>
-                </div>
-              </div>
-              <div class="svc-actions">
-                <app-prov-btn variant="secondary" size="sm" (clicked)="emit(s._links?.['edit'])">
-                  Edit
-                </app-prov-btn>
-                <app-prov-btn variant="dangerOutline" size="sm" (clicked)="askDelete(s)"
-                              [disabled]="busyId === s.id">
-                  Delete
-                </app-prov-btn>
-              </div>
+      <div class="pw-main">
+        <app-prov-web-topbar
+          [businessName]="business?.business_name || 'Your storefront'"
+          [email]="business?.email || ''"
+          [notifCount]="topBadge"
+          (follow)="emit($event)">
+        </app-prov-web-topbar>
+
+        <main id="main" class="pw-content">
+          <div class="pw-header">
+            <div class="pw-header-text pw-header-centered">
+              <h1 class="pw-title">Services</h1>
+              <div class="pw-sub">{{ services.length }} service{{ services.length === 1 ? '' : 's' }} · across {{ categoryCount }} categor{{ categoryCount === 1 ? 'y' : 'ies' }}</div>
             </div>
-          </app-prov-card>
-          <div class="list-foot">Tap any service to edit. Customers see all services on your storefront.</div>
-        </ng-container>
+            <div class="pw-header-actions">
+              <label class="sort-select" *ngIf="services.length" aria-label="Sort services">
+                <span class="sort-eyebrow">Sort</span>
+                <select [(ngModel)]="sortKey" name="sort-key">
+                  <option value="name-asc">Name A → Z</option>
+                  <option value="name-desc">Name Z → A</option>
+                  <option value="price-asc">Price low → high</option>
+                  <option value="price-desc">Price high → low</option>
+                  <option value="time-asc">Time short → long</option>
+                  <option value="time-desc">Time long → short</option>
+                </select>
+              </label>
+              <button type="button" class="wbtn wbtn-ink" (click)="emit(links['add'])" [disabled]="!links['add']">+ Add service</button>
+            </div>
+          </div>
 
-        <ng-template #emptyState>
-          <app-prov-empty-hint
-            title="No services yet"
-            body="Add your first service so customers can book. You can edit price, duration, and description anytime.">
-            <app-prov-btn variant="primary" (clicked)="emit(links['add'])"
-                          [disabled]="!links['add']">
-              Add your first service
-            </app-prov-btn>
-          </app-prov-empty-hint>
-        </ng-template>
+          <div class="pw-pad">
+            <ng-container *ngIf="services.length; else emptyState">
+              <section class="web-card nopad">
+                <table class="svc-table">
+                  <thead>
+                    <tr>
+                      <th>Service</th>
+                      <th class="col-cat">Category</th>
+                      <th class="col-dur">Duration</th>
+                      <th class="col-price r">Price</th>
+                      <th class="col-act r">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let s of sortedServices">
+                      <td>
+                        <div class="svc-cell">
+                          <div class="swatch" [style.background]="swatchBg(s.category)" aria-hidden="true"></div>
+                          <div class="svc-info">
+                            <div class="svc-name">{{ s.name }}</div>
+                            <div class="svc-desc" *ngIf="s.description">{{ s.description }}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="col-cat"><span class="cat-eyebrow">{{ s.category_label }}</span></td>
+                      <td class="col-dur mono">{{ s.duration_minutes }} min</td>
+                      <td class="col-price r mono price">\${{ formatPrice(s) }}</td>
+                      <td class="col-act r">
+                        <div class="row-actions">
+                          <button type="button" class="wbtn wbtn-secondary sm" (click)="emit(s._links?.['edit'])">Edit</button>
+                          <button type="button" class="wbtn wbtn-danger-outline sm" (click)="askDelete(s)" [disabled]="busyId === s.id">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
+            </ng-container>
 
-        <p *ngIf="errorMsg" class="server-error" role="alert" aria-live="assertive">{{ errorMsg }}</p>
-      </main>
+            <ng-template #emptyState>
+              <section class="web-card empty-card">
+                <div class="empty-ico" aria-hidden="true">
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1a3a52" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4L12 3z"/></svg>
+                </div>
+                <h2 class="empty-h2">No services yet</h2>
+                <div class="empty-body">Customers see a service list on your storefront. Add at least one to go live.</div>
+                <button type="button" class="wbtn wbtn-ink lg" (click)="emit(links['add'])" [disabled]="!links['add']">+ Add your first service</button>
+              </section>
+            </ng-template>
 
-      <app-prov-tab-bar active="services" [badges]="tabBadges" (tabClick)="onTab($event)"></app-prov-tab-bar>
+            <p *ngIf="errorMsg" class="server-error" role="alert" aria-live="assertive">{{ errorMsg }}</p>
+          </div>
+        </main>
+      </div>
 
       <app-beauty-confirm-modal
         *ngIf="pendingDelete"
@@ -136,108 +155,86 @@ const CATEGORY_HUE: Record<string, string> = {
   `,
   styles: [`
     :host {
-      --surface: #F2F2F2; --line: #DCDCDF; --text: #0F1115; --text-muted: #6B6F77;
-      --accent-blue: #CFE3F5; --accent-blue-deep: #7DA8CF; --danger: #C0392B;
+      --surface: #F2F2F2; --surface-2: #E9E9EB; --line: #DCDCDF; --text: #0F1115; --text-muted: #6B6F77;
+      --accent-blue: #CFE3F5; --accent-blue-deep: #7DA8CF; --accent-blue-text: #1a3a52;
+      --ink: #0A0A0B; --danger: #C0392B; --danger-soft: #FCE8E5;
       --font-body: 'Inter', system-ui, sans-serif;
       --font-display: 'Cormorant Garamond', Georgia, serif;
       --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
-      display: block;
-      background: var(--surface);
+      display: block; background: var(--surface);
     }
     :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
-    .prov-shell {
-      display: flex; flex-direction: column;
-      min-height: 100vh;
-      background: var(--surface);
-      color: var(--text);
-      font-family: var(--font-body);
+
+    /* Shell */
+    .pw-shell { display: flex; min-height: 100dvh; background: var(--surface); }
+    app-prov-web-sidebar { position: sticky; top: 0; height: 100dvh; }
+    .pw-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    app-prov-web-topbar { position: sticky; top: 0; z-index: 5; }
+    .pw-content { flex: 1; padding: 0 0 40px; }
+    .pw-pad { padding: 20px 28px 28px; }
+
+    .pw-header { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px 28px 4px; }
+    .pw-header-text { flex: 1; min-width: 0; }
+    .pw-header-centered { text-align: center; }
+    .pw-title { margin: 0; font-family: var(--font-display); font-size: 2rem; font-weight: 500; letter-spacing: 0.2px; line-height: 1.15; }
+    .pw-sub { font-size: 0.8125rem; color: var(--text-muted); margin-top: 6px; }
+    .pw-header-actions { position: absolute; top: 24px; right: 28px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+    /* Buttons */
+    .wbtn { height: 40px; padding: 0 16px; border-radius: 10px; cursor: pointer; font-family: var(--font-body); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid transparent; white-space: nowrap; }
+    .wbtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .wbtn.sm { height: 32px; padding: 0 12px; font-size: 0.75rem; }
+    .wbtn.lg { height: 48px; padding: 0 22px; font-size: 0.9375rem; }
+    .wbtn-ink { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .wbtn-ink:hover:not(:disabled) { background: #1F1F22; }
+    .wbtn-secondary { background: #fff; color: var(--text); border-color: var(--line); }
+    .wbtn-secondary:hover:not(:disabled) { border-color: var(--accent-blue-deep); }
+    .wbtn-danger-outline { background: #fff; color: var(--danger); border-color: rgba(192,57,43,0.4); }
+    .wbtn-danger-outline:hover:not(:disabled) { background: var(--danger-soft); }
+
+    .sort-select { display: inline-flex; align-items: center; gap: 6px; font-size: 0.6875rem; color: var(--text-muted); }
+    .sort-eyebrow { font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; }
+    .sort-select select { font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; color: var(--text); background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 0 10px; height: 40px; cursor: pointer; }
+
+    .web-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; }
+    .web-card.nopad { overflow: hidden; }
+
+    /* Services table */
+    .svc-table { width: 100%; border-collapse: collapse; }
+    .svc-table thead tr { background: var(--surface); border-bottom: 1px solid var(--line); }
+    .svc-table th {
+      padding: 12px 16px; font-size: 0.625rem; font-weight: 700; letter-spacing: 1.2px;
+      text-transform: uppercase; color: var(--text-muted); text-align: left;
     }
-    .prov-body {
-      flex: 1;
-      padding: 14px 16px;
-      overflow-y: auto;
-    }
-    .list-head {
-      display: flex; justify-content: space-between; align-items: baseline;
-      margin-bottom: 8px;
-    }
-    .count-eyebrow {
-      font-size: 11px; font-weight: 600;
-      color: var(--text-muted);
-      letter-spacing: 0.6px; text-transform: uppercase;
-    }
-    .sort-select {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-    .sort-eyebrow {
-      font-weight: 600;
-      letter-spacing: 0.6px;
-      text-transform: uppercase;
-    }
-    .sort-select select {
-      font-family: var(--font-body);
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text);
-      background: #FFFFFF;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 5px 8px;
-      cursor: pointer;
-      min-height: 32px;
-    }
-    .svc-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 0;
-      border-bottom: 1px solid var(--line);
-    }
-    .svc-row.last { border-bottom: none; }
-    .swatch {
-      width: 44px; height: 44px;
-      border-radius: 10px;
-      flex-shrink: 0;
-      border: 1px solid var(--line);
-    }
-    .svc-info { flex: 1; min-width: 0; }
-    .svc-name {
-      font-family: var(--font-display);
-      font-size: 17px; font-weight: 500;
-      color: var(--text);
-      line-height: 1.2;
-    }
-    .svc-meta {
-      display: flex; align-items: center; gap: 6px;
-      margin-top: 4px;
-      flex-wrap: wrap;
-    }
-    .cat-eyebrow {
-      font-size: 9px; font-weight: 700;
-      color: var(--accent-blue-deep);
-      letter-spacing: 1.2px; text-transform: uppercase;
-    }
-    .dot { color: var(--line); }
-    .mono {
-      font-family: var(--font-mono);
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-    .mono.price { font-weight: 700; color: var(--text); }
-    .svc-actions { display: flex; gap: 6px; flex-shrink: 0; }
-    .list-foot {
-      margin-top: 14px;
-      font-size: 11px;
-      color: var(--text-muted);
-      text-align: center;
-    }
-    .server-error {
-      color: var(--danger);
-      padding: 12px 0;
-      font-size: 13px;
-    }
-    @media screen and (min-width: 768px) {
-      .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
+    .svc-table th.r, .svc-table td.r { text-align: right; }
+    .col-cat { width: 140px; } .col-dur { width: 110px; } .col-price { width: 120px; } .col-act { width: 200px; }
+    .svc-table tbody tr { border-top: 1px solid var(--surface); }
+    .svc-table tbody tr:first-child { border-top: none; }
+    .svc-table td { padding: 14px 16px; vertical-align: middle; }
+    .svc-cell { display: flex; align-items: center; gap: 14px; }
+    .swatch { width: 48px; height: 48px; border-radius: 10px; flex-shrink: 0; border: 1px solid var(--line); }
+    .svc-info { min-width: 0; }
+    .svc-name { font-family: var(--font-display); font-size: 1.125rem; font-weight: 500; }
+    .svc-desc { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340px; }
+    .cat-eyebrow { font-size: 0.625rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--accent-blue-deep); }
+    .mono { font-family: var(--font-mono); font-size: 0.8125rem; color: var(--text); }
+    .mono.price { font-weight: 600; }
+    .row-actions { display: inline-flex; gap: 6px; }
+
+    /* Empty */
+    .empty-card { padding: 56px; text-align: center; }
+    .empty-ico { width: 64px; height: 64px; border-radius: 16px; background: var(--accent-blue); margin: 0 auto 18px; display: grid; place-items: center; }
+    .empty-h2 { margin: 0; font-family: var(--font-display); font-size: 1.75rem; font-weight: 500; }
+    .empty-body { font-size: 0.875rem; color: var(--text-muted); margin: 8px auto 24px; line-height: 1.55; max-width: 420px; }
+
+    .server-error { color: var(--danger); padding: 12px 0; font-size: 0.8125rem; }
+
+    @media screen and (max-width: 720px) {
+      app-prov-web-sidebar { display: none; }
+      .pw-header { flex-direction: column; padding: 16px; }
+      .pw-pad { padding: 16px; }
+      .col-cat, .col-dur { display: none; }
+      .svc-desc { display: none; }
     }
   `],
 })
@@ -306,8 +303,24 @@ export class BeautyBusinessServicesComponent {
     if (link) this.followLink.emit(link);
   }
 
-  onTab(tab: ProviderTab): void {
-    this.emit(resolveTabLink(tab, this.links, 'services'));
+  get business(): { email?: string; business_name?: string } | null {
+    return (this.data['business'] as { email?: string; business_name?: string }) || null;
+  }
+  get storefrontOpen(): boolean {
+    const sf = (this.data['storefront'] as { is_open?: boolean }) || {};
+    return sf.is_open !== false;
+  }
+  get topBadge(): number | null {
+    const b = (this.data['badges'] as { messages_unread?: number; bookings_unread?: number }) || {};
+    const t = (b.messages_unread || 0) + (b.bookings_unread || 0);
+    return t > 0 ? t : null;
+  }
+  get navBadges(): Partial<Record<ProvWebNav, number>> {
+    const b = (this.data['badges'] as { messages_unread?: number; bookings_unread?: number }) || {};
+    return { bookings: b.bookings_unread || 0, messages: b.messages_unread || 0 };
+  }
+  get categoryCount(): number {
+    return new Set(this.services.map((s) => s.category)).size;
   }
 
   del(s: ServiceRow): void {

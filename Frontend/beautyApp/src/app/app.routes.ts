@@ -6,7 +6,6 @@ import { BeautyGoogleAuthComponent } from './beauty/cust-web/beauty-google-auth.
 import { BeautyErrorComponent } from './beauty/beauty-error.component';
 import { BeautySearchComponent } from './beauty/beauty-search.component';
 import { BeautyReviewWriteComponent } from './beauty/beauty-review-write.component';
-import { BeautyBusinessReviewsComponent } from './beauty/beauty-business-reviews.component';
 import { BeautyFavoritesComponent } from './beauty/beauty-favorites.component';
 import { beautyAuthGuard, beautyBusinessAuthGuard } from './beauty/beauty-auth.guard';
 
@@ -331,6 +330,20 @@ export const routes: Routes = [
     data: { screen: 'beauty_business_services' },
   },
   {
+    path: 'business/messages',
+    component: BeautyShellComponent,
+    title: 'Beauty - Messages',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_messages' },
+  },
+  {
+    path: 'business/messages/:bookingId',
+    component: BeautyShellComponent,
+    title: 'Beauty - Messages',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_messages' },
+  },
+  {
     path: 'business/services/new',
     component: BeautyShellComponent,
     title: 'Beauty - Add Service',
@@ -385,13 +398,6 @@ export const routes: Routes = [
     title: 'Beauty - Business Profile',
     canActivate: [beautyBusinessAuthGuard],
     data: { screen: 'beauty_business_profile' },
-  },
-  {
-    path: 'business/reviews',
-    component: BeautyBusinessReviewsComponent,
-    title: 'Beauty - Customer Reviews',
-    canActivate: [beautyBusinessAuthGuard],
-    data: { screen: 'beauty_business_reviews' },
   },
   {
     path: '**',
