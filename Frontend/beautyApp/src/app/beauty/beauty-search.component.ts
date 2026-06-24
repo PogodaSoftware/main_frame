@@ -30,41 +30,14 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { environment } from '../../environments/environment';
-import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { BeautySearchService, SearchItem } from './beauty-search.service';
 import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
-
-interface SearchProvider {
-  id: number;
-  name: string;
-  short_description: string;
-  location_label: string;
-}
-
-interface SearchService {
-  id: number;
-  name: string;
-  description: string;
-  price_cents: number;
-  duration_minutes: number;
-  category: string;
-  is_future: boolean;
-  service_locations: string[];
-  is_favorited?: boolean;
-  provider: SearchProvider;
-}
-
-interface SearchResponse {
-  items: SearchService[];
-  next_offset: number | null;
-  has_more: boolean;
-}
 
 const DEBOUNCE_MS = 300;
 const PAGE_SIZE = 20;
@@ -341,7 +314,7 @@ const PAGE_SIZE = 20;
 export class BeautySearchComponent implements OnInit, AfterViewInit, OnDestroy {
   query = '';
   location = '';
-  results: SearchService[] = [];
+  results: SearchItem[] = [];
   loading = false;
   rateLimited = false;
   errorMessage = '';
@@ -356,8 +329,7 @@ export class BeautySearchComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('sentinel', { static: false }) sentinel?: ElementRef<HTMLDivElement>;
 
   constructor(
-    private http: HttpClient,
-    private auth: BeautyAuthService,
+    private searchSvc: BeautySearchService,
     private router: Router,
     private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: object,
@@ -366,7 +338,7 @@ export class BeautySearchComponent implements OnInit, AfterViewInit, OnDestroy {
   get totalLoaded(): number { return this.results.length; }
 
   ngOnInit(): void {
-    this.location = this._readProfileLocation();
+    this.location = this.searchSvc.readProfileLocation();
     this.subs.push(
       this.query$
         .pipe(debounceTime(DEBOUNCE_MS), distinctUntilChanged())
@@ -394,7 +366,7 @@ export class BeautySearchComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.rateToastTimeout) clearTimeout(this.rateToastTimeout);
   }
 
-  trackById = (_: number, item: SearchService): number => item.id;
+  trackById = (_: number, item: SearchItem): number => item.id;
 
   onQueryChange(value: string): void {
     this.query$.next((value || '').trim());
@@ -409,32 +381,20 @@ export class BeautySearchComponent implements OnInit, AfterViewInit, OnDestroy {
     if (link?.route) this.router.navigateByUrl(link.route);
   }
 
-  toggleFavorite(ev: Event, svc: SearchService): void {
+  toggleFavorite(ev: Event, svc: SearchItem): void {
     ev.stopPropagation();
     if (!svc?.id) return;
     const wasOn = !!svc.is_favorited;
     svc.is_favorited = !wasOn;
-    const url = `${environment.apiBaseUrl}/api/beauty/protected/services/${svc.id}/favorite/`;
-    const opts = { withCredentials: true, headers: this.auth.getAuthHeaders() };
-    const obs = wasOn ? this.http.delete(url, opts) : this.http.post(url, {}, opts);
-    obs.subscribe({
+    this.searchSvc.toggleFavorite(svc, wasOn).subscribe({
       error: () => { svc.is_favorited = wasOn; this.cdr.markForCheck(); },
     });
   }
 
-  openProvider(svc: SearchService): void {
+  openProvider(svc: SearchItem): void {
     const providerId = svc?.provider?.id;
     if (!providerId) return;
     this.router.navigate(['/providers', providerId]);
-  }
-
-  private _readProfileLocation(): string {
-    if (!isPlatformBrowser(this.platformId)) return '';
-    try {
-      const raw = localStorage.getItem('beauty_customer_city');
-      if (raw && raw.trim()) return raw.trim();
-    } catch { /* localStorage may be locked */ }
-    return '';
   }
 
   private runSearch(reset: boolean): void {
@@ -449,25 +409,12 @@ export class BeautySearchComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loading = true;
     this.errorMessage = '';
 
-    const params = new URLSearchParams();
-    if (this.query) params.set('q', this.query);
-    if (this.location) params.set('location', this.location);
-    params.set('offset', String(this.nextOffset));
-    params.set('limit', String(PAGE_SIZE));
-    params.set('includeFuture', 'true');
-
-    const url = `${environment.apiBaseUrl}/api/beauty/services/search/?${params.toString()}`;
-
-    this.http
-      .get<SearchResponse>(url, {
-        withCredentials: true,
-        headers: this.auth.getAuthHeaders(),
-      })
+    this.searchSvc.search(this.query, this.location, this.nextOffset, PAGE_SIZE)
       .subscribe({
-        next: (resp) => {
-          this.results = reset ? resp.items : this.results.concat(resp.items);
-          this.nextOffset = resp.next_offset;
-          this.hasMore = !!resp.has_more;
+        next: (page) => {
+          this.results = reset ? page.items : this.results.concat(page.items);
+          this.nextOffset = page.next_offset;
+          this.hasMore = page.has_more;
           this.loading = false;
           this.cdr.markForCheck();
         },

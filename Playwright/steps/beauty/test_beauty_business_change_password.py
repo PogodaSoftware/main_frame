@@ -8,6 +8,7 @@ from Playwright.Hooks.hooks import goto_route, timeout_for_testing
 from Playwright.pages.pogoda.beauty.business_change_password_page import (
     current_input,
     new_input,
+    confirm_input,
     submit_btn,
     message,
 )
@@ -68,12 +69,14 @@ def open_chpw(page):
 def enter_correct(page):
     page.locator(current_input).fill(ORIGINAL_PASSWORD)
     page.locator(new_input).fill(NEW_PASSWORD)
+    page.locator(confirm_input).fill(NEW_PASSWORD)
 
 
 @when("I enter a wrong current password and a new strong password")
 def enter_wrong(page):
     page.locator(current_input).fill("wrong-password-xyz")
     page.locator(new_input).fill(NEW_PASSWORD)
+    page.locator(confirm_input).fill(NEW_PASSWORD)
 
 
 @when("I submit the change-password form")

@@ -43,9 +43,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     return {
         'action': 'render',
         'screen': 'beauty_forgot',
-        'data': {
-            'links': {k: v['screen'] for k, v in links.items() if v.get('screen')},
-        },
+        'data': {},
         'meta': {'title': 'Beauty - Reset Password'},
         '_links': links,
         'form': form,

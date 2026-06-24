@@ -127,7 +127,8 @@ def test_itin_field_locks_to_nine_digits_via_typing(page):
         _sign_in_fresh_via_ui(page, email, password, "ITIN Typing Studio")
 
         # Switch to the registered-business branch which surfaces the ITIN input.
-        page.get_by_role('radio', name='A registered business').check()
+        # Radio inputs are sr-only; click the wrapping label instead.
+        page.locator('label.legal-opt:has(input[value="business"])').click()
         itin = page.locator('#itin')
         expect(itin).to_be_visible()
 
@@ -148,7 +149,8 @@ def test_itin_field_strips_pasted_non_digits(page):
     password = "ItinPaste123!"
     try:
         _sign_in_fresh_via_ui(page, email, password, "ITIN Paste Studio")
-        page.get_by_role('radio', name='A registered business').check()
+        # Radio inputs are sr-only; click the wrapping label instead.
+        page.locator('label.legal-opt:has(input[value="business"])').click()
         itin = page.locator('#itin')
         expect(itin).to_be_visible()
         itin.click()
@@ -192,21 +194,23 @@ def test_wizard_full_flow_lands_on_dashboard(page, fresh_business):
 
     page.get_by_role('textbox', name='First name').fill('Maya')
     page.get_by_role('textbox', name='Last name').fill('Rivera')
-    page.get_by_role('button', name='Save & Continue').click()
+    page.get_by_role('button', name='Continue').click()
     page.wait_for_url('**/apply/services', timeout=10_000)
 
     # Pick at least one category to enable the CTA.
-    page.locator('input[type=checkbox][name^="cat-"]').first.check()
-    page.get_by_role('button', name='Save & Continue').click()
+    # Categories are toggle buttons (cat-btn), not checkboxes.
+    page.locator('button.cat-btn').first.click()
+    page.get_by_role('button', name='Continue').click()
     page.wait_for_url('**/apply/stripe', timeout=10_000)
-    page.get_by_role('button', name='Mark complete').click()
+    page.get_by_role('button', name='Continue').click()
     page.wait_for_url('**/apply/schedule', timeout=10_000)
-    page.get_by_role('button', name='Save & Continue').click()
+    page.get_by_role('button', name='Continue').click()
     page.wait_for_url('**/apply/tools', timeout=10_000)
-    page.get_by_role('button', name='Save & Continue').click()
+    page.get_by_role('button', name='Continue').click()
     page.wait_for_url('**/apply/review', timeout=10_000)
 
-    page.get_by_role('checkbox', name='Terms').check()
+    # TOS checkbox is sr-only; click the wrapping label instead.
+    page.locator('label.tos-agree').click()
     page.get_by_role('button', name='Submit application').click()
     page.wait_for_url('**/business', timeout=10_000)
     page.wait_for_timeout(1000)
@@ -341,8 +345,10 @@ def test_provider_chat_thread_shows_seeded_messages(page, signed_in_business):
     biz = signed_in_business
 
     # Seed: create a customer, a provider service, a booking, two messages.
+    # slot_at is set 1 hour in the future so the 24h chat window is still open
+    # (prune_expired_for deletes messages once slot_at+duration+24h has passed).
     seed = _shell_exec(
-        "from datetime import datetime, timezone; "
+        "from datetime import datetime, timedelta, timezone; "
         "from django.contrib.auth.hashers import make_password; "
         "from beauty_api.models import (BeautyUser, BusinessProvider, BeautyProvider, "
         "BeautyService, BeautyBooking, BeautyChatMessage); "
@@ -354,9 +360,10 @@ def test_provider_chat_thread_shows_seeded_messages(page, signed_in_business):
         "    defaults={'category':'facial','price_cents':5000,'duration_minutes':30}); "
         f"cust, _ = BeautyUser.objects.get_or_create(email='handoff_cust_{uuid.uuid4().hex[:6]}@beauty-test.com', "
         "    defaults={'password': make_password('x')}); "
+        "slot = datetime.now(timezone.utc) + timedelta(hours=1); "
         "bk = BeautyBooking.objects.create("
         "    customer=cust, service=svc, "
-        "    slot_at=datetime(2026,5,28,15,0,tzinfo=timezone.utc), "
+        "    slot_at=slot, "
         "    service_name_at_booking=svc.name, "
         "    service_price_cents_at_booking=svc.price_cents, "
         "    service_duration_minutes_at_booking=svc.duration_minutes, "
@@ -368,11 +375,14 @@ def test_provider_chat_thread_shows_seeded_messages(page, signed_in_business):
     assert 'BK:' in seed, seed
     booking_id = int(seed.split('BK:')[1].strip().split()[0])
 
-    goto_route(page, 'beauty_chat_thread', bookingId=booking_id)
+    # Business users access the two-pane Messages UI at /business/messages/:bookingId
+    # (the customer /chats route is guarded and bounces business users).
+    goto_route(page, 'beauty_business_message_thread', bookingId=booking_id)
     timeout_for_testing(page)
 
-    expect(page.get_by_text('HELLO_FROM_TEST_CUSTOMER')).to_be_visible()
-    expect(page.get_by_text('REPLY_FROM_TEST_BUSINESS')).to_be_visible()
+    # Messages render in .bubble > .bubble-body inside the thread pane.
+    expect(page.locator('.bubble-body', has_text='HELLO_FROM_TEST_CUSTOMER').first).to_be_visible()
+    expect(page.locator('.bubble-body', has_text='REPLY_FROM_TEST_BUSINESS').first).to_be_visible()
 
 
 # ---------------------------------------------------------------------------

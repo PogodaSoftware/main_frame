@@ -138,9 +138,11 @@ interface DayRow extends WeeklyHourRow {}
               </div>
               <div class="wc-field">
                 <label for="itin" class="wc-label">EIN / ITIN <span class="req">*</span></label>
-                <input id="itin" name="itin" type="text" maxlength="11"
+                <input id="itin" name="itin" type="text" maxlength="9"
                        inputmode="numeric" autocomplete="off" class="mono-input"
                        [(ngModel)]="entityForm.itin"
+                       (input)="onItinInput($event)"
+                       (paste)="onItinPaste($event)"
                        [attr.aria-required]="true"
                        [attr.aria-invalid]="entityFormError === 'itin' ? 'true' : null"
                        placeholder="9 digits" />
@@ -635,6 +637,24 @@ export class BeautyBusinessApplicationComponent implements OnChanges {
         this.serverError = err?.error?.detail || 'Could not save. Please review the form.';
       },
     });
+  }
+
+  /** Strip non-digits and cap at 9 on every keystroke. */
+  onItinInput(ev: Event): void {
+    const el = ev.target as HTMLInputElement;
+    const stripped = el.value.replace(/\D/g, '').slice(0, 9);
+    el.value = stripped;
+    this.entityForm.itin = stripped;
+  }
+
+  /** Strip non-digits and cap at 9 on paste. */
+  onItinPaste(ev: ClipboardEvent): void {
+    ev.preventDefault();
+    const raw = ev.clipboardData?.getData('text/plain') || '';
+    const stripped = raw.replace(/\D/g, '').slice(0, 9);
+    const el = ev.target as HTMLInputElement;
+    el.value = stripped;
+    this.entityForm.itin = stripped;
   }
 
   submitEntity(): void {

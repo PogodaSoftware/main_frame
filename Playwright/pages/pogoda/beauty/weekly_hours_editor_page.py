@@ -52,8 +52,15 @@ time_end_nth = (
     "div.time-pair input.time-input:nth-of-type(2)"
 )
 
-# TZ banner
+# TZ banner — present on the wizard schedule step (hideTzBanner=false, default).
+# NOT present on the availability page (hideTzBanner=true there).
 tz_banner = "css=app-beauty-weekly-hours-editor div.tz-banner"
+
+# TZ rail card — present on the availability page (right-rail aside).
+# The availability page hides the inline tz-banner and shows a right-rail card
+# instead. Scoped to the "Time zone" eyebrow specifically (there are 2 rail-eyebrow
+# elements on the page; the other is "Upcoming overrides").
+tz_rail_card = "css=app-beauty-business-availability div.rail-eyebrow:has-text('Time zone')"
 
 # Legacy locators that should NO LONGER be present in either screen.
 # Kept here so the test can assert they are absent (regression guard).

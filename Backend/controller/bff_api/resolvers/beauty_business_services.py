@@ -16,14 +16,7 @@ from ..services.application_gate import (
     resolve_business_or_redirect,
 )
 from ..services.price_format_service import dollars_or_from_cents as _dollars
-
-
-CATEGORY_LABELS = {
-    'facial': 'Facial',
-    'massage': 'Massage',
-    'nails': 'Nails',
-    'hair': 'Hair',
-}
+from ._business_shared import CATEGORY_LABELS
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:

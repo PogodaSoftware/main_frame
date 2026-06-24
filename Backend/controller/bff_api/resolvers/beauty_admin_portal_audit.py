@@ -11,10 +11,10 @@ from html import escape
 
 from django.db.models import Q
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyAdminAuditEvent
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _PAGE_SIZE = 50

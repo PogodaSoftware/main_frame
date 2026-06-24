@@ -111,6 +111,51 @@ def seeded_admin():
     delete_test_users(email)
 
 
+@pytest.fixture(scope="function")
+def seeded_admin_session(page):
+    """Create a customer, promote to admin Owner, log in, inject cookie."""
+    tag = uuid.uuid4().hex[:6]
+    email = f"magictest_{tag}@beauty-test.com"
+    password = "MagicPass123!"
+
+    resp = requests.post(
+        f"{BACKEND_URL}/api/beauty/signup/",
+        json={"email": email, "password": password},
+        timeout=10,
+    )
+    assert resp.status_code == 201, f"Signup failed: {resp.text}"
+
+    user_id = int(_shell(
+        "from beauty_api.models import BeautyUser; "
+        f"print(BeautyUser.objects.get(email='{email}').id)"
+    ))
+    principal_id = _set_admin_principal("customer", user_id, role="owner")
+
+    login = requests.post(
+        f"{BACKEND_URL}/api/beauty/login/",
+        json={"email": email, "password": password, "device_id": TEST_DEVICE_ID},
+        timeout=10,
+    )
+    assert login.status_code == 200, f"Login failed: {login.text}"
+    cookie = login.cookies.get(BEAUTY_SESSION_COOKIE)
+    assert cookie, "Login missing beauty_auth cookie."
+
+    page.context.add_cookies([{
+        "name": BEAUTY_SESSION_COOKIE, "value": cookie,
+        "domain": "localhost", "path": "/", "httpOnly": False,
+    }])
+
+    _STATE.update({"email": email, "password": password,
+                   "user_id": user_id, "principal_id": principal_id, "cookie": cookie})
+    yield _STATE
+
+    _shell(
+        "from beauty_api.models import BeautyAdminPrincipal; "
+        f"BeautyAdminPrincipal.objects.filter(id={principal_id}).delete(); print('ok')"
+    )
+    delete_test_users(email)
+
+
 def _open_desktop(page, route: str) -> None:
     page.set_viewport_size(_DESKTOP)
     page.add_init_script(
@@ -162,8 +207,16 @@ def assert_2fa(page):
 # Scenario 2 — magic-link renders form-only
 # ---------------------------------------------------------------------------
 
+@given("a seeded admin session is active")
+def given_seeded_admin_session(seeded_admin_session):
+    _STATE.update(seeded_admin_session)
+
+
 @when("I open the admin magic-link page at desktop width")
 def open_magic(page):
+    page.add_init_script(
+        f"window.localStorage.setItem('beauty_device_id', '{TEST_DEVICE_ID}');"
+    )
     _open_desktop(page, "beauty_admin_portal_magic")
 
 

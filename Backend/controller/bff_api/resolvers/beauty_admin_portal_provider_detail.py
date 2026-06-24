@@ -2,43 +2,23 @@
 Beauty Admin Portal — Business provider detail resolver
 """
 
-from datetime import datetime, timezone
 from decimal import Decimal
 
 from django.db.models import Avg, Count, Sum
 
 from beauty_api import chat_service
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminNote, BeautyAdminTag, BeautyAdminTagAssignment, BeautyBooking,
     BeautyProvider, BeautyProviderAvailability, BeautyReview, BeautyService,
     BeautySession, BusinessProvider,
 )
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
+from ._admin_datetime import humanize_dt as _humanize_dt, humanize_relative as _humanize_relative
 
 
 _DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-
-def _humanize_dt(dt) -> str:
-    if not dt:
-        return '—'
-    return dt.strftime('%b %-d, %Y') if hasattr(dt, 'strftime') else str(dt)
-
-
-def _humanize_relative(dt) -> str:
-    if not dt:
-        return '—'
-    delta = datetime.now(timezone.utc) - dt
-    s = int(delta.total_seconds())
-    if s < 60:
-        return 'just now'
-    if s < 3600:
-        return f'{s // 60}m ago'
-    if s < 86400:
-        return f'{s // 3600}h ago'
-    return f'{s // 86400}d ago'
 
 
 def _services_for(provider_id: int):

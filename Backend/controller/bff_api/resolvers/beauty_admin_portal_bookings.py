@@ -7,10 +7,10 @@ from decimal import Decimal
 
 from django.db.models import Q, Sum
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyBooking
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
@@ -29,8 +29,6 @@ def _status_chip(status: str) -> str:
         return 'Refunded'
     if status in BeautyBooking.CANCELLED_STATUSES:
         return 'Cancelled'
-    if status == BeautyBooking.STATUS_PENDING if hasattr(BeautyBooking, 'STATUS_PENDING') else False:
-        return 'Pending'
     return 'Confirmed'
 
 
@@ -48,7 +46,7 @@ def _row(b: BeautyBooking) -> dict:
         'mon': _MON[b.slot_at.month - 1],
         'day': b.slot_at.day,
         'weekday': _DOW[b.slot_at.weekday()],
-        'time': b.slot_at.strftime('%-I:%M %p') if hasattr(b.slot_at, 'strftime') else '',
+        'time': b.slot_at.strftime('%I:%M %p').lstrip('0') if hasattr(b.slot_at, 'strftime') else '',
         'service': b.service_name_at_booking or (b.service.name if b.service else '—'),
         'customer_name': customer_name,
         'provider_name': provider_name or '—',

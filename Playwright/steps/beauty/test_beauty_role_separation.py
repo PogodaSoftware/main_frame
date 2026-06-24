@@ -346,3 +346,57 @@ def assert_business_403(_state):
         )
     finally:
         _cleanup(_state)
+
+
+# -- screen-level portal isolation (BFF resolve envelope) ---------------
+
+def _login(email: str, password: str, fake_ip: str, *, business: bool = False) -> str:
+    path = '/api/beauty/business/login/' if business else '/api/beauty/login/'
+    resp = requests.post(
+        f'{BACKEND_URL}{path}',
+        json={'email': email, 'password': password, 'device_id': TEST_DEVICE_ID},
+        headers=_xff_headers(fake_ip),
+        timeout=10,
+    )
+    assert resp.status_code == 200, f'Setup login failed: {resp.text}'
+    cookie = resp.cookies.get('beauty_auth')
+    assert cookie, 'Missing beauty_auth cookie on login'
+    return cookie
+
+
+@given('a signed-in business session')
+def signed_in_business(_state, fake_ip):
+    biz = _create_business(_state, 'iso')
+    _state['cookie'] = _login(biz['email'], biz['password'], fake_ip, business=True)
+
+
+@given('a signed-in customer session')
+def signed_in_customer(_state, fake_ip):
+    cust = _create_customer(_state, 'iso')
+    _state['cookie'] = _login(cust['email'], cust['password'], fake_ip)
+
+
+@when(parsers.parse('that session resolves the "{screen}" screen'))
+def resolve_screen(_state, screen):
+    resp = requests.post(
+        f'{BACKEND_URL}/api/bff/beauty/resolve/',
+        json={'version': '2.0.0', 'screen': screen,
+              'device_id': TEST_DEVICE_ID, 'params': {}},
+        cookies={'beauty_auth': _state['cookie']},
+        timeout=10,
+    )
+    _state['resolve_resp'] = resp
+
+
+@then(parsers.parse('the resolve envelope should redirect to "{target}"'))
+def assert_resolve_redirect(_state, target):
+    try:
+        resp = _state['resolve_resp']
+        assert resp.status_code == 200, f'resolve status {resp.status_code}: {resp.text}'
+        body = resp.json()
+        assert body.get('action') == 'redirect', f'expected a redirect envelope, got: {body}'
+        assert body.get('redirect_to') == target, (
+            f"expected redirect_to '{target}', got '{body.get('redirect_to')}'"
+        )
+    finally:
+        _cleanup(_state)

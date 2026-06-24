@@ -18,11 +18,10 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 
-import { environment } from '../../environments/environment';
 import { BeautyAuthService } from './beauty-auth.service';
+import { BeautyBffService } from './beauty-bff.service';
 import { BffLink } from './beauty-bff.types';
 import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
 import { BeautyHomeSearchComponent } from './beauty-home-search.component';
@@ -48,11 +47,7 @@ interface FavoriteRow {
   created_at: string;
   service: FavoriteService;
   provider: FavoriteProvider;
-}
-
-interface FavoritesResponse {
-  items: FavoriteRow[];
-  count: number;
+  _links?: Record<string, BffLink>;
 }
 
 @Component({
@@ -162,7 +157,7 @@ export class BeautyFavoritesComponent implements OnInit {
   errorMessage = '';
 
   constructor(
-    private http: HttpClient,
+    private bff: BeautyBffService,
     private auth: BeautyAuthService,
     private router: Router,
     private cdr: ChangeDetectorRef,
@@ -193,15 +188,12 @@ export class BeautyFavoritesComponent implements OnInit {
   }
 
   remove(row: FavoriteRow): void {
-    if (!row?.service?.id) return;
+    const link = row?._links?.['unfavorite'];
+    if (!link) return;
     const before = this.rows;
     this.rows = this.rows.filter((r) => r.id !== row.id);
     this.cdr.markForCheck();
-    const url = `${environment.apiBaseUrl}/api/beauty/protected/services/${row.service.id}/favorite/`;
-    this.http.delete(url, {
-      withCredentials: true,
-      headers: this.auth.getAuthHeaders(),
-    }).subscribe({
+    this.auth.follow(link).subscribe({
       error: () => {
         this.rows = before;
         this.errorMessage = 'Could not remove favorite.';
@@ -211,23 +203,19 @@ export class BeautyFavoritesComponent implements OnInit {
   }
 
   private load(): void {
-    const url = `${environment.apiBaseUrl}/api/beauty/protected/favorites/`;
-    this.http.get<FavoritesResponse>(url, {
-      withCredentials: true,
-      headers: this.auth.getAuthHeaders(),
-    }).subscribe({
-      next: (resp) => {
-        this.rows = resp?.items || [];
+    this.bff.resolve('beauty_favorites').subscribe({
+      next: (env) => {
         this.loading = false;
+        if (env?.action === 'render') {
+          this.rows = (env.data?.['items'] as FavoriteRow[]) || [];
+        } else {
+          this.errorMessage = 'Sign in as a customer to view your saved services.';
+        }
         this.cdr.markForCheck();
       },
-      error: (err: HttpErrorResponse) => {
+      error: () => {
         this.loading = false;
-        if (err.status === 403) {
-          this.errorMessage = 'Sign in as a customer to view your saved services.';
-        } else {
-          this.errorMessage = 'Could not load saved services.';
-        }
+        this.errorMessage = 'Could not load saved services.';
         this.cdr.markForCheck();
       },
     });

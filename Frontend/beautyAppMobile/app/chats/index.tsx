@@ -8,6 +8,9 @@ import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { BeautyShell } from '@/components/BeautyShell';
 import { BottomNav } from '@/components/BottomNav';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_BODY_BOLD, FONT_DISPLAY, FONT_MONO } from '@/theme/fonts';
+import { formatSlotLocal } from '@/utils/dateFormatters';
 
 interface ChatThreadRow {
   booking_id: number;
@@ -30,24 +33,7 @@ interface ChatsData {
   total: number;
 }
 
-const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlue: '#CFE3F5',
-  accentBlueDeep: '#7DA8CF',
-  accentBlueText: '#1a3a52',
-  danger: '#C0392B',
-  white: '#FFFFFF',
-};
-
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_BODY_BOLD = 'Inter_700Bold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
-const FONT_MONO = 'Menlo';
+const C = PALETTE;
 
 const AVATAR_PALETTES: Array<[string, string]> = [
   ['#BFD8EE', '#7DA8CF'],
@@ -63,31 +49,6 @@ function initialOf(name: string): string {
 function avatarColors(name: string): [string, string] {
   const seed = (name || '').charCodeAt(0) || 0;
   return AVATAR_PALETTES[seed % AVATAR_PALETTES.length];
-}
-
-const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-const MONTHS_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
-// Booking slot in device-local time (EDT), not the UTC-baked `slot_label`.
-function formatSlotLocal(iso: string): string {
-  const d = new Date(iso);
-  if (isNaN(d.getTime())) return '';
-  const wd = WEEKDAYS_SHORT[d.getDay()];
-  const mo = MONTHS_SHORT[d.getMonth()];
-  const time = d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
-  let tz = '';
-  try {
-    const part = new Intl.DateTimeFormat(undefined, { timeZoneName: 'short' })
-      .formatToParts(d)
-      .find((p) => p.type === 'timeZoneName');
-    tz = part?.value ?? '';
-  } catch {
-    /* no tz abbreviation */
-  }
-  return `${wd} ${mo} ${d.getDate()} · ${time}${tz ? ` ${tz}` : ''}`;
 }
 
 function formatRelative(iso: string | null): string {

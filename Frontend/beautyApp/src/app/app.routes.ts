@@ -28,7 +28,7 @@ export const routes: Routes = [
     title: 'Beauty - Reset Password',
   },
   {
-    path: 'auth/oauth/google',
+    path: 'auth/oauth/google/:user_type',
     component: BeautyGoogleAuthComponent,
     title: 'Beauty - Continue with Google',
   },
@@ -342,6 +342,13 @@ export const routes: Routes = [
     title: 'Beauty - Messages',
     canActivate: [beautyBusinessAuthGuard],
     data: { screen: 'beauty_business_messages' },
+  },
+  {
+    path: 'business/reviews',
+    component: BeautyShellComponent,
+    title: 'Beauty - Customer reviews',
+    canActivate: [beautyBusinessAuthGuard],
+    data: { screen: 'beauty_business_reviews' },
   },
   {
     path: 'business/services/new',

@@ -13,12 +13,12 @@ SLA-breached tickets). Footer "View all activity" → audit log.
 
 from datetime import datetime, timezone
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminTicket, BeautyBooking, BeautyUser, BusinessProviderApplication,
 )
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 def _age(dt) -> str:

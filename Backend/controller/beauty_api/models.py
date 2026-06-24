@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import make_password
 class BeautyUser(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
+    city = models.CharField(max_length=128, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     is_suspended = models.BooleanField(default=False)
     suspended_at = models.DateTimeField(null=True, blank=True)

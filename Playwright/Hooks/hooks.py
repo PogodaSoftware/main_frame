@@ -2,7 +2,7 @@ import os
 from playwright.sync_api import Page
 
 frontend_port = os.getenv('FRONTEND_PORT', '5000')
-beauty_port = os.getenv('BEAUTY_PORT', '4200')
+beauty_port = os.getenv('BEAUTY_PORT', '4300')
 
 _BEAUTY_BASE = "/pogoda/beauty"
 
@@ -37,6 +37,7 @@ _BEAUTY_ROUTES = {
     'beauty_admin_portal_tickets',
     'beauty_chats',
     'beauty_chat_thread',
+    'beauty_business_message_thread',
     'beauty_business_apply_entity',
     'beauty_business_apply_services',
     'beauty_business_apply_stripe',
@@ -57,6 +58,9 @@ _BEAUTY_ROUTES = {
     'beauty_booking_detail',
     'beauty_booking_success',
     'beauty_profile',
+    'beauty_favorites',
+    'beauty_business_reviews',
+    'beauty_business_messages',
 }
 
 # Static and templated routes for selecting_different_routes / goto_route.
@@ -76,6 +80,8 @@ _ROUTE_PATHS = {
     'beauty_business_settings': f'{_BEAUTY_BASE}/business/settings',
     'beauty_business_change_password': f'{_BEAUTY_BASE}/business/settings/password',
     'beauty_business_profile': f'{_BEAUTY_BASE}/business/profile',
+    'beauty_business_reviews': f'{_BEAUTY_BASE}/business/reviews',
+    'beauty_business_messages': f'{_BEAUTY_BASE}/business/messages',
     'beauty_business_apply_entity':   f'{_BEAUTY_BASE}/business/apply/entity',
     'beauty_business_apply_services': f'{_BEAUTY_BASE}/business/apply/services',
     'beauty_business_apply_stripe':   f'{_BEAUTY_BASE}/business/apply/stripe',
@@ -96,6 +102,7 @@ _ROUTE_PATHS = {
     'beauty_booking_detail': f'{_BEAUTY_BASE}/bookings/{{id}}',
     'beauty_booking_success': f'{_BEAUTY_BASE}/bookings/{{id}}/success',
     'beauty_profile': f'{_BEAUTY_BASE}/profile',
+    'beauty_favorites': f'{_BEAUTY_BASE}/saved',
     'beauty_admin_portal_dashboard': f'{_BEAUTY_BASE}/admin/portal/dashboard',
     'beauty_admin_portal_team':      f'{_BEAUTY_BASE}/admin/portal/team',
     'beauty_admin_portal_audit':     f'{_BEAUTY_BASE}/admin/portal/audit',
@@ -113,6 +120,7 @@ _ROUTE_PATHS = {
     'beauty_admin_portal_tickets':   f'{_BEAUTY_BASE}/admin/portal/tickets',
     'beauty_chats': f'{_BEAUTY_BASE}/chats',
     'beauty_chat_thread': f'{_BEAUTY_BASE}/chats/{{bookingId}}',
+    'beauty_business_message_thread': f'{_BEAUTY_BASE}/business/messages/{{bookingId}}',
 }
 
 

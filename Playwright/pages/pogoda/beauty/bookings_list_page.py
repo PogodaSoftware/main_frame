@@ -1,32 +1,43 @@
-"""Locators for the Beauty bookings list page (`/pogoda/beauty/bookings`)."""
+"""Locators for the Beauty bookings list page (`/pogoda/beauty/bookings`).
 
-bookings_page_root = "css=div.beauty-app"
+Root is div.cust-bookings (redesigned desktop layout: CustTopNav + .bk-main
+with filter chips and card rows; no bottom nav, no .segmented, no .b-card).
+"""
 
-sub_header = "css=div.beauty-app header.sub-header"
-sub_header_title = "css=div.beauty-app header.sub-header span.sub-header-title"
-back_button = "css=div.beauty-app header.sub-header button.back-btn"
+bookings_page_root = "css=div.cust-bookings"
 
-bookings_section = "css=div.beauty-app main.bookings-section"
-page_title = "css=div.beauty-app main.bookings-section h1.page-title"
-page_sub = "css=div.beauty-app main.bookings-section .page-sub"
+# No dedicated sub-header; top-nav is app-cust-top-nav.
+sub_header = "css=div.cust-bookings app-cust-top-nav"
+sub_header_title = "css=div.cust-bookings h1.title"
+back_button = "css=div.cust-bookings app-cust-top-nav"   # no back button on this screen
 
-segmented = "css=div.beauty-app .segmented"
-seg_tab = "css=div.beauty-app .segmented button.seg-tab"
-seg_tab_upcoming = "css=div.beauty-app .segmented button.seg-tab >> nth=0"
-seg_tab_past = "css=div.beauty-app .segmented button.seg-tab >> nth=1"
-seg_tab_active = "css=div.beauty-app .segmented button.seg-tab.is-active"
+# Main section and title.
+bookings_section = "css=div.cust-bookings main.bk-main"
+page_title = "css=div.cust-bookings h1.title"             # was main.bookings-section h1.page-title
+page_sub = "css=div.cust-bookings .subtitle"              # was .page-sub → .subtitle
 
-empty_card = "css=div.beauty-app .empty-card"
-empty_title = "css=div.beauty-app .empty-card .empty-title"
-browse_services_button = "css=div.beauty-app .empty-card button.btn-browse"
+# Filter chips (replaces .segmented / .seg-tab).
+segmented = "css=div.cust-bookings .chips"                # was .segmented → .chips
+seg_tab = "css=div.cust-bookings .chips button.chip"      # was button.seg-tab → button.chip
+seg_tab_upcoming = "css=div.cust-bookings .chips button.chip >> nth=0"
+seg_tab_past = "css=div.cust-bookings .chips button.chip >> nth=1"
+seg_tab_active = "css=div.cust-bookings .chips button.chip.is-active"
 
-# Booking list cards.
-booking_card = "css=div.beauty-app .b-card"
-booking_card_first = "css=div.beauty-app .b-card >> nth=0"
-booking_title = "css=div.beauty-app .b-card .b-title"
-booking_title_button = "css=div.beauty-app .b-card button.b-card-title-btn"
-booking_status = "css=div.beauty-app .b-card .b-status"
-booking_place = "css=div.beauty-app .b-card .b-place"
-booking_when = "css=div.beauty-app .b-card .b-when"
+# Empty state card (class unchanged: .empty-card / .empty-title).
+empty_card = "css=div.cust-bookings .empty-card"
+empty_title = "css=div.cust-bookings .empty-card .empty-title"
+# CTA in empty-card is now btn--primary (was button.btn-browse).
+browse_services_button = "css=div.cust-bookings .empty-card button.btn--primary"
 
-bottom_nav = "css=div.beauty-app nav.bottom-nav"
+# Booking list cards (redesigned as article.card.row, no .b-card hierarchy).
+booking_card = "css=div.cust-bookings article.card.row"
+booking_card_first = "css=div.cust-bookings article.card.row >> nth=0"
+booking_title = "css=div.cust-bookings article.card.row .row-name"
+# "Open →" ghost button navigates to the detail; replaces old b-card-title-btn.
+booking_title_button = "css=div.cust-bookings article.card.row button.btn--ghost"
+booking_status = "css=div.cust-bookings article.card.row .chip-status"
+booking_place = "css=div.cust-bookings article.card.row .row-at"
+booking_when = "css=div.cust-bookings article.card.row .row-meta"
+
+# No bottom nav in redesigned desktop layout.
+bottom_nav = "css=div.cust-bookings .bk-main"            # was nav.bottom-nav → main area

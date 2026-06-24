@@ -13,18 +13,7 @@ from ..services.application_gate import (
     redirect_to_wizard_if_incomplete,
     resolve_business_or_redirect,
 )
-
-
-def _initial(email: str) -> str:
-    return (email.strip()[:1] or '?').upper()
-
-
-def _display_name(email: str) -> str:
-    """Friendly name from the email local-part (capitalized). The BeautyUser
-    model has no name field, so the local-part is the best stable label."""
-    local = (email or '').split('@', 1)[0]
-    first = local.replace('.', ' ').replace('_', ' ').split(' ')[0]
-    return (first[:1].upper() + first[1:]) if first else 'Guest'
+from ._business_shared import _display_name, _initial
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:

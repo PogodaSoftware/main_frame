@@ -1,20 +1,34 @@
-"""Locators for the Beauty reset-password (forgot) page (`/pogoda/beauty/forgot`)."""
+"""Locators for the Beauty reset-password (forgot) page (`/pogoda/beauty/forgot`).
 
-forgot_page_root = "css=div.forgot-page"
+The component renders entirely inside CustAuthLayoutComponent → root div.cust-auth
+(split-pane). There is no div.forgot-page wrapper. The "back to sign in" button
+is a projected footer element rendered in div.cust-auth .foot. The title h1 is
+rendered by the layout inside main.pane .pane-inner.
+"""
 
-back_bar = "css=div.forgot-page header.back-bar"
-back_button = "css=div.forgot-page header.back-bar button.back-btn"
+# Root is the shared auth layout shell (no div.forgot-page in DOM).
+forgot_page_root = "css=div.cust-auth"
 
-brand_block = "css=div.forgot-page .brand"
-brand_name = "css=div.forgot-page .brand-name"
-title = "css=div.forgot-page h1.title"
-subtitle = "css=div.forgot-page p.subtitle"
+# No header.back-bar; back link is in the cust-auth-footer slot (.foot).
+back_bar = "css=div.cust-auth .foot"
+back_button = "css=div.cust-auth .foot button.link"
 
-email_input = "css=div.forgot-page input#forgot-email"
-field_error = "css=div.forgot-page span.field-error"
-server_error = "css=div.forgot-page div.server-error"
-success_message = "css=div.forgot-page div.success-msg"
+# Brand block is in aside.hero (desktop) / .brand--mobile (mobile).
+brand_block = "css=div.cust-auth aside.hero .brand"
+brand_name = "css=div.cust-auth aside.hero .brand-name"
 
-submit_button = "css=div.forgot-page button.btn-submit"
-info_card = "css=div.forgot-page .info-card"
-back_to_signin_link = "css=div.forgot-page .footer button.link"
+# Title + subtitle rendered by layout in .pane-inner.
+title = "css=div.cust-auth .pane-inner h1.title"
+subtitle = "css=div.cust-auth .pane-inner p.sub"
+
+# Form elements — scoped to .pane .body (projected content area).
+email_input = "css=div.cust-auth input#forgot-email"
+field_error = "css=div.cust-auth span.field-error"
+server_error = "css=div.cust-auth div.server-error"
+success_message = "css=div.cust-auth div.success-msg"
+
+submit_button = "css=div.cust-auth button.btn-submit"
+info_card = "css=div.cust-auth .info-card"
+
+# Back to sign in: projected into [cust-auth-footer] → rendered in .foot.
+back_to_signin_link = "css=div.cust-auth .foot button.link"

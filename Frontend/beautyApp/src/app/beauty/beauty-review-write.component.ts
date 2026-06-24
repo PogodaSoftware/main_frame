@@ -20,11 +20,11 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { environment } from '../../environments/environment';
 import { BeautyAuthService } from './beauty-auth.service';
+import { BeautyBffService } from './beauty-bff.service';
 import { BffLink } from './beauty-bff.types';
 import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
 
@@ -202,8 +202,10 @@ export class BeautyReviewWriteComponent implements OnInit {
   submitting = false;
   errorMessage = '';
 
+  private submitLink: BffLink | null = null;
+
   constructor(
-    private http: HttpClient,
+    private bff: BeautyBffService,
     private auth: BeautyAuthService,
     private route: ActivatedRoute,
     private router: Router,
@@ -231,26 +233,13 @@ export class BeautyReviewWriteComponent implements OnInit {
   }
 
   private loadBooking(): void {
-    const url = `${environment.apiBaseUrl}/api/beauty/protected/bookings/`;
-    this.http.get<{ upcoming?: MyBooking[]; past?: MyBooking[]; bookings?: MyBooking[]; items?: MyBooking[] }>(url, {
-      withCredentials: true,
-      headers: this.auth.getAuthHeaders(),
-    }).subscribe({
-      next: (resp) => {
-        const all: MyBooking[] = [
-          ...(resp?.upcoming || []),
-          ...(resp?.past || []),
-          ...(resp?.bookings || []),
-          ...(resp?.items || []),
-        ];
-        const seen = new Set<number>();
-        const dedup = all.filter((b) => {
-          if (!b || seen.has(b.id)) return false;
-          seen.add(b.id);
-          return true;
-        });
-        this.booking = dedup.find((b) => b.id === this.bookingId) || null;
+    this.bff.resolve('beauty_booking_detail', { id: this.bookingId! }).subscribe({
+      next: (env) => {
         this.loading = false;
+        if (env?.action === 'render') {
+          this.booking = (env.data?.['booking'] as MyBooking) || null;
+          this.submitLink = env._links?.['submit_review'] || null;
+        }
         this.cdr.markForCheck();
       },
       error: () => {
@@ -262,16 +251,12 @@ export class BeautyReviewWriteComponent implements OnInit {
 
   submit(): void {
     if (this.submitting) return;
-    if (!this.booking?.service?.id) return;
+    if (!this.submitLink) return;
     if (this.rating < 1 || this.rating > 5) return;
     this.submitting = true;
     this.errorMessage = '';
 
-    const url = `${environment.apiBaseUrl}/api/beauty/protected/services/${this.booking.service.id}/reviews/`;
-    this.http.post(url, { rating: this.rating, body: this.body }, {
-      withCredentials: true,
-      headers: this.auth.getAuthHeaders(),
-    }).subscribe({
+    this.auth.follow(this.submitLink, { rating: this.rating, body: this.body }).subscribe({
       next: () => {
         this.submitting = false;
         const providerId = this.booking?.provider?.id;

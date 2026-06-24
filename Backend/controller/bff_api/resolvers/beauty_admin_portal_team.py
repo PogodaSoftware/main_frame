@@ -10,12 +10,12 @@ plus a "+ Invite" composer the frontend renders inline.
 import re
 from datetime import datetime, timezone
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminInvite, BeautyAdminPrincipal, BeautyUser, BusinessProvider,
 )
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _ROLE_OPTIONS = [

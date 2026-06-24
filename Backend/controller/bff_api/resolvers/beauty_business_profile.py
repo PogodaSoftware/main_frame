@@ -18,19 +18,7 @@ from ..services.application_gate import (
     resolve_business_or_redirect,
 )
 from ..services.price_format_service import cents_to_dollars
-
-
-_CATEGORY_LABELS = {'facial': 'Facial', 'massage': 'Massage', 'nails': 'Nails', 'hair': 'Hair'}
-
-
-def _initial(email: str) -> str:
-    return (email.strip()[:1] or '?').upper()
-
-
-def _display_name(email: str) -> str:
-    local = (email or '').split('@', 1)[0]
-    first = local.replace('.', ' ').replace('_', ' ').split(' ')[0]
-    return (first[:1].upper() + first[1:]) if first else 'Guest'
+from ._business_shared import CATEGORY_LABELS as _CATEGORY_LABELS, _display_name, _initial
 
 
 def _reviews(storefront, *, limit: int = 12) -> dict:

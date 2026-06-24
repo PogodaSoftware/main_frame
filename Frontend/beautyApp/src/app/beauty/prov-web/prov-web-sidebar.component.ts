@@ -23,7 +23,7 @@ import { BffLink } from '../beauty-bff.types';
 
 export type ProvWebNav =
   | 'dashboard' | 'bookings' | 'services' | 'hours'
-  | 'messages' | 'profile' | 'settings';
+  | 'messages' | 'reviews' | 'profile' | 'settings';
 
 interface NavDef {
   id: ProvWebNav;
@@ -38,6 +38,7 @@ const NAV: NavDef[] = [
   { id: 'services',  label: 'Services',     screen: 'beauty_business_services',     route: '/business/services' },
   { id: 'hours',     label: 'Weekly hours', screen: 'beauty_business_availability', route: '/business/availability' },
   { id: 'messages',  label: 'Messages',     screen: 'beauty_business_messages',     route: '/business/messages' },
+  { id: 'reviews',   label: 'Reviews',      screen: 'beauty_business_reviews',      route: '/business/reviews' },
   { id: 'profile',   label: 'Profile',      screen: 'beauty_business_profile',      route: '/business/profile' },
   { id: 'settings',  label: 'Settings',     screen: 'beauty_business_settings',     route: '/business/settings' },
 ];
@@ -218,6 +219,7 @@ export class BeautyProvWebSidebarComponent {
       case 'services': return `<svg ${s}><path d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4L12 3z"/></svg>`;
       case 'hours': return `<svg ${s}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>`;
       case 'messages': return `<svg ${s}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+      case 'reviews': return `<svg ${s}><path d="M12 3l2.7 5.5 6 .9-4.3 4.2 1 6L12 17l-5.4 2.6 1-6L3.3 9.4l6-.9z"/></svg>`;
       case 'profile': return `<svg ${s}><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>`;
       case 'settings': return `<svg ${s}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-2.82 1.17V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 7.6 19.4l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 3 12.6V12a2 2 0 0 1 4 0v.09c.7.3 1.5.12 2-.4l.06-.06A1.65 1.65 0 0 0 9.6 9.4z"/></svg>`;
       default: return '';

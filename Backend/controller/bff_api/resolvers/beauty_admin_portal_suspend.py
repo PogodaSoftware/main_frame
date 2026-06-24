@@ -8,10 +8,10 @@ Resolves the account name + a default reason. The actual suspend POST goes
 to the existing /api/beauty/admin/crm/suspend/ endpoint via the shell.
 """
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyUser, BusinessProvider
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _DEFAULT_REASON = (

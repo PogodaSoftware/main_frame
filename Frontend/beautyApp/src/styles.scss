@@ -107,7 +107,9 @@ html, body {
  * Scoped to `.cust-auth` so business auth + book/reschedule are untouched.
  * --------------------------------------------------------------------------- */
 .cust-auth .login-page,
-.cust-auth .signup-page {
+.cust-auth .signup-page,
+.cust-auth .business-login-page,
+.cust-auth .business-signup-page {
   max-width: none !important;
   min-height: auto !important;
   margin: 0 !important;
@@ -158,7 +160,9 @@ html, body {
 .cust-topnav .home-search-empty,
 .cust-topnav .home-search-toast {
   position: absolute !important; top: calc(100% + 12px); left: 0;
-  width: 440px; max-width: 80vw; z-index: 200;
+  /* Span the full search pill (the relative-positioned .search ancestor),
+     not a fixed 440px, so results/empty/toast match the bar width. */
+  width: 100%; max-width: 80vw; z-index: 200;
   background: #fff; border: 1px solid #DCDCDF; border-radius: 14px;
   box-shadow: 0 12px 32px rgba(15, 35, 60, 0.16);
   max-height: 62vh; overflow: auto; margin: 0 !important;

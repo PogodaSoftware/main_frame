@@ -6,6 +6,7 @@ Orchestrates: AuthService + BeautyConfigService + HateoasService.
 """
 
 from beauty_api.middleware import SESSION_COOKIE_NAME
+from beauty_api.models import BeautyProvider
 from ..services.auth_service import get_authenticated_user
 from ..services.beauty_config_service import get_beauty_config
 from ..services import hateoas_service as h
@@ -59,6 +60,19 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             prompt='Sign out',
         )
 
+    nearby_providers = [
+        {
+            'id': p.id,
+            'name': p.name,
+            'short_description': p.short_description,
+            'location_label': p.location_label,
+            '_links': {
+                'detail': h.screen_link('detail', 'beauty_provider_detail', prompt=p.name, params={'id': p.id}),
+            },
+        }
+        for p in BeautyProvider.objects.filter(services__isnull=False).distinct().order_by('name')[:6]
+    ]
+
     # Per-category navigation link for each tile on the home services row.
     services = []
     for entry in config['services']:
@@ -81,7 +95,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'user_email': user['email'] if user else None,
             'user_type': user['user_type'] if user else None,
             'business_name': user['business_name'] if user else None,
+            'user_city': user['city'] if user else '',
             'services': services,
+            'nearby_providers': nearby_providers,
             'google_maps_key_present': config['google_maps_key_present'],
         },
         'meta': {'title': 'Beauty - Home'},

@@ -1,14 +1,20 @@
 /**
  * BeautyGoogleAuthComponent — mock Google "Choose an account" chooser.
  *
- * Web-only presentational stub matching the design `CustAuthGoogle`. There is
- * no real Google OAuth backend yet, so selecting an account (or "Use another
- * account") routes to the email sign-in page rather than completing a real
- * OAuth exchange. Reached from the Welcome screen's "Continue with Google".
+ * Web-only, BFF-driven: resolves `beauty_google_auth` for the demo account
+ * list + a `submit` link, then POSTs the chosen account to the DEBUG-only
+ * mock auth endpoint, which issues a real session cookie. NOT real OAuth.
+ * `user_type` (customer|business) comes from the route param; the matching
+ * portal is loaded on success. Reached from the login/welcome "Continue with
+ * Google" links.
  */
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+
+import { BeautyBffService } from '../beauty-bff.service';
+import { BeautyAuthService } from '../beauty-auth.service';
+import { BffLink } from '../beauty-bff.types';
 
 interface GoogleAccount { initials: string; name: string; email: string; }
 
@@ -27,18 +33,20 @@ interface GoogleAccount { initials: string; name: string; email: string; }
         <p class="goog-sub">to continue to <span class="goog-host">beauty.app</span></p>
 
         <div class="goog-list">
-          <button type="button" class="goog-row" *ngFor="let a of accounts" (click)="pick()">
+          <button type="button" class="goog-row" *ngFor="let a of accounts" [disabled]="busy" (click)="pick(a)">
             <span class="goog-avatar">{{ a.initials }}</span>
             <span class="goog-acct">
               <span class="goog-name">{{ a.name }}</span>
               <span class="goog-email">{{ a.email }}</span>
             </span>
           </button>
-          <button type="button" class="goog-row" (click)="another()">
+          <button type="button" class="goog-row" [disabled]="busy" (click)="another()">
             <span class="goog-avatar goog-avatar--add" aria-hidden="true">+</span>
             <span class="goog-another">Use another account</span>
           </button>
         </div>
+
+        <p class="goog-err" *ngIf="error" role="alert">{{ error }}</p>
 
         <p class="goog-foot">To continue, Google will share your name, email address, and profile picture with beauty.app.</p>
       </div>
@@ -80,19 +88,51 @@ interface GoogleAccount { initials: string; name: string; email: string; }
     .goog-another { font-size: 14px; color: var(--google-blue); }
 
     .goog-foot { margin: 22px 0 0; font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .goog-err { margin: 12px 0 0; font-size: 13px; color: #b3261e; }
 
     :host *:focus-visible { outline: 2px solid #1a73e8; outline-offset: 2px; border-radius: 6px; }
   `],
 })
-export class BeautyGoogleAuthComponent {
-  constructor(private router: Router) {}
+export class BeautyGoogleAuthComponent implements OnInit {
+  accounts: GoogleAccount[] = [];
+  userType: 'customer' | 'business' = 'customer';
+  busy = false;
+  error = '';
+  private submitLink: BffLink | null = null;
 
-  readonly accounts: GoogleAccount[] = [
-    { initials: 'AB', name: 'Aisha Bell', email: 'aisha.bell@gmail.com' },
-    { initials: 'HL', name: 'Hugo Lindqvist', email: 'hugo.l@startuplabs.io' },
-  ];
+  constructor(
+    private router: Router,
+    private route: ActivatedRoute,
+    private bff: BeautyBffService,
+    private auth: BeautyAuthService,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
-  // No real Google OAuth backend yet — fall through to email sign-in.
-  pick(): void { this.router.navigate(['/login']); }
-  another(): void { this.router.navigate(['/login']); }
+  ngOnInit(): void {
+    const ut = this.route.snapshot.paramMap.get('user_type');
+    this.userType = ut === 'business' ? 'business' : 'customer';
+    this.bff.resolve('beauty_google_auth', { user_type: this.userType }).subscribe({
+      next: (env) => {
+        this.accounts = ((env?.data as { accounts?: GoogleAccount[] })?.accounts) || [];
+        this.submitLink = env?._links?.['submit'] || null;
+        this.cdr.markForCheck();
+      },
+      error: () => { this.error = 'Could not load accounts.'; this.cdr.markForCheck(); },
+    });
+  }
+
+  pick(account: GoogleAccount): void {
+    if (this.busy || !this.submitLink) return;
+    this.busy = true;
+    this.error = '';
+    // include_device_id=true so follow() adds the device_id the cookie is bound to.
+    this.auth.follow(this.submitLink, { account: account.email, user_type: this.userType }, true).subscribe({
+      next: () => this.router.navigateByUrl(this.userType === 'business' ? '/business' : '/'),
+      error: () => { this.busy = false; this.error = 'Sign-in failed. Try again.'; this.cdr.markForCheck(); },
+    });
+  }
+
+  another(): void {
+    this.router.navigate([this.userType === 'business' ? '/business/login' : '/login']);
+  }
 }

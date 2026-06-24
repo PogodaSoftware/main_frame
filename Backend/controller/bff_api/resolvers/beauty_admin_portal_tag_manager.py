@@ -2,12 +2,12 @@
 Beauty Admin Portal — Tag manager bottom-sheet resolver
 """
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from django.db.models import Count
 
 from beauty_api.models import BeautyAdminTag
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _DEFAULT_SEEDS = [

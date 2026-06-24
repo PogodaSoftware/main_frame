@@ -98,7 +98,8 @@ def submit_entity(page):
 
 @when(parsers.parse('I select the "{cat}" service category'))
 def select_category(page, cat):
-    page.locator(service_checkbox.format(category=cat)).check()
+    # Services step now uses button.cat-btn (toggle button), not a checkbox.
+    page.locator(service_checkbox.format(category=cat)).click()
 
 
 @when("I submit the services step")
@@ -132,7 +133,8 @@ def submit_disabled(page):
 
 @when("I tick the terms of service checkbox")
 def tick_tos(page):
-    page.locator(tos_checkbox).check()
+    # tos_checkbox now targets label.tos-agree (input is sr-only); use click.
+    page.locator(tos_checkbox).click()
 
 
 @then("the submit application button should be enabled")
@@ -155,7 +157,8 @@ def land_on_dashboard(page):
 
 @when("I choose the business entity option")
 def choose_business(page):
-    page.locator(entity_radio_business).check()
+    # entity_radio_business now targets label.legal-opt (input is sr-only); use click.
+    page.locator(entity_radio_business).click()
 
 
 @when("I leave the ITIN field blank")

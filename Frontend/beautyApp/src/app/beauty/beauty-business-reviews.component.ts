@@ -12,17 +12,16 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  Inject,
-  OnInit,
-  PLATFORM_ID,
+  EventEmitter,
+  Input,
+  OnChanges,
+  Output,
 } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 
-import { environment } from '../../environments/environment';
 import { BeautyAuthService } from './beauty-auth.service';
+import { BffLink } from './beauty-bff.types';
 
 interface BusinessReview {
   id: number;
@@ -31,18 +30,13 @@ interface BusinessReview {
   business_reply: string;
   business_reply_at: string | null;
   created_at: string;
-  service: { id: number; name: string; provider_id: number | null };
-  customer: { id: number; initial: string };
+  service: { name: string };
+  customer: { initial: string; display_name?: string };
+  _links?: { reply?: BffLink };
   // local form state
   draftReply?: string;
   editing?: boolean;
   saving?: boolean;
-}
-
-interface BusinessReviewsResponse {
-  items: BusinessReview[];
-  has_more: boolean;
-  next_offset: number | null;
 }
 
 @Component({
@@ -69,13 +63,11 @@ interface BusinessReviewsResponse {
           </span>
         </div>
 
-        <div *ngIf="loading" class="status">Loading…</div>
-
-        <div *ngIf="!loading && !reviews.length" class="empty" data-testid="business-reviews-empty">
+        <div *ngIf="!reviews.length" class="empty" data-testid="business-reviews-empty">
           No reviews on your services yet.
         </div>
 
-        <ul class="reviews-list" *ngIf="!loading && reviews.length" role="list">
+        <ul class="reviews-list" *ngIf="reviews.length" role="list">
           <li
             *ngFor="let r of reviews"
             class="review-card"
@@ -240,25 +232,33 @@ interface BusinessReviewsResponse {
     }
   `],
 })
-export class BeautyBusinessReviewsComponent implements OnInit {
+export class BeautyBusinessReviewsComponent implements OnChanges {
+  /** SDUI render data from the `beauty_business_reviews` BFF resolver. */
+  @Input() data: Record<string, unknown> = {};
+  @Input() links: Record<string, BffLink> = {};
+  @Output() followLink = new EventEmitter<BffLink>();
+
   reviews: BusinessReview[] = [];
-  loading = true;
   errorMessage = '';
 
   constructor(
-    private http: HttpClient,
     private auth: BeautyAuthService,
-    private router: Router,
     private cdr: ChangeDetectorRef,
-    @Inject(PLATFORM_ID) private platformId: object,
   ) {}
 
-  ngOnInit(): void {
-    this.load();
+  ngOnChanges(): void {
+    const list = (this.data?.['reviews'] as BusinessReview[]) ?? [];
+    this.reviews = list.map((r) => ({
+      ...r,
+      draftReply: r.business_reply || '',
+      editing: false,
+      saving: false,
+    }));
   }
 
   goBack(): void {
-    if (isPlatformBrowser(this.platformId)) window.history.back();
+    const link = this.links?.['business_home'];
+    if (link) this.followLink.emit(link);
   }
 
   formatDate(iso: string): string {
@@ -280,60 +280,21 @@ export class BeautyBusinessReviewsComponent implements OnInit {
 
   postReply(r: BusinessReview): void {
     const reply = (r.draftReply || '').trim();
-    if (!reply || r.saving) return;
+    const link = r._links?.reply;  // HATEOAS reply action from the resolver
+    if (!reply || r.saving || !link) return;
     r.saving = true;
     this.errorMessage = '';
-
-    const url = `${environment.apiBaseUrl}/api/beauty/protected/business/reviews/${r.id}/reply/`;
-    this.http.post<BusinessReview>(url, { reply }, {
-      withCredentials: true,
-      headers: this.auth.getAuthHeaders(),
-    }).subscribe({
-      next: (updated) => {
-        r.business_reply = updated.business_reply;
-        r.business_reply_at = updated.business_reply_at;
+    this.auth.follow(link, { reply }).subscribe({
+      next: () => {
+        r.business_reply = reply;
         r.editing = false;
         r.saving = false;
         r.draftReply = '';
         this.cdr.markForCheck();
       },
-      error: (err: HttpErrorResponse) => {
+      error: () => {
         r.saving = false;
-        if (err.status === 403) {
-          this.errorMessage = 'You can only reply to reviews on your own services.';
-        } else if (err.status === 401) {
-          this.errorMessage = 'Your session has expired. Please sign in again.';
-        } else {
-          this.errorMessage = 'Could not save reply. Please try again.';
-        }
-        this.cdr.markForCheck();
-      },
-    });
-  }
-
-  private load(): void {
-    const url = `${environment.apiBaseUrl}/api/beauty/protected/business/reviews/`;
-    this.http.get<BusinessReviewsResponse>(url, {
-      withCredentials: true,
-      headers: this.auth.getAuthHeaders(),
-    }).subscribe({
-      next: (resp) => {
-        this.reviews = (resp?.items || []).map((r) => ({
-          ...r,
-          draftReply: r.business_reply || '',
-          editing: false,
-          saving: false,
-        }));
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: (err: HttpErrorResponse) => {
-        this.loading = false;
-        if (err.status === 403) {
-          this.errorMessage = 'Business sign-in required.';
-        } else {
-          this.errorMessage = 'Could not load reviews. Please try again.';
-        }
+        this.errorMessage = 'Could not save reply. Please try again.';
         this.cdr.markForCheck();
       },
     });

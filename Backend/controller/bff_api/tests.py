@@ -37,6 +37,14 @@ from bff_api.resolvers import beauty_admin_portal_provider_detail as provres
 from bff_api.resolvers import beauty_admin_portal_tickets as ticketsres
 from bff_api.resolvers import beauty_admin_portal_team as teamres
 from bff_api.resolvers import beauty_admin_portal_audit as auditres
+from bff_api.resolvers import beauty_admin_portal_dashboard as dashres
+from bff_api.resolvers import beauty_admin_portal_2fa as twofares
+from bff_api.resolvers import beauty_admin_portal_magic as magicres
+from bff_api.resolvers import beauty_profile as profileres
+from bff_api.resolvers import beauty_bookings as bookingsres
+from bff_api.resolvers import beauty_book as bookres_customer
+from bff_api.resolvers import beauty_business_home as bizhomeres
+from bff_api import views as bff_views
 from beauty_api.models import BusinessProvider, BeautyAdminTicket, BeautyAdminPrincipal
 
 
@@ -1045,3 +1053,226 @@ class ProviderDetailMessageableThreadTests(TestCase):
         data = self._render()['data']
         self.assertFalse(data['has_active_booking'])
         self.assertFalse(data['has_messageable_thread'])
+
+
+# ---------------------------------------------------------------------------
+# Cross-role authorization isolation tests
+# ---------------------------------------------------------------------------
+# Covers the view-level _context_redirect gate AND per-resolver guards for
+# 2fa/magic. Tests are structured as: wrong-role → redirect; right-role → not
+# a redirect to the wrong place. Admin screens tested at the resolver level
+# (matching existing patterns) and view level (_context_redirect).
+# ---------------------------------------------------------------------------
+
+_CUSTOMER_USER = {"user_type": "customer", "user_id": 1, "email": "customer@beauty-test.com"}
+_BUSINESS_USER = {"user_type": "business", "user_id": 2, "email": "business@beauty-test.com"}
+_NON_ADMIN_CUSTOMER = {"user_type": "customer", "user_id": 3, "email": "nonadmin@beauty-test.com"}
+
+
+class CrossRoleContextRedirectTests(TestCase):
+    """_context_redirect view-level gate: wrong portal → redirect, correct portal → None."""
+
+    def test_business_on_customer_screen_redirected_to_business_home(self):
+        result = bff_views._context_redirect('business', 'beauty_profile', _BUSINESS_USER)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['action'], 'redirect')
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_business_home')
+
+    def test_business_on_bookings_screen_redirected(self):
+        result = bff_views._context_redirect('business', 'beauty_bookings', _BUSINESS_USER)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_business_home')
+
+    def test_business_on_book_screen_redirected(self):
+        result = bff_views._context_redirect('business', 'beauty_book', _BUSINESS_USER)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_business_home')
+
+    def test_customer_on_business_screen_redirected_to_beauty_home(self):
+        result = bff_views._context_redirect('customer', 'beauty_business_home', _CUSTOMER_USER)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['action'], 'redirect')
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_home')
+
+    def test_non_admin_customer_on_admin_screen_redirected_to_beauty_home(self):
+        """Signed-in customer without admin principal → redirected to beauty_home."""
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=False):
+            result = bff_views._context_redirect(
+                'customer', 'beauty_admin_portal_dashboard', _NON_ADMIN_CUSTOMER
+            )
+        self.assertIsNotNone(result)
+        self.assertEqual(result['action'], 'redirect')
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_home')
+
+    def test_non_admin_business_on_admin_screen_redirected_to_business_home(self):
+        """Signed-in business without admin principal → redirected to beauty_business_home."""
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=False):
+            result = bff_views._context_redirect(
+                'business', 'beauty_admin_portal_dashboard', _BUSINESS_USER
+            )
+        self.assertIsNotNone(result)
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_business_home')
+
+    def test_admin_on_admin_screen_not_redirected(self):
+        """Admin principal → _context_redirect returns None (pass-through to resolver)."""
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=True):
+            result = bff_views._context_redirect(
+                'customer', 'beauty_admin_portal_dashboard', _ADMIN_USER
+            )
+        self.assertIsNone(result)
+
+    def test_admin_can_reach_beauty_home(self):
+        """Admin IS a base customer account; beauty_home is not an admin screen."""
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=True):
+            result = bff_views._context_redirect(
+                'customer', 'beauty_home', _ADMIN_USER
+            )
+        self.assertIsNone(result)
+
+    def test_unauthenticated_principal_on_admin_screen_redirected(self):
+        """principal=None (unauthenticated) on an admin screen → redirect to beauty_home."""
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=False):
+            result = bff_views._context_redirect('customer', 'beauty_admin_portal_audit', None)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_home')
+
+
+class AdminPortal2faResolverGateTests(TestCase):
+    """beauty_admin_portal_2fa resolver: non-admin → signin redirect."""
+
+    def setUp(self):
+        self.rf = RequestFactory()
+
+    def _request(self):
+        req = self.rf.get('/api/bff/beauty/resolve/')
+        req.COOKIES[SESSION_COOKIE_NAME] = 'fake-session-cookie'
+        return req
+
+    def test_unauthenticated_redirected_to_signin(self):
+        with mock.patch.object(twofares, 'get_authenticated_user', return_value=None):
+            resp = twofares.resolve(self._request(), 'beauty_admin_portal_2fa', 'dev-1')
+        self.assertEqual(resp['action'], 'redirect')
+        self.assertEqual(resp['_links']['target']['screen'], 'beauty_admin_portal_signin')
+
+    def test_non_admin_customer_redirected_to_signin(self):
+        with mock.patch.object(twofares, 'get_authenticated_user', return_value=_NON_ADMIN_CUSTOMER), \
+                mock.patch.object(twofares.h, 'is_beauty_admin', return_value=False):
+            resp = twofares.resolve(self._request(), 'beauty_admin_portal_2fa', 'dev-1')
+        self.assertEqual(resp['action'], 'redirect')
+        self.assertEqual(resp['_links']['target']['screen'], 'beauty_admin_portal_signin')
+
+    def test_admin_gets_render(self):
+        with mock.patch.object(twofares, 'get_authenticated_user', return_value=_ADMIN_USER), \
+                mock.patch.object(twofares.h, 'is_beauty_admin', return_value=True):
+            resp = twofares.resolve(self._request(), 'beauty_admin_portal_2fa', 'dev-1')
+        self.assertEqual(resp['action'], 'render')
+        self.assertEqual(resp['screen'], 'beauty_admin_portal_2fa')
+
+
+class AdminPortalMagicResolverGateTests(TestCase):
+    """beauty_admin_portal_magic resolver: non-admin → signin redirect."""
+
+    def setUp(self):
+        self.rf = RequestFactory()
+
+    def _request(self):
+        req = self.rf.get('/api/bff/beauty/resolve/')
+        req.COOKIES[SESSION_COOKIE_NAME] = 'fake-session-cookie'
+        return req
+
+    def test_unauthenticated_redirected_to_signin(self):
+        with mock.patch.object(magicres, 'get_authenticated_user', return_value=None):
+            resp = magicres.resolve(self._request(), 'beauty_admin_portal_magic', 'dev-1')
+        self.assertEqual(resp['action'], 'redirect')
+        self.assertEqual(resp['_links']['target']['screen'], 'beauty_admin_portal_signin')
+
+    def test_non_admin_customer_redirected_to_signin(self):
+        with mock.patch.object(magicres, 'get_authenticated_user', return_value=_NON_ADMIN_CUSTOMER), \
+                mock.patch.object(magicres.h, 'is_beauty_admin', return_value=False):
+            resp = magicres.resolve(self._request(), 'beauty_admin_portal_magic', 'dev-1')
+        self.assertEqual(resp['action'], 'redirect')
+        self.assertEqual(resp['_links']['target']['screen'], 'beauty_admin_portal_signin')
+
+    def test_admin_gets_render(self):
+        with mock.patch.object(magicres, 'get_authenticated_user', return_value=_ADMIN_USER), \
+                mock.patch.object(magicres.h, 'is_beauty_admin', return_value=True):
+            resp = magicres.resolve(self._request(), 'beauty_admin_portal_magic', 'dev-1')
+        self.assertEqual(resp['action'], 'render')
+        self.assertEqual(resp['screen'], 'beauty_admin_portal_magic')
+
+
+class ResolverLevelCrossRoleTests(TestCase):
+    """Resolver-level: wrong-role principals → redirect (not render)."""
+
+    def setUp(self):
+        self.rf = RequestFactory()
+
+    def _request(self):
+        req = self.rf.get('/api/bff/beauty/resolve/')
+        req.COOKIES[SESSION_COOKIE_NAME] = 'fake-session-cookie'
+        return req
+
+    # -- Customer resolvers reject a business principal ----------------------
+
+    def test_business_on_beauty_profile_resolver_hits_view_gate(self):
+        """View-level gate fires for business on beauty_profile; resolver unreachable."""
+        # Confirm _context_redirect catches this — no need to call resolver directly.
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=False):
+            result = bff_views._context_redirect('business', 'beauty_profile', _BUSINESS_USER)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_business_home')
+
+    def test_business_on_beauty_bookings_resolver_hits_view_gate(self):
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=False):
+            result = bff_views._context_redirect('business', 'beauty_bookings', _BUSINESS_USER)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_business_home')
+
+    def test_business_on_beauty_book_resolver_hits_view_gate(self):
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=False):
+            result = bff_views._context_redirect('business', 'beauty_book', _BUSINESS_USER)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_business_home')
+
+    # -- Business resolver rejects a customer principal ----------------------
+
+    def test_customer_on_beauty_business_home_hits_view_gate(self):
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=False):
+            result = bff_views._context_redirect('customer', 'beauty_business_home', _CUSTOMER_USER)
+        self.assertIsNotNone(result)
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_home')
+
+    # -- Admin screen rejects non-admin customer at view level ---------------
+
+    def test_non_admin_customer_on_admin_dashboard_view_gate(self):
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=False):
+            result = bff_views._context_redirect(
+                'customer', 'beauty_admin_portal_dashboard', _NON_ADMIN_CUSTOMER
+            )
+        self.assertIsNotNone(result)
+        self.assertEqual(result['action'], 'redirect')
+        self.assertEqual(result['_links']['target']['screen'], 'beauty_home')
+
+    # -- Admin still reaches admin AND customer screens ----------------------
+
+    def test_admin_customer_passes_view_gate_for_admin_screen(self):
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=True):
+            result = bff_views._context_redirect(
+                'customer', 'beauty_admin_portal_dashboard', _ADMIN_USER
+            )
+        self.assertIsNone(result)
+
+    def test_admin_customer_passes_view_gate_for_beauty_home(self):
+        """Admin is also a customer — must not be blocked from beauty_home."""
+        with mock.patch.object(bff_views.h, 'is_beauty_admin', return_value=True):
+            result = bff_views._context_redirect('customer', 'beauty_home', _ADMIN_USER)
+        self.assertIsNone(result)
+
+    # -- Resolver-level: dashboard rejects non-admin -------------------------
+
+    def test_non_admin_on_dashboard_resolver_redirected_to_signin(self):
+        with mock.patch.object(dashres, 'get_authenticated_user', return_value=_NON_ADMIN_CUSTOMER), \
+                mock.patch.object(dashres.h, 'is_beauty_admin', return_value=False):
+            resp = dashres.resolve(self._request(), 'beauty_admin_portal_dashboard', 'dev-1')
+        self.assertEqual(resp['action'], 'redirect')
+        self.assertEqual(resp['_links']['target']['screen'], 'beauty_admin_portal_signin')

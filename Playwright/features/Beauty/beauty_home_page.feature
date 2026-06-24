@@ -10,3 +10,8 @@ Feature: Beauty Home Page Validation
     And the services section should be visible on the home page
     And the map section should be visible on the home page
     And the bottom nav should be visible on the home page
+
+  Scenario: Notification bell opens the notifications panel
+    Given an authenticated customer is on the beauty home page
+    When the customer clicks the notification bell
+    Then the notifications panel should be visible

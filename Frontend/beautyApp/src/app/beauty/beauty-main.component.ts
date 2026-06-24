@@ -12,9 +12,8 @@
  * search (BeautyHomeSearchComponent) is projected into the top-nav search pill,
  * preserving its existing results → /book/:id behavior.
  *
- * NOTE: the design's "Studios near you" 3-up card row has no backing BFF data
- * (home payload exposes only `services` + map), so it is intentionally omitted
- * until a providers feed is added to the resolver.
+ * "Studios near you" section is BFF-driven via `nearby_providers` from the
+ * home resolver. Cards carry `_links.detail` for provider-detail navigation.
  */
 
 import {
@@ -34,6 +33,7 @@ import { isPlatformBrowser, DOCUMENT, CommonModule } from '@angular/common';
 
 import { BeautyHomeSearchComponent } from './beauty-home-search.component';
 import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
+import { BeautySearchService } from './beauty-search.service';
 import { BffLink } from './beauty-bff.types';
 
 declare const google: any;
@@ -47,35 +47,13 @@ interface ServiceCategory {
   _links?: { category?: BffLink | null };
 }
 
-/** Demo studios for the "Studios near you" row (design handoff data — no BFF
- *  providers feed exists for the home screen yet, so these are presentational
- *  only and do not link anywhere). */
-interface DemoStudio {
+interface NearbyProvider {
+  id: number;
   name: string;
-  hue: string;
-  city: string;
-  rating: string;
-  reviews: number;
-  dist: string;
-  from: number;
-  cats: string[];
-  slots: string[];
-  featured?: boolean;
-  availableToday?: boolean;
-  isNew?: boolean;
+  short_description: string | null;
+  location_label: string | null;
+  _links: { detail: BffLink | null };
 }
-
-const DEMO_STUDIOS: DemoStudio[] = [
-  { name: 'Indigo Studio', hue: '#5C4A3F', city: 'Brooklyn',  rating: '4.86', reviews: 142, dist: '0.4 mi', from: 35, cats: ['Facials', 'Brows', 'Lashes'], slots: ['9:30', '11:00', '1:00', '3:15', '5:00'], featured: true, availableToday: true },
-  { name: 'Atelier Rouge', hue: '#A88A7A', city: 'Manhattan', rating: '4.92', reviews: 312, dist: '1.2 mi', from: 75, cats: ['Facials', 'Massage'], slots: ['10:00', '12:30', '2:45'], availableToday: true },
-  { name: 'Bonsai Nails',  hue: '#7A8B6E', city: 'Brooklyn',  rating: '4.74', reviews: 88,  dist: '0.7 mi', from: 45, cats: ['Nails'], slots: ['11:30', '1:00', '3:00', '4:45'], isNew: true },
-  { name: 'Loop Hair Co.', hue: '#574A3D', city: 'Queens',    rating: '4.81', reviews: 184, dist: '2.4 mi', from: 65, cats: ['Hair'], slots: ['9:00', '10:30', '2:00'], availableToday: true },
-  { name: 'Salt & Steam',  hue: '#3A3A3A', city: 'Brooklyn',  rating: '4.79', reviews: 96,  dist: '1.0 mi', from: 95, cats: ['Massage'], slots: ['1:00', '4:00', '6:30'], availableToday: true },
-  { name: 'Velvet Brow',   hue: '#5F5A4A', city: 'Manhattan', rating: '4.88', reviews: 142, dist: '1.8 mi', from: 55, cats: ['Brows', 'Lashes'], slots: ['11:00', '1:30', '4:00'], isNew: true },
-];
-
-type StudioFilter = 'Top rated' | 'Available today' | '$ under 50' | 'New';
-const STUDIO_FILTERS: StudioFilter[] = ['Top rated', 'Available today', '$ under 50', 'New'];
 
 @Component({
   selector: 'app-beauty-main',
@@ -90,7 +68,6 @@ const STUDIO_FILTERS: StudioFilter[] = ['Top rated', 'Available today', '$ under
         [userName]="displayName"
         [userInitials]="initials"
         [userMeta]="userMeta"
-        city="Brooklyn"
         (follow)="emitFollow($event)"
       >
         <app-beauty-home-search *ngIf="isAuthenticated" topnav-search></app-beauty-home-search>
@@ -148,58 +125,39 @@ const STUDIO_FILTERS: StudioFilter[] = ['Top rated', 'Available today', '$ under
           </div>
         </section>
 
-        <!-- Studios near you (presentational demo — no home providers feed yet) -->
-        <section class="studios">
+        <!-- Studios near you (BFF-driven) -->
+        <section class="studios" *ngIf="nearbyProviders.length">
           <div class="section-inner">
-            <div class="section-head section-head--row">
+            <div class="section-head">
               <div>
                 <h2 class="section-title">Studios near you</h2>
-                <p class="section-sub">Brooklyn, NY · within 3 mi · sorted by rating</p>
-              </div>
-              <div class="chips">
-                <button
-                  type="button"
-                  class="chip"
-                  [class.is-active]="activeFilter === f"
-                  [attr.aria-pressed]="activeFilter === f"
-                  (click)="setFilter(f)"
-                  *ngFor="let f of studioFilters"
-                >{{ f }}</button>
-                <button type="button" class="chip chip--filter" (click)="resetFilters()" [attr.aria-label]="'Reset filters'">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5h18l-7 9v6l-4-2v-4L3 5z"/></svg>
-                  Filters
-                </button>
+                <p class="section-sub">Browse available studios</p>
               </div>
             </div>
-            <div class="studio-grid" *ngIf="filteredStudios.length; else noStudios">
-              <article class="studio-card" *ngFor="let s of filteredStudios">
-                <div class="studio-photo" [style.--hue]="s.hue">
-                  <span class="studio-badge" *ngIf="s.featured">Featured</span>
-                  <button type="button" class="studio-fav" aria-label="Save studio">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0F1115" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-4.5-9.5-9C1 9.5 2.5 5 7 5c2.5 0 4 1.5 5 3 1-1.5 2.5-3 5-3 4.5 0 6 4.5 4.5 7C19 16.5 12 21 12 21z"/></svg>
-                  </button>
+            <div class="studio-grid">
+              <article
+                class="studio-card"
+                *ngFor="let p of nearbyProviders"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'View ' + p.name"
+                (click)="emitFollow(p._links?.detail)"
+                (keydown.enter)="emitFollow(p._links?.detail)"
+                style="cursor: pointer"
+              >
+                <div class="studio-photo">
                   <div class="studio-photo-foot">
-                    <div class="studio-name">{{ s.name }}</div>
-                    <div class="studio-cats">{{ catsLabel(s.cats) }}</div>
+                    <div class="studio-name">{{ p.name }}</div>
+                    <div class="studio-cats" *ngIf="p.short_description">{{ p.short_description }}</div>
                   </div>
                 </div>
                 <div class="studio-body">
                   <div class="studio-meta">
-                    <span class="studio-rating">★ {{ s.rating }}</span>
-                    <span class="studio-sub">({{ s.reviews }})</span>
-                    <span class="studio-sub">· {{ s.city }} · {{ s.dist }}</span>
-                    <span class="studio-from">from \${{ s.from }}</span>
-                  </div>
-                  <div class="studio-slots">
-                    <span class="slot" *ngFor="let t of s.slots.slice(0, 4)">{{ t }}</span>
-                    <span class="slot slot--more" *ngIf="s.slots.length > 4">+{{ s.slots.length - 4 }}</span>
+                    <span class="studio-sub">{{ p.location_label || 'NYC' }}</span>
                   </div>
                 </div>
               </article>
             </div>
-            <ng-template #noStudios>
-              <p class="studios-empty">No studios match this filter. <button type="button" class="link-btn" (click)="resetFilters()">Clear</button></p>
-            </ng-template>
           </div>
         </section>
 
@@ -244,8 +202,7 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
   userMeta = '';
   googleMapsKeyPresent = false;
   services: ServiceCategory[] = [];
-  readonly studioFilters = STUDIO_FILTERS;
-  activeFilter: StudioFilter = 'Top rated';
+  nearbyProviders: NearbyProvider[] = [];
 
   private map: any = null;
   private scriptEl: HTMLScriptElement | null = null;
@@ -253,6 +210,7 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
   constructor(
     @Inject(PLATFORM_ID) private platformId: object,
     @Inject(DOCUMENT) private document: Document,
+    private searchSvc: BeautySearchService,
   ) {}
 
   ngOnChanges(): void {
@@ -260,6 +218,9 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
     this.userEmail = (this.data['user_email'] as string) || null;
     this.googleMapsKeyPresent = Boolean(this.data['google_maps_key_present']);
     this.services = (this.data['services'] as ServiceCategory[]) || [];
+    this.nearbyProviders = (this.data['nearby_providers'] as NearbyProvider[]) || [];
+    const city = (this.data['user_city'] as string) || '';
+    if (city) this.searchSvc.setProfileLocation(city);
 
     const businessName = (this.data['business_name'] as string) || '';
     const userType = (this.data['user_type'] as string) || 'customer';
@@ -291,39 +252,6 @@ export class BeautyMainComponent implements OnChanges, AfterViewInit, OnDestroy 
 
   onServiceTap(service: ServiceCategory): void {
     this.emitFollow(service?._links?.category);
-  }
-
-  catsLabel(cats: string[]): string {
-    return cats.join(' · ').toUpperCase();
-  }
-
-  setFilter(f: StudioFilter): void {
-    this.activeFilter = f;
-  }
-
-  resetFilters(): void {
-    this.activeFilter = 'Top rated';
-  }
-
-  /** Client-side filter/sort of the (presentational) studios row. */
-  get filteredStudios(): DemoStudio[] {
-    let list = [...DEMO_STUDIOS];
-    switch (this.activeFilter) {
-      case 'Available today':
-        list = list.filter((s) => s.availableToday);
-        break;
-      case '$ under 50':
-        list = list.filter((s) => s.from < 50);
-        break;
-      case 'New':
-        list = list.filter((s) => s.isNew);
-        break;
-      case 'Top rated':
-      default:
-        break;
-    }
-    // Always present best-rated first.
-    return list.sort((a, b) => parseFloat(b.rating) - parseFloat(a.rating));
   }
 
   ngAfterViewInit(): void {

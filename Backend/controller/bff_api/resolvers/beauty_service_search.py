@@ -24,15 +24,6 @@ from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
 
 
-def _favorite_links(service_id: int) -> dict:
-    """POST favorite / DELETE unfavorite — same href, method picks the verb."""
-    href = f'/api/beauty/protected/services/{service_id}/favorite/'
-    return {
-        'favorite': h.link(rel='favorite', href=href, method='POST', prompt='Save'),
-        'unfavorite': h.link(rel='unfavorite', href=href, method='DELETE', prompt='Unsave'),
-    }
-
-
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
@@ -94,7 +85,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         payload['_links'] = {
             'book': h.screen_link('book', 'beauty_book', prompt='Book', params={'serviceId': s.id}),
             'provider': h.screen_link('provider', 'beauty_provider_detail', prompt='View', params={'id': s.provider.id}),
-            **_favorite_links(s.id),
+            **h.service_favorite_links(s.id),
         }
         items.append(payload)
 

@@ -1,27 +1,45 @@
 """Locators for the Beauty error pages: generic, not-found, offline, and the
 catch-all wildcard route.
 
-All variants share the same `BeautyErrorComponent` template; only the copy
-text and embedded SVG differ.
+All variants share the same `BeautyErrorComponent` template rendered as
+role=alert (div.err-card) inside div.err-wrap. Copy and CTAs differ per
+variant (see feature file for per-variant assertions).
+
+DOM facts (verified live):
+  root: div[role='alert'].err-card   (inside :host > div.err-wrap)
+  eyebrow: div.err-eyebrow
+  title: h1.err-title
+  body:  p.err-body
+  CTAs:  div.err-actions > button.btn.btn--primary | button.btn.btn--secondary
+  No code.err-code element exists in the redesigned component.
+
+Per-variant CTAs:
+  generic:           btn--primary="Refresh", btn--secondary="Contact support"
+  notfound/catchall: btn--primary="Back home" only
+  offline:           btn--secondary="Try again" only
 """
 
-error_page_root = "css=div.error-page"
+# Root: the role=alert card — present on every variant.
+error_page_root = "css=div.err-card[role='alert']"
 
-sub_header = "css=div.error-page header.sub-header"
-sub_header_title = "css=div.error-page header.sub-header span.sub-header-title"
-back_button = "css=div.error-page header.sub-header button.back-btn"
+# Copy — present on every variant.
+eyebrow = "css=div.err-card div.err-eyebrow"
+title = "css=div.err-card h1.err-title"
+body = "css=div.err-card p.err-body"
 
-# Sparkle disc + icon.
-sparkle = "css=div.error-page .err-sparkle"
-sparkle_ring = "css=div.error-page .err-sparkle-ring"
+# Icon disc — present on every variant.
+sparkle = "css=div.err-card div.err-disc"
 
-# Copy.
-eyebrow = "css=div.error-page .err-eyebrow"
-title = "css=div.error-page h1.err-title"
-body = "css=div.error-page p.err-body"
-code = "css=div.error-page code.err-code"
+# Any CTA button in the actions container — present on every variant.
+any_cta_button = "css=div.err-card div.err-actions button"
 
-# Action buttons (Try again, Go home, Contact support).
-try_again_button = "css=div.error-page .err-actions button.btn-secondary"
-go_home_button = "css=div.error-page .err-actions button.btn-primary"
-contact_support_link = "css=div.error-page button.btn-link"
+# Primary CTA (Refresh / Back home) — generic + notfound/catchall variants.
+primary_cta_button = "css=div.err-card button.btn--primary"
+
+# Secondary CTA — generic: Contact support; offline: Try again.
+secondary_cta_button = "css=div.err-card button.btn--secondary"
+
+# Named CTAs for targeted assertions.
+try_again_button = "css=div.err-card button:has-text('Try again')"
+go_home_button = "css=div.err-card button.btn--primary"
+contact_support_link = "css=div.err-card button:has-text('Contact support')"

@@ -66,3 +66,25 @@ def verify_login_visible(page):
 @then("I should land on the beauty signup page")
 def verify_signup_visible(page):
     expect(page.locator(signup_page_root)).to_be_visible()
+
+
+@given("I view the beauty welcome page at a 390px mobile width")
+def navigate_to_welcome_mobile(page):
+    page.set_viewport_size({"width": 390, "height": 844})
+    selecting_different_routes(page, 'beauty_welcome')
+    timeout_for_testing(page)
+
+
+@then("the welcome page should not scroll horizontally")
+def welcome_no_horizontal_scroll(page):
+    overflow = page.evaluate(
+        "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+    )
+    assert overflow <= 1, f"welcome page scrolls horizontally by {overflow}px at 390px"
+
+
+@then("the welcome sign in button should span the mobile content width")
+def welcome_cta_full_width(page):
+    btn_w = page.locator(welcome_signin_button).bounding_box()["width"]
+    # Full-width CTA: ~viewport minus pane padding; allow margin.
+    assert btn_w >= 390 * 0.8, f"sign-in CTA only {btn_w}px wide at 390px viewport"

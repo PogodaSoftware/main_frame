@@ -2,53 +2,19 @@
 Beauty Admin Portal — Customer detail resolver
 """
 
-from datetime import datetime, timezone
 from decimal import Decimal
 
 from django.db.models import Count, Sum
 
 from beauty_api import chat_service
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminAuditEvent, BeautyAdminNote, BeautyAdminTag, BeautyAdminTagAssignment,
     BeautyAdminTicket, BeautyBooking, BeautySession, BeautyUser,
 )
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
-
-
-def _humanize_dt(dt) -> str:
-    if not dt:
-        return '—'
-    return dt.strftime('%b %-d, %Y') if hasattr(dt, 'strftime') else str(dt)
-
-
-def _humanize_relative(dt) -> str:
-    if not dt:
-        return '—'
-    delta = datetime.now(timezone.utc) - dt
-    s = int(delta.total_seconds())
-    if s < 60:
-        return 'just now'
-    if s < 3600:
-        return f'{s // 60}m ago'
-    if s < 86400:
-        return f'{s // 3600}h ago'
-    return f'{s // 86400}d ago'
-
-
-_MONTH_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
-_WEEKDAY_ABBR = ['MON','TUE','WED','THU','FRI','SAT','SUN']
-
-
-def _date_parts(dt) -> dict:
-    if not dt:
-        return {'mon': '—', 'day': 0, 'weekday': '—'}
-    return {
-        'mon': _MONTH_ABBR[dt.month - 1],
-        'day': dt.day,
-        'weekday': _WEEKDAY_ABBR[dt.weekday()],
-    }
+from ..services.auth_service import get_authenticated_user
+from ._admin_datetime import date_parts as _date_parts, humanize_dt as _humanize_dt, humanize_relative as _humanize_relative
 
 
 def _status_to_chip(status: str) -> str:

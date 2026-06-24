@@ -14,6 +14,7 @@ Feature: Beauty Admin Portal — Auth screens (desktop)
     And the two-factor step should render
 
   Scenario: The magic-link screen renders form-only by default
+    Given a seeded admin session is active
     When I open the admin magic-link page at desktop width
     Then the magic-link form should render
     And the "Link sent" success card should not be visible

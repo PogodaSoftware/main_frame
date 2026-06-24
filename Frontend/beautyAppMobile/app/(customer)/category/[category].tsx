@@ -8,6 +8,8 @@ import { resolve } from '@/services/bff';
 import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { BottomNav } from '@/components/BottomNav';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_DISPLAY, FONT_MONO } from '@/theme/fonts';
 
 interface CategoryService {
   id: number;
@@ -47,23 +49,7 @@ const CATEGORY_GRADIENTS: Record<string, [string, string]> = {
   default: ['#3A3A3A', '#2A2A2A'],
 };
 
-const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlueDeep: '#7DA8CF',
-  accentBlueText: '#1a3a52',
-  ink: '#0A0A0B',
-  success: '#2F7A47',
-  white: '#FFFFFF',
-};
-
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
-const FONT_MONO = 'Menlo';
+const C = PALETTE;
 
 export default function CategoryScreen() {
   const router = useRouter();

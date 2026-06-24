@@ -76,24 +76,47 @@ def _cleanup() -> None:
     )
 
 
-def _is_search_url(url: str) -> bool:
-    return "/api/beauty/services/search/" in url
+def _is_search_request(req) -> bool:
+    """True if req is a BFF resolve call for the beauty_service_search screen."""
+    if "/api/bff/beauty/resolve/" not in req.url:
+        return False
+    try:
+        body = json.loads(req.post_data or "{}")
+    except Exception:
+        body = {}
+    return body.get("screen") == "beauty_service_search"
 
 
 def _mock_response(page, payload: dict, status_code: int = 200) -> None:
-    body = json.dumps(payload)
+    """Route **/api/bff/beauty/resolve/** and fulfill when screen==beauty_service_search.
+
+    ``payload`` is the inner data dict (same shape the old search GET returned).
+    We wrap it in the BFF render envelope so the Angular component receives what
+    the real resolver emits.
+    """
+    envelope = {
+        "action": "render",
+        "screen": "beauty_service_search",
+        "data": payload,
+        "meta": {},
+        "_links": {},
+        "app_version": "2.0.0",
+        "needs_update": False,
+    }
+    body = json.dumps(envelope)
+    error_body = json.dumps(payload)  # For error responses (4xx/5xx) keep raw payload
 
     def _route(route):
-        if _is_search_url(route.request.url):
+        if _is_search_request(route.request):
             route.fulfill(
                 status=status_code,
                 content_type="application/json",
-                body=body,
+                body=body if status_code == 200 else error_body,
             )
         else:
             route.continue_()
 
-    page.route("**/api/beauty/services/search/**", _route)
+    page.route(re.compile(r"/api/bff/beauty/resolve/"), _route)
 
 
 # ---------------------------------------------------------------------------
@@ -109,9 +132,15 @@ def home_page_with_city(page, test_customer, city):
     page.search_requests = []  # type: ignore[attr-defined]
 
     def _on_request(req):
-        if _is_search_url(req.url):
+        if _is_search_request(req):
+            try:
+                params = json.loads(req.post_data or "{}").get("params", {})
+            except Exception:
+                params = {}
             page.search_requests.append({  # type: ignore[attr-defined]
-                "url": req.url, "ts": time.monotonic(),
+                "url": req.url,
+                "params": params,
+                "ts": time.monotonic(),
             })
 
     page.on("request", _on_request)
@@ -210,9 +239,11 @@ def mock_single_service(page, sid):
                 body=book_body,
             )
         else:
-            route.continue_()
+            # Defer to the search mock (_mock_response) registered earlier —
+            # continue_() would hit the real network and bypass it.
+            route.fallback()
 
-    page.route("**/api/bff/beauty/resolve/**", _bff_route)
+    page.route(re.compile(r"/api/bff/beauty/resolve/"), _bff_route)
 
 
 # ---------------------------------------------------------------------------
@@ -223,7 +254,7 @@ def mock_single_service(page, sid):
 def type_in_two_bursts(page, first, rest):
     box = page.locator(home_search_input)
     expect(box).to_be_visible()
-    box.click()
+    box.click(force=True)
     box.fill("")
     box.type(first, delay=10)
     page.wait_for_timeout(120)  # under 300ms debounce window
@@ -234,7 +265,7 @@ def type_in_two_bursts(page, first, rest):
 @when(parsers.re(r'the customer types "(?P<text>[^"]+)" in the home search input'))
 def type_query(page, text):
     box = page.locator(home_search_input)
-    box.click()
+    box.click(force=True)
     box.fill("")
     box.type(text, delay=20)
     page.wait_for_timeout(900)
@@ -278,6 +309,13 @@ def search_bar_visible(page):
     expect(page.locator(home_search_input)).to_be_visible()
 
 
+@then("the home search bar should be hidden")
+def search_bar_hidden(page):
+    # The top-nav search (which hosts the home search) is display:none under
+    # 560px in the redesign — mobile offers no inline search bar.
+    expect(page.locator(home_search_input)).to_be_hidden()
+
+
 @then("the home search bar should appear above the home carousel")
 def bar_above_carousel(page):
     bar = page.locator(home_search_section).first
@@ -301,11 +339,11 @@ def no_pagination(page):
 def one_debounced(page):
     typed = [
         r for r in page.search_requests  # type: ignore[attr-defined]
-        if re.search(r"[?&]q=nails", r["url"], flags=re.I)
+        if re.search(r"nails", str(r.get("params", {}).get("q", "")), flags=re.I)
     ]
     assert len(typed) == 1, (
-        f"Expected one debounced /search request for q=nails, got {len(typed)}: "
-        f"{[r['url'] for r in typed]}"
+        f"Expected one debounced resolve request for q=nails, got {len(typed)}: "
+        f"{[r.get('params') for r in page.search_requests]}"  # type: ignore[attr-defined]
     )
 
 
@@ -355,7 +393,7 @@ def input_a11y(page):
 def status_aria(page):
     # Type something to make the status node render.
     box = page.locator(home_search_input)
-    box.click()
+    box.click(force=True)
     box.fill("a")
     page.wait_for_timeout(400)
     expect(page.locator(home_search_status)).to_have_attribute("aria-live", "polite")

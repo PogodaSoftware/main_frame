@@ -51,6 +51,7 @@ import { BeautyRescheduleComponent } from './beauty-reschedule.component';
 import { BeautyProfileComponent } from './beauty-profile.component';
 import { BeautyChatsComponent } from './beauty-chats.component';
 import { BeautyProviderMessagesComponent } from './prov-web/beauty-provider-messages.component';
+import { BeautyBusinessReviewsComponent } from './beauty-business-reviews.component';
 import { BeautyChatThreadComponent } from './beauty-chat-thread.component';
 import { BeautyBusinessDashboardComponent } from './beauty-business-dashboard.component';
 import { BeautyBusinessServicesComponent } from './beauty-business-services.component';
@@ -138,6 +139,7 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBusinessChangePasswordComponent,
     BeautyBusinessProfileComponent,
     BeautyProviderMessagesComponent,
+    BeautyBusinessReviewsComponent,
     BeautyBusinessEmailContactComponent,
     BeautyProviderNewMessageToastComponent,
   ],
@@ -393,6 +395,12 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-beauty-provider-messages
         *ngIf="bffResponse!.screen === 'beauty_business_messages'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-reviews
+        *ngIf="bffResponse!.screen === 'beauty_business_reviews'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"

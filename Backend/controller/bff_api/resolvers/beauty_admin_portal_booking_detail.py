@@ -9,10 +9,11 @@ ledger) — never the customer- or business-facing booking screens. Keeps the
 admin portal isolated from the marketplace/business apps.
 """
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyBooking, BusinessProvider
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
+from ._admin_datetime import humanize_dt as _humanize_dt
 
 
 _MON = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
@@ -31,12 +32,6 @@ def _status_chip(status: str) -> str:
     if status in BeautyBooking.CANCELLED_STATUSES:
         return 'Cancelled'
     return 'Confirmed'
-
-
-def _humanize_dt(dt) -> str:
-    if not dt:
-        return '—'
-    return dt.strftime('%b %-d, %Y') if hasattr(dt, 'strftime') else str(dt)
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:

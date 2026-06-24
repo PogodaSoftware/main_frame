@@ -62,6 +62,7 @@ from .views import (
     BusinessLogoutView,
     BusinessProviderSignUpView,
     ForgotPasswordView,
+    GoogleMockAuthView,
     LoginView,
     LogoutView,
     MeView,
@@ -72,6 +73,7 @@ from .views import (
 urlpatterns = [
     path('signup/', SignUpView.as_view(), name='beauty-signup'),
     path('login/', LoginView.as_view(), name='beauty-login'),
+    path('auth/google/', GoogleMockAuthView.as_view(), name='beauty-google-mock'),
     path('logout/', LogoutView.as_view(), name='beauty-logout'),
     path('auth/forgot/', ForgotPasswordView.as_view(), name='beauty-auth-forgot'),
     path('business/signup/', BusinessProviderSignUpView.as_view(), name='beauty-business-signup'),

@@ -21,7 +21,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Observable, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, shareReplay } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { BffLink } from './beauty-bff.types';
 
@@ -109,39 +109,48 @@ export class BeautyAuthService {
     }
   }
 
-  isAuthenticated(): Observable<boolean> {
-    if (!isPlatformBrowser(this.platformId)) {
-      return of(false);
-    }
-    return this.http
-      .get(`${this.apiBase}/api/beauty/protected/me/`, {
-        withCredentials: true,
-        headers: this.getAuthHeaders(),
-      })
-      .pipe(
-        map(() => true),
-        catchError(() => of(false)),
-      );
-  }
+  /** Single source of truth for the session probe. One GET /protected/me/,
+   *  shared for ~1s so the shell (isAuthenticated) and the route guards
+   *  (sessionType) firing on startup collapse to ONE request and can never
+   *  disagree (no auth/type divergence). */
+  private sessionInfo$: Observable<{ authenticated: boolean; user_type: 'customer' | 'business' | null }> | null = null;
+  private sessionInfoAt = 0;
 
-  /** The signed-in principal's type, or null if unauthenticated. Used by
-   *  the route guards to keep customer and business contexts fully apart. */
-  sessionType(): Observable<'customer' | 'business' | null> {
+  sessionInfo(): Observable<{ authenticated: boolean; user_type: 'customer' | 'business' | null }> {
     if (!isPlatformBrowser(this.platformId)) {
-      return of(null);
+      return of({ authenticated: false, user_type: null });
     }
-    return this.http
+    const now = Date.now();
+    if (this.sessionInfo$ && now - this.sessionInfoAt < 1000) {
+      return this.sessionInfo$;
+    }
+    this.sessionInfoAt = now;
+    this.sessionInfo$ = this.http
       .get<{ user_type?: string }>(`${this.apiBase}/api/beauty/protected/me/`, {
         withCredentials: true,
         headers: this.getAuthHeaders(),
       })
       .pipe(
-        map((me) =>
-          me?.user_type === 'business' ? 'business'
-          : me?.user_type === 'customer' ? 'customer'
-          : null),
-        catchError(() => of(null)),
+        map((me) => ({
+          authenticated: true,
+          user_type: (me?.user_type === 'business' ? 'business'
+            : me?.user_type === 'customer' ? 'customer'
+            : null) as 'customer' | 'business' | null,
+        })),
+        catchError(() => of({ authenticated: false, user_type: null as 'customer' | 'business' | null })),
+        shareReplay({ bufferSize: 1, refCount: false }),
       );
+    return this.sessionInfo$;
+  }
+
+  isAuthenticated(): Observable<boolean> {
+    return this.sessionInfo().pipe(map((s) => s.authenticated));
+  }
+
+  /** The signed-in principal's type, or null if unauthenticated. Used by
+   *  the route guards to keep customer and business contexts fully apart. */
+  sessionType(): Observable<'customer' | 'business' | null> {
+    return this.sessionInfo().pipe(map((s) => s.user_type));
   }
 
   // ── Cookie auto-refresh ────────────────────────────────────

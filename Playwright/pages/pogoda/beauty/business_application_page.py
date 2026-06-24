@@ -1,34 +1,37 @@
 """Locators for the business application wizard."""
 
-shell_root = "css=div.business-shell"
-step_counter = "css=div.business-shell span.step-counter"
-biz_title = "css=div.business-shell h1.biz-title"
-server_error = "css=div.business-shell p.server-error"
+shell_root = "css=div.wiz"
+# Step counter is now span.wiz-step-counter.
+step_counter = "css=div.wiz span.wiz-step-counter"
+biz_title = "css=div.wiz h1.wiz-title"
+server_error = "css=div.wiz p.server-error"
 
-# Entity step
-entity_radio_person = "css=input[name='entity_type'][value='person']"
-entity_radio_business = "css=input[name='entity_type'][value='business']"
+# Entity step — radio inputs are sr-only; click the wrapping label instead.
+entity_radio_person = "css=label.legal-opt:has(input[value='person'])"
+entity_radio_business = "css=label.legal-opt:has(input[value='business'])"
 entity_itin_input = "css=input#itin"
 entity_first_input = "css=input#first"
 entity_last_input = "css=input#last"
 entity_business_name_input = "css=input#biz-name"
-entity_submit = "css=div.business-shell[data-step='entity'] button[type='submit']"
+# Footer Continue button — shared across all steps.
+_footer_continue = "css=div.wiz footer button.wbtn.wbtn-green"
+entity_submit = _footer_continue
 
-# Services step
-service_checkbox = "css=label.check-row[data-category='{category}'] input[type='checkbox']"
-services_submit = "css=div.business-shell[data-step='services'] button[type='submit']"
+# Services step — category buttons (not checkboxes) with data-category attribute.
+service_checkbox = "css=button.cat-btn[data-category='{category}']"
+services_submit = _footer_continue
 
 # Stripe step
-stripe_submit = "css=div.business-shell[data-step='stripe'] button[type='submit']"
+stripe_submit = _footer_continue
 
 # Schedule step
-schedule_submit = "css=div.business-shell[data-step='schedule'] button[type='submit']"
+schedule_submit = _footer_continue
 
-# Tools step
+# Tools step — checkboxes inside label.check-row[data-tool='{tool}'].
 tool_checkbox = "css=label.check-row[data-tool='{tool}'] input[type='checkbox']"
-tools_submit = "css=div.business-shell[data-step='tools'] button[type='submit']"
+tools_submit = _footer_continue
 
-# Review step
-tos_text = "css=div.business-shell[data-step='review'] p.tos-text"
-tos_checkbox = "css=div.business-shell[data-step='review'] input[name='accept_tos']"
-submit_application_button = "css=div.business-shell[data-step='review'] button.submit-application"
+# Review step — TOS checkbox is sr-only; click the wrapping label instead.
+tos_text = "css=div.wiz span.tos-text"
+tos_checkbox = "css=label.tos-agree"
+submit_application_button = _footer_continue

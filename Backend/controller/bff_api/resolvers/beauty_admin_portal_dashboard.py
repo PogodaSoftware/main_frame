@@ -14,8 +14,8 @@ from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminAuditEvent, BeautyBooking, BeautyUser, BusinessProvider,
 )
-from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _ACTIVITY_STYLE = {
@@ -181,9 +181,6 @@ def _flagged_count() -> int:
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
-
-    # Gate to admins; bounce non-admins to signin so the existence isn't
-    # advertised to authenticated non-admin users.
     if not user or not h.is_beauty_admin(user):
         return h.redirect_envelope('beauty_admin_portal_signin', 'auth_required')
 

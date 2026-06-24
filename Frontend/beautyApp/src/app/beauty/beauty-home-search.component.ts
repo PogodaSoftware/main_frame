@@ -13,47 +13,17 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  Inject,
   OnDestroy,
   OnInit,
-  PLATFORM_ID,
 } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { environment } from '../../environments/environment';
-import { BeautyAuthService } from './beauty-auth.service';
-
-interface HomeSearchProvider {
-  id: number;
-  name: string;
-  short_description: string;
-  location_label: string;
-}
-
-interface HomeSearchService {
-  id: number;
-  name: string;
-  description: string;
-  price_cents: number;
-  duration_minutes: number;
-  category: string;
-  is_future: boolean;
-  service_locations: string[];
-  distance_km: number | null;
-  is_favorited?: boolean;
-  provider: HomeSearchProvider;
-}
-
-interface HomeSearchResponse {
-  items: HomeSearchService[];
-  next_offset: number | null;
-  has_more: boolean;
-}
+import { BeautySearchService, SearchItem } from './beauty-search.service';
 
 const DEBOUNCE_MS = 300;
 const PAGE_SIZE = 20;
@@ -179,6 +149,11 @@ const PAGE_SIZE = 20;
       --font-display: 'Cormorant Garamond', Georgia, serif;
       --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
       display: block;
+      /* Fill the topnav .search-slot (a flex container) instead of shrinking
+         to content width — keeps the native search ✕ flush-right and lets the
+         results/empty-state span the search bar. */
+      flex: 1;
+      min-width: 0;
       font-family: var(--font-body);
       color: var(--text);
     }
@@ -276,7 +251,7 @@ const PAGE_SIZE = 20;
 export class BeautyHomeSearchComponent implements OnInit, OnDestroy {
   query = '';
   location = '';
-  results: HomeSearchService[] = [];
+  results: SearchItem[] = [];
   loading = false;
   rateLimited = false;
   errorMessage = '';
@@ -286,17 +261,15 @@ export class BeautyHomeSearchComponent implements OnInit, OnDestroy {
   private rateToastTimeout: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private http: HttpClient,
-    private auth: BeautyAuthService,
+    private searchSvc: BeautySearchService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    @Inject(PLATFORM_ID) private platformId: object,
   ) {}
 
   get hasQuery(): boolean { return this.query.trim().length > 0; }
 
   ngOnInit(): void {
-    this.location = this._readProfileLocation();
+    this.location = this.searchSvc.readProfileLocation();
     this.subs.push(
       this.query$
         .pipe(debounceTime(DEBOUNCE_MS), distinctUntilChanged())
@@ -317,59 +290,35 @@ export class BeautyHomeSearchComponent implements OnInit, OnDestroy {
     if (this.rateToastTimeout) clearTimeout(this.rateToastTimeout);
   }
 
-  trackById = (_: number, item: HomeSearchService): number => item.id;
+  trackById = (_: number, item: SearchItem): number => item.id;
 
   onQueryChange(value: string): void {
     this.query$.next((value || '').trim());
   }
 
-  openService(svc: HomeSearchService): void {
+  openService(svc: SearchItem): void {
     if (!svc?.id) return;
     this.router.navigate(['/book', svc.id]);
   }
 
-  toggleFavorite(ev: Event, svc: HomeSearchService): void {
+  toggleFavorite(ev: Event, svc: SearchItem): void {
     ev.stopPropagation();
     if (!svc?.id) return;
     const wasOn = !!svc.is_favorited;
     svc.is_favorited = !wasOn;
-    const url = `${environment.apiBaseUrl}/api/beauty/protected/services/${svc.id}/favorite/`;
-    const opts = { withCredentials: true, headers: this.auth.getAuthHeaders() };
-    const obs = wasOn ? this.http.delete(url, opts) : this.http.post(url, {}, opts);
-    obs.subscribe({
+    this.searchSvc.toggleFavorite(svc, wasOn).subscribe({
       error: () => { svc.is_favorited = wasOn; this.cdr.markForCheck(); },
     });
-  }
-
-  private _readProfileLocation(): string {
-    if (!isPlatformBrowser(this.platformId)) return '';
-    try {
-      const raw = localStorage.getItem('beauty_customer_city');
-      if (raw && raw.trim()) return raw.trim();
-    } catch { /* localStorage may be locked */ }
-    return '';
   }
 
   private runSearch(): void {
     this.loading = true;
     this.errorMessage = '';
 
-    const params = new URLSearchParams();
-    params.set('q', this.query.trim());
-    if (this.location) params.set('location', this.location);
-    params.set('offset', '0');
-    params.set('limit', String(PAGE_SIZE));
-    params.set('includeFuture', 'true');
-
-    const url = `${environment.apiBaseUrl}/api/beauty/services/search/?${params.toString()}`;
-    this.http
-      .get<HomeSearchResponse>(url, {
-        withCredentials: true,
-        headers: this.auth.getAuthHeaders(),
-      })
+    this.searchSvc.search(this.query.trim(), this.location, 0, PAGE_SIZE)
       .subscribe({
-        next: (resp) => {
-          this.results = resp.items || [];
+        next: (page) => {
+          this.results = page.items;
           this.loading = false;
           this.cdr.markForCheck();
         },

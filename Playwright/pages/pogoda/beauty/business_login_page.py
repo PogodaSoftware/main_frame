@@ -1,5 +1,8 @@
 business_login_page_root = "css=div.business-login-page"
-business_badge = "css=div.business-login-page div.auth-brand-badge"
+# Badge moved from the form's (now hidden) brand block to the CustAuthLayout
+# hero when business login adopted the desktop split-pane. Scope to .hero so the
+# desktop badge is matched (the mobile brand-band badge is display:none at desktop).
+business_badge = "css=.cust-auth .hero span.hero-badge"
 business_login_title = "css=div.business-login-page h1.login-title"
 business_login_subtitle = "css=div.business-login-page p.login-subtitle"
 email_input = "css=div.business-login-page input#email"
