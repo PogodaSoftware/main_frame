@@ -100,6 +100,7 @@ def get_authenticated_user(cookie_value: str, device_id: str) -> dict | None:
                 'user_type': 'customer',
                 'email': user.email,
                 'business_name': None,
+                'city': user.city or '',
             }
         else:
             provider = BusinessProvider.objects.get(id=user_id)
@@ -108,6 +109,7 @@ def get_authenticated_user(cookie_value: str, device_id: str) -> dict | None:
                 'user_type': 'business',
                 'email': provider.email,
                 'business_name': provider.business_name,
+                'city': '',
             }
     except (BeautyUser.DoesNotExist, BusinessProvider.DoesNotExist):
         logger.error('Session exists but user %s/%s not found in DB.', user_type, user_id)

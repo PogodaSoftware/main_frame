@@ -55,9 +55,9 @@ Feature: Beauty Customer Home Search Bar
     And the customer types "spam" in the home search input
     Then the home search rate-limit toast should be visible
 
-  Scenario: V12 Search bar is full-width on mobile and aligned on desktop
+  Scenario: V12 Search bar is hidden on mobile and shown on desktop
     Given an authenticated customer with city "Seattle" is on the home page
     When the viewport is resized to mobile width
-    Then the home search bar should be visible
+    Then the home search bar should be hidden
     When the viewport is resized to desktop width
     Then the home search bar should be visible

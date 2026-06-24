@@ -10,7 +10,6 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
-import { BeautyProviderCardComponent } from './provider/prov-card.component';
 
 export interface DayRow {
   day_of_week: number;
@@ -59,9 +58,10 @@ function setMon(rows: DayRow[], from: number, to: number, start: string, end: st
 @Component({
   selector: 'app-beauty-weekly-hours-editor',
   standalone: true,
-  imports: [CommonModule, FormsModule, BeautyProviderCardComponent],
+  imports: [CommonModule, FormsModule],
   template: `
-    <div class="quickset">
+    <div class="wh-editor" [class.is-flat]="flat">
+    <div class="quickset" [class.flat]="flat">
       <div class="qs-label">Quick set</div>
       <div class="qs-chips">
         <button *ngFor="let qs of quickSets" type="button"
@@ -72,7 +72,9 @@ function setMon(rows: DayRow[], from: number, to: number, start: string, end: st
       </div>
     </div>
 
-    <app-prov-card padding="0 14px" class="hours-card">
+    <div class="sched-label" *ngIf="flat">Schedule</div>
+
+    <div class="hours-card" [class.boxed]="!flat">
       <div *ngFor="let row of rows; let last = last" class="day-row" [class.last]="last">
         <div class="day-col">
           <div class="day-name">{{ row.day_label }}</div>
@@ -101,14 +103,15 @@ function setMon(rows: DayRow[], from: number, to: number, start: string, end: st
                  [attr.aria-label]="row.day_label + ' end time'"/>
         </div>
       </div>
-    </app-prov-card>
+    </div>
 
-    <div class="tz-banner">
+    <div class="tz-banner" *ngIf="!hideTzBanner">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 17v.01"/>
       </svg>
       <span>Time zone: UTC. All bookings show in your customer's local time.</span>
+    </div>
     </div>
   `,
   styles: [`
@@ -121,13 +124,15 @@ function setMon(rows: DayRow[], from: number, to: number, start: string, end: st
     }
     :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
 
-    .quickset { margin-bottom: 14px; }
-    .qs-label {
+    .quickset { margin-top: 20px; margin-bottom: 14px; }
+    .quickset.flat { margin-top: 0; }
+    .qs-label, .sched-label {
       font-size: 11px; font-weight: 600;
       letter-spacing: 0.6px; text-transform: uppercase;
       color: var(--text-muted);
       margin-bottom: 6px;
     }
+    .sched-label { margin-top: 18px; }
     .qs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
     .qs-chip {
       padding: 7px 12px; min-height: 44px;
@@ -145,6 +150,7 @@ function setMon(rows: DayRow[], from: number, to: number, start: string, end: st
     }
 
     .hours-card { display: block; }
+    .hours-card.boxed { background: #FFFFFF; border: 1px solid var(--line); border-radius: 14px; padding: 0 14px; }
     .day-row {
       display: flex; align-items: center; gap: 12px;
       padding: 14px 0;
@@ -175,14 +181,15 @@ function setMon(rows: DayRow[], from: number, to: number, start: string, end: st
       font-family: var(--font-body);
     }
     .seg.is-selected {
-      background: #FFFFFF;
-      color: var(--text);
-      border-color: var(--line);
+      background: var(--text);
+      color: #FFFFFF;
+      border-color: var(--text);
     }
+    /* Closed selected uses the same ink fill as Open per the desktop design. */
     .seg.is-selected.closed {
-      background: #FCE8E5;
-      color: var(--danger);
-      border-color: rgba(192,57,43,0.33);
+      background: var(--text);
+      color: #FFFFFF;
+      border-color: var(--text);
     }
 
     .time-pair {
@@ -212,10 +219,27 @@ function setMon(rows: DayRow[], from: number, to: number, start: string, end: st
       display: flex; gap: 8px; align-items: flex-start;
     }
     .tz-banner svg { color: var(--accent-blue-deep); flex-shrink: 0; margin-top: 1px; }
+
+    /* --- Web (flat) overrides: square pills, bigger text, tighter spacing --- */
+    .is-flat .qs-label, .is-flat .sched-label { font-size: 12px; }
+    .is-flat .qs-chip { font-size: 13px; padding: 10px 14px; }
+    .is-flat .day-row { padding: 16px 0; gap: 18px; }
+    .is-flat .day-col { width: 96px; }
+    .is-flat .day-name { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.375rem; font-weight: 500; }
+    .is-flat .day-sub { font-size: 12px; margin-top: 1px; }
+    .is-flat .seg-pill { border-radius: 10px; padding: 3px; gap: 2px; }
+    .is-flat .seg { border-radius: 7px; font-size: 13px; padding: 9px 18px; min-height: 38px; }
+    .is-flat .time-pair { margin-left: 22px; gap: 8px; }
+    .is-flat .time-input { font-size: 14px; padding: 8px 10px; min-height: 38px; }
+    .is-flat .dash { font-size: 14px; }
   `],
 })
 export class BeautyWeeklyHoursEditorComponent {
   @Input() rows: DayRow[] = [];
+  /** Web/desktop: drop the inner card wrapper (parent supplies one card) + show a "Schedule" eyebrow. */
+  @Input() flat = false;
+  /** Web/desktop: hide the inline TZ banner (the page shows a TZ rail card instead). */
+  @Input() hideTzBanner = false;
 
   quickSets = QUICK_SETS;
   activeQuickSet: string | null = null;

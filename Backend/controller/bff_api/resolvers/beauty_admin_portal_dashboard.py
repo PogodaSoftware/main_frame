@@ -14,8 +14,8 @@ from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminAuditEvent, BeautyBooking, BeautyUser, BusinessProvider,
 )
-from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _ACTIVITY_STYLE = {
@@ -141,6 +141,23 @@ def _gmv_series(now, days: int = 7) -> list[int]:
     return cents
 
 
+def _signups_daily(now, days: int) -> list[int]:
+    """Per-day customer signup counts for the last ``days`` days, oldest → newest."""
+    start = (now - timedelta(days=days - 1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    counts = [0] * days
+    qs = BeautyUser.objects.filter(created_at__gte=start).values_list('created_at', flat=True)
+    for created in qs:
+        idx = (created.date() - start.date()).days
+        if 0 <= idx < days:
+            counts[idx] += 1
+    return counts
+
+
+# Range selector (header "Last N days" + chart chips). Maps a range key to a
+# day window for the signups trend chart.
+_RANGE_DAYS = {'7d': 7, '30d': 30, '90d': 90}
+
+
 def _signups_weekly(now, weeks: int = 12) -> list[int]:
     """Per-week customer signup counts for last ``weeks`` weeks, oldest → newest."""
     week_start = (now - timedelta(days=7 * (weeks - 1))).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -164,9 +181,6 @@ def _flagged_count() -> int:
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
-
-    # Gate to admins; bounce non-admins to signin so the existence isn't
-    # advertised to authenticated non-admin users.
     if not user or not h.is_beauty_admin(user):
         return h.redirect_envelope('beauty_admin_portal_signin', 'auth_required')
 
@@ -180,6 +194,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
 
     now = datetime.now(timezone.utc)
     first_name = (user.get('email') or 'admin').split('@', 1)[0].split('.', 1)[0].title()
+
+    # Trend-chart range: header "Last N days" dropdown + chart chips.
+    rng = (params or {}).get('range') or '7d'
+    if rng not in _RANGE_DAYS:
+        rng = '7d'
+    trend_days = _RANGE_DAYS[rng]
+    range_label = f'Last {trend_days} days'
 
     # ── Real series + month-over-month deltas, all from DB ──
     month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
@@ -211,6 +232,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         gmv_7d_series = _gmv_series(now, 7)
         gmv_prev7_series = _gmv_series(now - timedelta(days=7), 7)
         signups_12w_series = _signups_weekly(now, 12)
+        trend_series = _signups_daily(now, trend_days)
         flagged = _flagged_count()
     except Exception:
         bookings_prev_mo = 0
@@ -221,6 +243,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         gmv_7d_series = [0] * 7
         gmv_prev7_series = [0] * 7
         signups_12w_series = [0] * 12
+        trend_series = [0] * trend_days
         flagged = 0
 
     bookings_7d_total = sum(bookings_7d_series)
@@ -303,6 +326,16 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             # Real-data series (replace hardcoded RN client charts).
             'signups_12w_series': signups_12w_series,
             'signups_12w_total': signups_12w_total,
+            # Range-driven trend chart (header "Last N days" + chart chips).
+            'range': rng,
+            'range_options': [
+                {'id': '7d', 'label': 'Last 7 days', 'chip': '7D'},
+                {'id': '30d', 'label': 'Last 30 days', 'chip': '30D'},
+                {'id': '90d', 'label': 'Last 90 days', 'chip': '90D'},
+            ],
+            'trend_series': trend_series,
+            'trend_total': sum(trend_series),
+            'trend_label': f'Last {trend_days} days · daily signups',
             'bookings_7d_series': bookings_7d_series,
             'bookings_7d_total': bookings_7d_total,
             'bookings_7d_delta': _pct_delta(bookings_7d_total, bookings_prev7_total),

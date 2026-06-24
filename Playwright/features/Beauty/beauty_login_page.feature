@@ -11,3 +11,9 @@ Feature: Beauty Login Page Validation
     And the sign in submit button should be visible
     And the sign up navigation link should be visible on the login page
     And the business login navigation link should be visible
+
+  # Responsive: mobile (390px) must not scroll sideways and the submit goes full-width.
+  Scenario: Login page is responsive on a mobile viewport
+    Given I view the beauty login page at a 390px mobile width
+    Then the login page should not scroll horizontally
+    And the sign in submit button should span the mobile content width

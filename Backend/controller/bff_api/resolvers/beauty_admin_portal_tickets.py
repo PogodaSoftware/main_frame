@@ -6,10 +6,10 @@ from datetime import datetime, timezone
 
 from django.db.models import Q
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyAdminTicket
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _CATEGORY_RUBRIC = [

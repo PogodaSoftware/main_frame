@@ -1,27 +1,42 @@
-"""Locators for the Beauty booking success page (`/pogoda/beauty/bookings/:id/success`)."""
+"""Locators for the Beauty booking success page (`/pogoda/beauty/bookings/:id/success`).
 
-booking_success_page_root = "css=div.beauty-app"
+Root is div.cust-confirm (redesigned desktop layout: CustTopNav + centred
+confirm-inner with a head block and a single .card containing facts + actions).
+No share button, no bottom nav, no separate summary-card or conf-chip in new
+design — confirmation code is a .fact inside the .card .facts grid.
+"""
 
-sub_header = "css=div.beauty-app header.sub-header"
-share_button = "css=div.beauty-app header.sub-header button.share-btn"
+booking_success_page_root = "css=div.cust-confirm"
 
-success_main = "css=div.beauty-app main.success-main"
-sparkle_disc = "css=div.beauty-app main.success-main .sparkle-disc"
-eyebrow = "css=div.beauty-app main.success-main .eyebrow"
-title = "css=div.beauty-app main.success-main h1.title"
-body = "css=div.beauty-app main.success-main p.body"
+# No share button or sub-header in new design; point to top-nav as nearest
+# equivalent so imports from the step file don't break at module load.
+sub_header = "css=div.cust-confirm app-cust-top-nav"
+share_button = "css=div.cust-confirm app-cust-top-nav"  # vanished — kept for import compat
 
-summary_card = "css=div.beauty-app section.summary-card"
-summary_row = "css=div.beauty-app section.summary-card .row"
-summary_label = "css=div.beauty-app section.summary-card .row-label"
-summary_value = "css=div.beauty-app section.summary-card .row-value"
+# Main content area.
+success_main = "css=div.cust-confirm main.confirm-main"
+sparkle_disc = "css=div.cust-confirm .check-disc"        # was .sparkle-disc → .check-disc
+eyebrow = "css=div.cust-confirm .eyebrow"
+title = "css=div.cust-confirm h1.headline"               # was h1.title → h1.headline
+body = "css=div.cust-confirm p.sub"                      # was p.body → p.sub
 
-conf_chip = "css=div.beauty-app .conf-chip"
-conf_code = "css=div.beauty-app .conf-chip code.conf-code"
-conf_copy_button = "css=div.beauty-app .conf-chip button.conf-copy"
+# The single details card (was section.summary-card).
+summary_card = "css=div.cust-confirm .card"
+summary_row = "css=div.cust-confirm .card .fact"
+summary_label = "css=div.cust-confirm .card .fact-k"
+summary_value = "css=div.cust-confirm .card .fact-v"
 
-view_my_bookings_button = "css=div.beauty-app .actions button.btn-primary"
-view_booking_button = "css=div.beauty-app .actions .actions-row button.btn-secondary >> nth=0"
-back_to_home_button = "css=div.beauty-app .actions .actions-row button.btn-secondary >> nth=1"
+# Confirmation code is a .fact in the .facts grid; copy via .ref-copy button.
+# No .conf-chip wrapper; kept variable names for import compat.
+conf_chip = "css=div.cust-confirm .card .facts"          # was .conf-chip → facts grid
+conf_code = "css=div.cust-confirm .card .fact-v.mono"    # was code.conf-code → .fact-v.mono
+conf_copy_button = "css=div.cust-confirm button.ref-copy"
 
-bottom_nav = "css=div.beauty-app nav.bottom-nav"
+# Actions row: secondary buttons (calendar / directions / message) + primary (Done).
+view_my_bookings_button = "css=div.cust-confirm .actions button.btn--primary"
+# view_booking_button and back_to_home_button no longer exist in this design.
+view_booking_button = "css=div.cust-confirm .actions button.btn--secondary >> nth=0"
+back_to_home_button = "css=div.cust-confirm .actions button.btn--secondary >> nth=1"
+
+# No bottom nav in redesigned desktop layout.
+bottom_nav = "css=div.cust-confirm .actions"             # was nav.bottom-nav → actions bar

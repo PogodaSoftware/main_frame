@@ -18,30 +18,19 @@ import { type FavoriteRow } from '@/services/marketplace';
 import { api } from '@/services/api';
 import { resolve } from '@/services/bff';
 import { isRedirect, type BffLink } from '@/bff/types';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_DISPLAY, FONT_MONO } from '@/theme/fonts';
 
 interface FavRow extends FavoriteRow {
   _links?: { unfavorite?: BffLink };
 }
 
 const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlueDeep: '#7DA8CF',
-  accentBlueText: '#1a3a52',
-  ink: '#0A0A0B',
-  white: '#FFFFFF',
+  ...PALETTE,
   errorBg: '#FCE8E6',
   errorBorder: '#F4C7C3',
   error: '#B3261E',
 };
-
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
-const FONT_MONO = 'Menlo';
 
 export default function FavoritesScreen() {
   const router = useRouter();

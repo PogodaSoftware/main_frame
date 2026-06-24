@@ -24,21 +24,28 @@ import { CommonModule } from '@angular/common';
         <div class="brand">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0F1115" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/></svg>
           <span class="brand-name">Beauty</span>
+          <span class="hero-badge auth-brand-badge" *ngIf="badge">{{ badge }}</span>
         </div>
 
-        <div class="pitch">
-          <h2 class="pitch-title">Book a fresh look,<br/>in a few taps.</h2>
-          <p class="pitch-sub">Discover hair, nails, skin, brows and lashes from independent studios near you. Real-time availability, instant booking.</p>
-          <div class="proof">
-            <div class="stack">
-              <span class="ava">AB</span><span class="ava">MV</span><span class="ava">PA</span><span class="ava">HL</span>
-            </div>
-            <div>
-              <div class="proof-1">4.86★ · 12,840 customers</div>
-              <div class="proof-2">184 VIP · 9,620 verified</div>
+        <div class="pitch" *ngIf="variant === 'business'; else customerPitch">
+          <h2 class="pitch-title">Grow your<br/>beauty business.</h2>
+          <p class="pitch-sub">Manage bookings, services, clients and payments in one portal. Real-time calendar, instant payouts, your storefront.</p>
+        </div>
+        <ng-template #customerPitch>
+          <div class="pitch">
+            <h2 class="pitch-title">Book a fresh look,<br/>in a few taps.</h2>
+            <p class="pitch-sub">Discover hair, nails, skin, brows and lashes from independent studios near you. Real-time availability, instant booking.</p>
+            <div class="proof">
+              <div class="stack">
+                <span class="ava">AB</span><span class="ava">MV</span><span class="ava">PA</span><span class="ava">HL</span>
+              </div>
+              <div>
+                <div class="proof-1">4.86★ · 12,840 customers</div>
+                <div class="proof-2">184 VIP · 9,620 verified</div>
+              </div>
             </div>
           </div>
-        </div>
+        </ng-template>
 
         <div class="hero-foot">beauty.app · Brooklyn · Manhattan · Queens</div>
       </aside>
@@ -49,6 +56,7 @@ import { CommonModule } from '@angular/common';
           <div class="brand brand--mobile">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0F1115" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h2M14 7h2M8 11h2M14 11h2M8 15h2M14 15h2"/></svg>
             <span class="brand-name">Beauty</span>
+            <span class="hero-badge" *ngIf="badge">{{ badge }}</span>
           </div>
           <h1 class="title" *ngIf="title">{{ title }}</h1>
           <p class="sub" *ngIf="sub">{{ sub }}</p>
@@ -82,6 +90,7 @@ import { CommonModule } from '@angular/common';
     }
     .brand { display: flex; align-items: center; gap: 10px; }
     .brand-name { font-family: var(--font-display); font-size: 32px; font-weight: 500; color: var(--text); line-height: 1; }
+    .hero-badge { font-family: var(--font-mono); font-size: 10px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: var(--accent-blue-text); background: rgba(255,255,255,0.6); border: 1px solid var(--accent-blue-deep); border-radius: 999px; padding: 4px 10px; }
     .pitch { max-width: 500px; }
     .pitch-title { margin: 0; font-family: var(--font-display); font-size: 60px; font-weight: 500; line-height: 1.05; letter-spacing: 0.2px; color: var(--text); }
     .pitch-sub { margin: 22px 0 0; font-size: 16px; color: var(--accent-blue-text); line-height: 1.6; }
@@ -112,7 +121,10 @@ import { CommonModule } from '@angular/common';
       .hero { display: none; }
       .brand--mobile { display: flex; align-items: center; gap: 10px; }
       .pane { align-items: flex-start; padding: 32px 20px; min-height: 100dvh; }
-      .pane-inner { max-width: 460px; margin: 0 auto; }
+      /* margin:auto centers the form block vertically when it's shorter than
+         the viewport (kills the blank lower-half void), and collapses to 0 to
+         stay top-aligned + scrollable when a tall form overflows. */
+      .pane-inner { max-width: 460px; margin: auto; }
       .title { font-size: 32px; }
     }
 
@@ -123,4 +135,6 @@ export class CustAuthLayoutComponent {
   @Input() title = '';
   @Input() sub = '';
   @Input() center = false;
+  @Input() variant: 'customer' | 'business' = 'customer';
+  @Input() badge = '';
 }

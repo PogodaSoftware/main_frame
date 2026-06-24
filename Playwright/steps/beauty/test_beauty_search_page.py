@@ -111,8 +111,26 @@ def _cleanup_seeded_services() -> None:
     )
 
 
-def _is_search_request(url: str) -> bool:
-    return "/api/beauty/services/search/" in url
+def _is_search_request(req_or_resp) -> bool:
+    """True for BFF resolve calls targeting the beauty_service_search screen.
+
+    Accepts both Playwright Request and Response objects; for a Response we
+    fall back to checking the URL only (post_data not available on Response).
+    """
+    url = getattr(req_or_resp, "url", "")
+    if "/api/bff/beauty/resolve/" not in url:
+        return False
+    # Request objects expose post_data; Response objects do not.
+    post_data = getattr(req_or_resp, "post_data", None)
+    if post_data is None:
+        # Response — URL match is sufficient (all resolves share the same URL,
+        # so we correlate by sequence counter in _on_response instead).
+        return True
+    try:
+        body = json.loads(post_data or "{}")
+    except Exception:
+        body = {}
+    return body.get("screen") == "beauty_service_search"
 
 
 # ---------------------------------------------------------------------------
@@ -133,14 +151,24 @@ def auth_customer_on_search(page, test_customer, city):
     page.search_response_ms = []  # type: ignore[attr-defined]
 
     def _on_request(req):
-        if _is_search_request(req.url):
+        if _is_search_request(req):
+            try:
+                params = json.loads(req.post_data or "{}").get("params", {})
+            except Exception:
+                params = {}
             page.search_requests.append({  # type: ignore[attr-defined]
-                "url": req.url, "ts": time.monotonic(),
+                "url": req.url,
+                "params": params,
+                "seq": len(page.search_requests),  # type: ignore[attr-defined]
+                "ts": time.monotonic(),
             })
+
     def _on_response(resp):
-        if _is_search_request(resp.url):
-            for r in reversed(page.search_requests):  # type: ignore[attr-defined]
-                if r["url"] == resp.url and "elapsed" not in r:
+        # All resolve responses share the same URL — correlate by finding the
+        # earliest open request (no "elapsed" yet) in FIFO order.
+        if "/api/bff/beauty/resolve/" in resp.url:
+            for r in page.search_requests:  # type: ignore[attr-defined]
+                if "elapsed" not in r:
                     r["elapsed"] = (time.monotonic() - r["ts"]) * 1000.0
                     page.search_response_ms.append(r["elapsed"])  # type: ignore[attr-defined]
                     break
@@ -200,7 +228,7 @@ def burst_requests(page, count):
     # making the toast appear flaky. Mocking keeps the assertion
     # deterministic while still exercising the 429 client path.
     def _route(route):
-        if _is_search_request(route.request.url):
+        if _is_search_request(route.request):
             route.fulfill(
                 status=429,
                 content_type="application/json",
@@ -208,24 +236,36 @@ def burst_requests(page, count):
             )
         else:
             route.continue_()
-    page.route("**/api/beauty/services/search/**", _route)
+    page.route(re.compile(r"/api/bff/beauty/resolve/"), _route)
 
     # Fire the burst in-browser so the requests still share the page
     # context. Each fetch is intercepted by the route above and answered
     # with 429 — providing the 429 signal the assertion checks for.
+    # POST to the new BFF resolve endpoint with screen=beauty_service_search.
     page.evaluate(
         f"""
         (async () => {{
           window.__rateBurstStatuses = [];
-          const headers = {{
-            'X-Device-ID':
-              window.localStorage.getItem('beauty_device_id') || ''
-          }};
+          const deviceId =
+            window.localStorage.getItem('beauty_device_id') || '';
           for (let i = 0; i < {count}; i++) {{
             try {{
               const r = await fetch(
-                '{BACKEND_URL}/api/beauty/services/search/?q=spam&offset=0&limit=20',
-                {{ credentials: 'include', headers }},
+                '{BACKEND_URL}/api/bff/beauty/resolve/',
+                {{
+                  method: 'POST',
+                  credentials: 'include',
+                  headers: {{
+                    'Content-Type': 'application/json',
+                    'X-Device-ID': deviceId,
+                  }},
+                  body: JSON.stringify({{
+                    version: '2.0.0',
+                    screen: 'beauty_service_search',
+                    device_id: deviceId,
+                    params: {{ q: 'spam', offset: 0, limit: 20 }},
+                  }}),
+                }},
               );
               window.__rateBurstStatuses.push(r.status);
             }} catch (_) {{
@@ -259,7 +299,7 @@ def scroll_to_bottom(page):
 @when("the search backend returns a 500 error for the next request")
 def force_500(page):
     def _route(route):
-        if _is_search_request(route.request.url):
+        if _is_search_request(route.request):
             route.fulfill(
                 status=500,
                 content_type="application/json",
@@ -267,7 +307,7 @@ def force_500(page):
             )
         else:
             route.continue_()
-    page.route("**/api/beauty/services/search/**", _route)
+    page.route(re.compile(r"/api/bff/beauty/resolve/"), _route)
 
 
 # ---------------------------------------------------------------------------
@@ -303,11 +343,11 @@ def one_debounced_request(page):
     # calls and not the page-mount baseline.
     typed = [
         r for r in page.search_requests  # type: ignore[attr-defined]
-        if re.search(r"[?&]q=facial", r["url"], flags=re.I)
+        if re.search(r"facial", str(r.get("params", {}).get("q", "")), flags=re.I)
     ]
     assert len(typed) == 1, (
-        f"Expected exactly one debounced request, got {len(typed)}: "
-        f"{[r['url'] for r in typed]}"
+        f"Expected exactly one debounced resolve request for q=facial, got {len(typed)}: "
+        f"{[r.get('params') for r in page.search_requests]}"  # type: ignore[attr-defined]
     )
 
 
@@ -326,13 +366,23 @@ def rate_toast_visible(page):
 
 @then(parsers.parse('the search request payload should include "{frag}"'))
 def payload_contains(page, frag):
-    matched = [
-        r for r in page.search_requests  # type: ignore[attr-defined]
-        if frag in r["url"]
-    ]
+    # POST body params are stored as a dict in r["params"]. Fragments arrive in
+    # the legacy "key=value" query form; match them against the dict, else fall
+    # back to a substring check over the serialised params.
+    if "=" in frag:
+        key, _, value = frag.partition("=")
+        matched = [
+            r for r in page.search_requests  # type: ignore[attr-defined]
+            if str(r.get("params", {}).get(key)) == value
+        ]
+    else:
+        matched = [
+            r for r in page.search_requests  # type: ignore[attr-defined]
+            if frag in json.dumps(r.get("params", {}))
+        ]
     assert matched, (
-        f"No search request contained {frag!r}. Recorded: "
-        f"{[r['url'] for r in page.search_requests]}"  # type: ignore[attr-defined]
+        f"No search resolve request params contained {frag!r}. Recorded params: "
+        f"{[r.get('params') for r in page.search_requests]}"  # type: ignore[attr-defined]
     )
 
 

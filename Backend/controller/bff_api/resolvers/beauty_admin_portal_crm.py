@@ -17,13 +17,13 @@ from decimal import Decimal
 
 from django.db.models import Sum
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyAdminTag, BeautyAdminTagAssignment, BeautyBooking, BeautySession,
     BeautyUser, BusinessProvider,
 )
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 _SPEND_HIGH_DOLLARS = Decimal('100.00')

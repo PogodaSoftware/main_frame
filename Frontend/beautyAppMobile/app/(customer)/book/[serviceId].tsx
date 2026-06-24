@@ -21,6 +21,8 @@ import { resolve } from '@/services/bff';
 import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { BottomNav } from '@/components/BottomNav';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_DISPLAY, FONT_MONO } from '@/theme/fonts';
 
 interface BookField {
   name: string;
@@ -68,26 +70,7 @@ interface CalendarCell {
   isSelected: boolean;
 }
 
-const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlue: '#CFE3F5',
-  accentBlueDeep: '#7DA8CF',
-  accentBlueLight: '#BFD8EE',
-  accentBlueText: '#1a3a52',
-  ink: '#0A0A0B',
-  success: '#2F7A47',
-  successHover: '#256238',
-  danger: '#C0392B',
-  white: '#FFFFFF',
-};
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
-const FONT_MONO = 'Menlo';
+const C = { ...PALETTE, accentBlueLight: '#BFD8EE' };
 
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 

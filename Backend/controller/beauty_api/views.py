@@ -17,6 +17,7 @@ Security measures applied:
 
 import hashlib
 import logging
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
@@ -147,6 +148,10 @@ def _reject_cross_role_login(request, email: str, attempted_role: str,
 
 class SignUpView(APIView):
     def post(self, request):
+        email = (request.data.get('email') or '').lower().strip()
+        confirm_email = (request.data.get('confirm_email') or '').lower().strip()
+        if confirm_email and confirm_email != email:
+            return Response({'detail': 'Email addresses do not match.'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -380,6 +385,82 @@ class BusinessLogoutView(APIView):
 
         response = Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
         response.delete_cookie(SESSION_COOKIE_NAME, path='/')
+        return response
+
+
+class GoogleMockAuthView(APIView):
+    """
+    POST /api/beauty/auth/google/
+
+    DEBUG-only passwordless login that simulates "Sign in with Google" for
+    demo purposes. Returns 404 in production (settings.DEBUG is False).
+
+    Request body:
+        { "account": "<demo email>", "device_id": "<str>", "user_type": "customer"|"business" }
+
+    Allowlisted demo accounts only — anything else returns 400.
+    On success: find-or-create the user/provider, issue a real session cookie.
+    """
+
+    # Allowlist — must stay in sync with beauty_google_auth.py resolver catalogue.
+    _CUSTOMER_ACCOUNTS = {
+        'aisha.bell@gmail.com':    {'name': 'Aisha Bell'},
+        'hugo.l@startuplabs.io':   {'name': 'Hugo Lindqvist'},
+    }
+    _BUSINESS_ACCOUNTS = {
+        'studio.luxe@gmail.com':   {'business_name': 'Studio Luxe'},
+        'glow.bar@startuplabs.io': {'business_name': 'Glow Bar'},
+    }
+
+    def post(self, request):
+        if not settings.DEBUG:
+            return Response(status=404)
+
+        account  = (request.data.get('account') or '').strip().lower()
+        device_id = (request.data.get('device_id') or '').strip()
+        user_type = (request.data.get('user_type') or 'customer').strip().lower()
+
+        if not account or not device_id:
+            return Response(
+                {'detail': 'account and device_id are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Resolve the per-type config; the session-issue path below is shared.
+        if user_type == 'customer':
+            allow, sess = self._CUSTOMER_ACCOUNTS, BeautySession.USER_TYPE_CUSTOMER
+            build = lambda: BeautyUser(email=account, city='Brooklyn')
+        elif user_type == 'business':
+            allow, sess = self._BUSINESS_ACCOUNTS, BeautySession.USER_TYPE_BUSINESS
+            build = lambda: BusinessProvider(email=account, business_name=allow[account]['business_name'])
+        else:
+            return Response(
+                {'detail': 'user_type must be customer or business.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if account not in allow:
+            return Response(
+                {'detail': 'Account not in demo allowlist.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        model = BeautyUser if user_type == 'customer' else BusinessProvider
+        obj = model.objects.filter(email=account).first()
+        if obj is None:
+            obj = build()
+            obj.set_password(secrets.token_urlsafe(32))
+            obj.save()
+
+        payload = _make_cookie_payload(obj.id, sess, device_id)
+        signed_token = signing.dumps(payload)
+        _create_session(obj.id, sess, device_id, signed_token)
+
+        response = Response(
+            {'message': 'Login successful.', 'email': obj.email},
+            status=status.HTTP_200_OK,
+        )
+        _set_auth_cookie(response, signed_token)
         return response
 
 

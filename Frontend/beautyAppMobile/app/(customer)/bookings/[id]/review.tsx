@@ -21,25 +21,15 @@ import { type MyBooking } from '@/services/bookings';
 import { api } from '@/services/api';
 import { resolve } from '@/services/bff';
 import { isRedirect } from '@/bff/types';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_DISPLAY } from '@/theme/fonts';
 
 const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlueText: '#1a3a52',
-  ink: '#0A0A0B',
-  danger: '#C0392B',
-  success: '#2F7A47',
-  white: '#FFFFFF',
+  ...PALETTE,
   avatar: '#5C4A3F',
   starFill: '#F5C36B',
   starEmpty: '#CFCFD3',
 };
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
 
 const MAX_COMMENT = 280;
 const RATING_LABELS = ['Tap a star to rate', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];

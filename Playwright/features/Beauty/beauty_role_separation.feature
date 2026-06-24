@@ -56,3 +56,25 @@ Feature: Beauty Customer/Business Role Separation
     When I log in as that customer via the customer login endpoint
     And I call the business dashboard endpoint with the customer session
     Then the business dashboard response status should be 403
+
+  # Screen-level portal isolation via the BFF resolve envelope ------
+
+  Scenario: A signed-in business is bounced off a customer screen
+    Given a signed-in business session
+    When that session resolves the "beauty_profile" screen
+    Then the resolve envelope should redirect to "beauty_business_home"
+
+  Scenario: A signed-in customer is bounced off a business screen
+    Given a signed-in customer session
+    When that session resolves the "beauty_business_home" screen
+    Then the resolve envelope should redirect to "beauty_home"
+
+  Scenario: A non-admin customer is bounced off an admin screen
+    Given a signed-in customer session
+    When that session resolves the "beauty_admin_portal_dashboard" screen
+    Then the resolve envelope should redirect to "beauty_home"
+
+  Scenario: A non-admin customer cannot reach the admin 2FA screen
+    Given a signed-in customer session
+    When that session resolves the "beauty_admin_portal_2fa" screen
+    Then the resolve envelope should redirect to "beauty_home"

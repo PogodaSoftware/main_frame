@@ -11,26 +11,23 @@ Auth required — redirects unauthenticated visitors to `beauty_login`.
 """
 
 from beauty_api.availability_service import compute_slots
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyFavorite, BeautyService
-from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
 from ..services.beauty_timezone_service import provider_timezone as _provider_timezone
+from ._customer_auth import coerce_int_param, require_customer_auth
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
     params = params or {}
+
+    user, redirect = require_customer_auth(request, device_id)
+    if redirect:
+        return redirect
+
     raw_id = params.get('serviceId') or params.get('service_id')
-
-    cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
-    user = get_authenticated_user(cookie, device_id)
-    if not user or user.get('user_type') != 'customer':
-        return h.redirect_envelope('beauty_login', 'auth_required')
-
-    try:
-        service_id = int(raw_id)
-    except (TypeError, ValueError):
-        return h.redirect_envelope('beauty_home', 'invalid_service')
+    service_id, redirect = coerce_int_param(raw_id, 'beauty_home', 'invalid_service')
+    if redirect:
+        return redirect
 
     try:
         svc = BeautyService.objects.select_related('provider').get(id=service_id)
@@ -40,7 +37,6 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     is_favorited = BeautyFavorite.objects.filter(
         customer_id=user.get('user_id'), service_id=svc.id,
     ).exists()
-    fav_href = f'/api/beauty/protected/services/{svc.id}/favorite/'
 
     return {
         'action': 'render',
@@ -96,7 +92,6 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'chats': h.screen_link('chats', 'beauty_chats', prompt='Chat'),
             'profile': h.screen_link('profile', 'beauty_profile', prompt='Profile'),
             # POST favorite / DELETE unfavorite — same href.
-            'favorite': h.link(rel='favorite', href=fav_href, method='POST', prompt='Save'),
-            'unfavorite': h.link(rel='unfavorite', href=fav_href, method='DELETE', prompt='Unsave'),
+            **h.service_favorite_links(svc.id),
         },
     }

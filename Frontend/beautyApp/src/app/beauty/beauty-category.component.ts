@@ -18,6 +18,7 @@ import {
 import { CommonModule } from '@angular/common';
 
 import { BffLink } from './beauty-bff.types';
+import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
 
 interface CategoryService {
   id: number;
@@ -46,31 +47,19 @@ interface FlatService extends CategoryService {
 @Component({
   selector: 'app-beauty-category',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CustTopNavComponent],
   changeDetection: ChangeDetectionStrategy.Default,
   template: `
-    <div class="beauty-app">
-      <header class="sub-header">
-        <button
-          type="button"
-          class="back-btn"
-          aria-label="Back"
-          (click)="emit(links['back'] || links['home'])"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </button>
-        <span class="sub-header-spacer-flex"></span>
-        <button type="button" class="save-btn" aria-label="Save category">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M19 14c1.5-1.5 3-3.5 3-6a4 4 0 0 0-7-2.6A4 4 0 0 0 8 8c0 2.5 1.5 4.5 3 6l4 4 4-4z"/>
-          </svg>
-        </button>
-      </header>
+    <div class="beauty-app cust-desk">
+      <app-cust-top-nav active="home" [links]="links" [signedIn]="true" (follow)="emit($event)"></app-cust-top-nav>
 
       <h1 class="sr-only">{{ categoryLabel }}</h1>
-      <main id="main">
+      <main id="main" class="cat-main">
+      <div class="cat-inner">
+      <div class="crumb">
+        <button type="button" class="crumb-link" (click)="emit(links['back'] || links['home'])">Home</button>
+        <span class="crumb-sep">›</span> {{ categoryLabel }}
+      </div>
       <section class="hero-cover" [attr.data-category]="categorySlug" [attr.aria-label]="categoryLabel">
         <span class="hero-tag">img · {{ categorySlug }}</span>
         <div class="hero-overlay">
@@ -138,41 +127,8 @@ interface FlatService extends CategoryService {
           <div class="service-empty-card">No providers in this category yet.</div>
         </ng-template>
       </div>
-
+      </div>
       </main>
-
-      <nav class="bottom-nav" aria-label="Primary">
-        <button type="button" class="nav-tab" (click)="emit(links['bookings'])" [disabled]="!links['bookings']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="5" width="18" height="16" rx="2.5"/>
-            <path d="M3 10h18M8 3v4M16 3v4"/>
-          </svg>
-          <span class="nav-label">Bookings</span>
-        </button>
-        <button type="button" class="nav-tab is-active" (click)="emit(links['home'])" [disabled]="!links['home']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M3 11l9-7 9 7v9a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9z"/>
-          </svg>
-          <span class="nav-label">Home</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['chats'])" [disabled]="!links['chats']" data-testid="nav-chat">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span class="nav-label">Chat</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['profile'])" [disabled]="!links['profile']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8.5" r="3.8"/>
-            <path d="M4.5 21c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"/>
-          </svg>
-          <span class="nav-label">Profile</span>
-        </button>
-      </nav>
     </div>
   `,
   styles: [`
@@ -344,8 +300,23 @@ interface FlatService extends CategoryService {
     .nav-label { font-size: 0.7rem; font-weight: 500; line-height: 1; letter-spacing: 0.1px; }
     .nav-tab.is-active .nav-label { font-weight: 600; }
 
-    @media screen and (min-width: 768px) {
-      .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
+    /* Desktop (cust-top-nav chrome). Web is desktop-only — RN is the mobile app. */
+    .cat-main { flex: 1; }
+    .cat-inner { max-width: 980px; margin: 0 auto; padding: 28px 24px 48px; width: 100%; }
+    .crumb { font-size: 0.6875rem; color: var(--text-muted); font-weight: 600; margin-bottom: 14px; }
+    .crumb-link { background: none; border: none; padding: 0; cursor: pointer; font: inherit; color: var(--text-muted); }
+    .crumb-link:hover { color: #1a3a52; text-decoration: underline; }
+    .crumb-sep { margin: 0 4px; }
+    .hero-cover { height: 240px; border-radius: 18px; overflow: hidden; }
+    .hero-overlay { left: 28px; right: 28px; bottom: 22px; }
+    .hero-title { font-size: 40px; }
+    .scroll-body { overflow: visible; padding: 18px 0 0; }
+    .description { max-width: 680px; }
+    .service-card { max-width: 760px; }
+    @media screen and (max-width: 720px) {
+      .cat-inner { padding: 16px 16px 32px; }
+      .hero-cover { height: 180px; }
+      .hero-title { font-size: 28px; }
     }
   `],
 })

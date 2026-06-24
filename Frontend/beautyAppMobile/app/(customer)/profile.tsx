@@ -11,30 +11,15 @@ import { BeautyShell } from '@/components/BeautyShell';
 import { BottomNav } from '@/components/BottomNav';
 import { useSession } from '@/hooks/useSession';
 import { logout as doLogout } from '@/services/auth';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_DISPLAY, FONT_MONO } from '@/theme/fonts';
 
 interface ProfileData {
   user?: { email?: string; name?: string; member_since?: string };
   stats?: { booking_count?: number };
 }
 
-const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlue: '#CFE3F5',
-  accentBlueDeep: '#7DA8CF',
-  accentBlueLight: '#BFD8EE',
-  accentBlueText: '#1a3a52',
-  danger: '#C0392B',
-  white: '#FFFFFF',
-};
-
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
-const FONT_MONO = 'Menlo';
+const C = { ...PALETTE, accentBlueLight: '#BFD8EE' };
 
 function formatMemberSince(iso?: string): string {
   if (!iso) return '';

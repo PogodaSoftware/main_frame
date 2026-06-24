@@ -13,8 +13,8 @@ from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import (
     BeautyBooking, BeautyReview, BeautyUser, BusinessProvider,
 )
-from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 def _fmt_int(n: int) -> str:

@@ -17,25 +17,22 @@ the booking-detail screen.
 from datetime import datetime, timezone
 
 from beauty_api.availability_service import compute_slots
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyBooking
-from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
 from ..services.beauty_timezone_service import provider_timezone as _provider_timezone
+from ._customer_auth import coerce_int_param, require_customer_auth
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
-    cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
-    user = get_authenticated_user(cookie, device_id)
-    if not user or user.get('user_type') != 'customer':
-        return h.redirect_envelope('beauty_login', 'auth_required')
+    user, redirect = require_customer_auth(request, device_id)
+    if redirect:
+        return redirect
 
     params = params or {}
     raw_id = params.get('bookingId') or params.get('id')
-    try:
-        booking_id = int(raw_id)
-    except (TypeError, ValueError):
-        return h.redirect_envelope('beauty_bookings', 'invalid_booking')
+    booking_id, redirect = coerce_int_param(raw_id, 'beauty_bookings', 'invalid_booking')
+    if redirect:
+        return redirect
 
     try:
         b = (

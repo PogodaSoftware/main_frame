@@ -2,42 +2,23 @@
 Beauty Admin Portal — Business provider detail resolver
 """
 
-from datetime import datetime, timezone
 from decimal import Decimal
 
 from django.db.models import Avg, Count, Sum
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
+from beauty_api import chat_service
 from beauty_api.models import (
     BeautyAdminNote, BeautyAdminTag, BeautyAdminTagAssignment, BeautyBooking,
     BeautyProvider, BeautyProviderAvailability, BeautyReview, BeautyService,
     BeautySession, BusinessProvider,
 )
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
+from ._admin_datetime import humanize_dt as _humanize_dt, humanize_relative as _humanize_relative
 
 
 _DOW_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-
-
-def _humanize_dt(dt) -> str:
-    if not dt:
-        return '—'
-    return dt.strftime('%b %-d, %Y') if hasattr(dt, 'strftime') else str(dt)
-
-
-def _humanize_relative(dt) -> str:
-    if not dt:
-        return '—'
-    delta = datetime.now(timezone.utc) - dt
-    s = int(delta.total_seconds())
-    if s < 60:
-        return 'just now'
-    if s < 3600:
-        return f'{s // 60}m ago'
-    if s < 86400:
-        return f'{s // 3600}h ago'
-    return f'{s // 86400}d ago'
 
 
 def _services_for(provider_id: int):
@@ -151,14 +132,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         .first()
     )
 
-    has_active_booking = False
-    if provider_profile_id is not None:
-        has_active_booking = (
-            BeautyBooking.objects
-            .filter(service__provider_id=provider_profile_id)
-            .exclude(status__in=BeautyBooking.CANCELLED_STATUSES)
-            .exists()
-        )
+    # Key on bp.id (BusinessProvider id) — the SAME key the admin send path +
+    # can_user_access use — so the button gate and actual delivery agree.
+    has_thread = chat_service.has_messageable_thread('business', bp.id)
 
     notes_qs = BeautyAdminNote.objects.filter(target_type='business', target_id=bp.id).order_by('-created_at')[:25]
 
@@ -177,7 +153,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'last_seen_label': _humanize_relative(last_session.created_at) if last_session else '—',
             'is_suspended': bp.is_suspended,
             'verified': bool(profile and bp.business_name),
-            'has_active_booking': has_active_booking,
+            'has_active_booking': has_thread,
+            'has_messageable_thread': has_thread,
             'attached_tags': [
                 {'id': a.tag.slug, 'label': a.tag.label, 'color': a.tag.color, 'tone': a.tag.tone}
                 for a in BeautyAdminTagAssignment.objects
@@ -191,6 +168,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                     assignments__user_type='business',
                     assignments__user_id=bp.id,
                 ).order_by('label')[:4]
+            ],
+            'available_tags': [
+                {'id': t.slug, 'label': t.label, 'color': t.color, 'tone': t.tone}
+                for t in BeautyAdminTag.objects.exclude(
+                    assignments__user_type='business',
+                    assignments__user_id=bp.id,
+                ).order_by('label')
             ],
             'performance': performance,
             'services': services,

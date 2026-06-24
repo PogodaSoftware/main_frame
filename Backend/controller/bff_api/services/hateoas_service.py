@@ -386,6 +386,7 @@ SCREEN_ROUTES = {
     'beauty_signup': '/pogoda/beauty/signup',
     'beauty_welcome': '/pogoda/beauty/welcome',
     'beauty_forgot': '/pogoda/beauty/forgot',
+    'beauty_google_auth': '/pogoda/beauty/auth/oauth/google/:user_type',
     'beauty_business_login': '/pogoda/beauty/business/login',
     'beauty_business_signup': '/pogoda/beauty/business/signup',
     'beauty_business_application_entity':   '/pogoda/beauty/business/apply/entity',
@@ -395,8 +396,6 @@ SCREEN_ROUTES = {
     'beauty_business_application_tools':    '/pogoda/beauty/business/apply/tools',
     'beauty_business_application_review':   '/pogoda/beauty/business/apply/review',
     'beauty_wireframe': '/pogoda/beauty/wireframe',
-    'beauty_users': '/pogoda/beauty/admin/users',
-    'beauty_business_providers': '/pogoda/beauty/admin/business-providers',
     'beauty_sessions': '/pogoda/beauty/admin/sessions',
     'beauty_admin_flags': '/pogoda/beauty/admin/flags',
     # Admin Portal (slate redesign — handoff May 2026). All routes mobile-only.
@@ -430,6 +429,8 @@ SCREEN_ROUTES = {
     'beauty_chat_thread': '/pogoda/beauty/chats/:bookingId',
     # Business portal screens.
     'beauty_business_home': '/pogoda/beauty/business',
+    'beauty_business_messages': '/pogoda/beauty/business/messages',
+    'beauty_business_notifications': '/pogoda/beauty/business/notifications',
     'beauty_business_services': '/pogoda/beauty/business/services',
     'beauty_business_service_form': '/pogoda/beauty/business/services/:serviceId/edit',
     'beauty_business_service_new': '/pogoda/beauty/business/services/new',
@@ -491,6 +492,22 @@ def redirect_envelope(
 
 
 # ---------------------------------------------------------------------------
+# Shared action-link bundles
+# ---------------------------------------------------------------------------
+
+def service_favorite_links(service_id: int) -> dict:
+    """
+    Return {'favorite': ..., 'unfavorite': ...} HATEOAS links for a service.
+    POST favorite / DELETE unfavorite — same href, method picks the verb.
+    """
+    href = f'/api/beauty/protected/services/{service_id}/favorite/'
+    return {
+        'favorite': link(rel='favorite', href=href, method='POST', prompt='Save'),
+        'unfavorite': link(rel='unfavorite', href=href, method='DELETE', prompt='Unsave'),
+    }
+
+
+# ---------------------------------------------------------------------------
 # Form schema builders
 # ---------------------------------------------------------------------------
 
@@ -507,6 +524,7 @@ def field(
     inputmode: str | None = None,
     autocapitalize: str | None = None,
     secret_toggle: bool = False,
+    match_field: str | None = None,
     error_messages: dict | None = None,
 ) -> dict:
     return {
@@ -521,6 +539,7 @@ def field(
         'inputmode': inputmode,
         'autocapitalize': autocapitalize,
         'secret_toggle': secret_toggle,
+        'match_field': match_field,
         'error_messages': error_messages or {},
     }
 
@@ -537,6 +556,24 @@ def email_field(*, label: str = 'Email', placeholder: str = 'Enter your email') 
         error_messages={
             'required': 'Email is required.',
             'email': 'Please enter a valid email address.',
+        },
+    )
+
+
+def confirm_email_field() -> dict:
+    return field(
+        'confirm_email',
+        type='email',
+        label='Confirm email',
+        placeholder='Re-enter your email',
+        autocomplete='email',
+        inputmode='email',
+        autocapitalize='none',
+        match_field='email',
+        error_messages={
+            'required': 'Please confirm your email address.',
+            'email': 'Please enter a valid email address.',
+            'match': 'Email addresses do not match.',
         },
     )
 

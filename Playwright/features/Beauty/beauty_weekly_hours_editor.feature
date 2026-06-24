@@ -39,4 +39,4 @@ Feature: Shared weekly-hours editor
     And the legacy closed-day checkbox should not be present
     And the quick set label should display "Quick set"
     And the editor should render exactly 7 day rows
-    And the time zone banner should mention "UTC"
+    And the time zone rail card should be visible

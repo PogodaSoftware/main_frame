@@ -102,3 +102,20 @@ def _augment_ld_library_path() -> None:
 
 
 _augment_ld_library_path()
+
+
+# ---------------------------------------------------------------------------
+# Demo/observability helpers
+# ---------------------------------------------------------------------------
+import time  # noqa: E402
+
+
+def pytest_bdd_after_step(request, feature, scenario, step, step_func, step_func_args):
+    """Optional slow-motion: set BDD_STEP_DELAY=2 to pause N seconds after each
+    Gherkin step so a headed run is watchable. No-op when unset (normal runs)."""
+    delay = os.environ.get('BDD_STEP_DELAY')
+    if delay:
+        try:
+            time.sleep(float(delay))
+        except (TypeError, ValueError):
+            pass

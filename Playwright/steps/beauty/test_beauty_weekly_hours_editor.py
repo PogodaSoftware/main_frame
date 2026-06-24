@@ -14,6 +14,7 @@ from Playwright.pages.pogoda.beauty.weekly_hours_editor_page import (
     seg_24h_nth,
     time_pair_nth,
     tz_banner,
+    tz_rail_card,
     legacy_closed_checkbox,
 )
 from .beauty_utils import (
@@ -124,3 +125,9 @@ def click_24h(page, n):
 @then(parsers.parse('day row {n:d} time pair should be hidden'))
 def time_pair_hidden(page, n):
     expect(page.locator(time_pair_nth.format(n=n))).to_have_count(0)
+
+
+@then("the time zone rail card should be visible")
+def tz_rail_card_visible(page):
+    """Availability page hides the inline tz-banner and shows a rail card instead."""
+    expect(page.locator(tz_rail_card)).to_be_visible()

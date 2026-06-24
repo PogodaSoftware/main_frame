@@ -1,14 +1,15 @@
-"""End-to-end tests for the Beauty Admin Portal — Audit log page.
+"""End-to-end tests for the Beauty Admin Portal — Audit log (desktop).
 
-Verifies that:
-* The empty state renders when no audit events exist for the test admin.
-* Recent admin actions appear in the timeline at the top, with the
-  expected verb and target rendered into `title_html`.
-* The summary count matches the live row count in the DB.
+* Renders real audit-event rows on the shared admin-web chrome.
+* Action chip filters drive an in-place stale-while-revalidate refetch
+  (no router navigation) — the visible row count equals the DB filtered count.
+* Actor search (debounced 250 ms) narrows every visible row to the typed
+  actor email.
+* Reason column renders the seeded `meta.reason` text.
 
-Pattern mirrors the team-page test: fresh customer → promoted to admin
-via `BeautyAdminPrincipal` row → REST login → cookie attached to the
-Playwright context.
+Seeds its own throwaway `BeautyAdminAuditEvent` rows (unique-tagged actor
+email) + a throwaway admin principal, and cleans both up in teardown —
+never mutates shared seed data.
 """
 
 import subprocess
@@ -21,12 +22,12 @@ from pytest_bdd import given, scenarios, then, when
 
 from Playwright.Hooks.hooks import goto_route
 from Playwright.pages.pogoda.beauty.admin_portal_audit_page import (
-    audit_page_root,
-    audit_summary,
-    audit_title,
-    empty_state_title,
-    event_rows,
-    event_title,
+    audit_actor_input,
+    audit_cell_reason,
+    audit_cell_who,
+    audit_chips,
+    audit_root,
+    audit_rows,
 )
 from .beauty_utils import (
     BACKEND_URL,
@@ -36,7 +37,6 @@ from .beauty_utils import (
 )
 
 scenarios("../../features/Beauty/beauty_admin_portal_audit.feature")
-
 
 _STATE: dict = {}
 
@@ -49,6 +49,7 @@ def _clear_state():
 
 
 def _shell(cmd: str) -> str:
+    """Run a one-liner inside the backend container's Django shell."""
     proc = subprocess.run(
         ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
@@ -63,48 +64,11 @@ def _shell(cmd: str) -> str:
     return (proc.stdout or "").strip()
 
 
-def _set_admin_principal(user_type: str, user_id: int) -> None:
-    _shell(
-        "from beauty_api.models import BeautyAdminPrincipal; "
-        "BeautyAdminPrincipal.objects.update_or_create("
-        f"  user_type='{user_type}', user_id={user_id},"
-        "  defaults={'role': 'owner'}); "
-        "print('ok')"
-    )
-
-
-def _clear_audit_events_for(email: str) -> None:
-    _shell(
-        "from beauty_api.models import BeautyAdminAuditEvent; "
-        f"BeautyAdminAuditEvent.objects.filter(actor_email='{email}').delete(); "
-        "print('ok')"
-    )
-
-
-def _seed_audit_event(actor_email: str, action: str, target_label: str = '') -> None:
-    """Insert an audit event row directly so the test doesn't depend on
-    every upstream endpoint being wired."""
-    _shell(
-        "from beauty_api.models import BeautyAdminAuditEvent; "
-        "BeautyAdminAuditEvent.objects.create("
-        f"  actor_email='{actor_email}',"
-        f"  actor_role='owner',"
-        f"  action='{action}',"
-        f"  target_label='{target_label}',"
-        "  ip='127.0.0.1'"
-        "); "
-        "print('ok')"
-    )
-
-
-def _login_admin(page, admin: dict) -> None:
+def _login_admin(page, email: str, password: str) -> None:
+    """Sign in via REST and attach the session cookie + device_id to the Playwright context."""
     resp = requests.post(
         f"{BACKEND_URL}/api/beauty/login/",
-        json={
-            "email": admin["email"],
-            "password": admin["password"],
-            "device_id": TEST_DEVICE_ID,
-        },
+        json={"email": email, "password": password, "device_id": TEST_DEVICE_ID},
         timeout=10,
     )
     assert resp.status_code == 200, f"Admin login failed: {resp.text}"
@@ -123,95 +87,205 @@ def _login_admin(page, admin: dict) -> None:
 
 
 @pytest.fixture(scope="function")
-def beauty_admin():
+def admin_on_audit(page):
+    """
+    Creates a throwaway owner admin, seeds 5 BeautyAdminAuditEvent rows
+    (3 x account.suspend + 2 x ticket.status), all with a unique actor_email
+    (`auditseed_<tag>@beauty-test.com`).  One suspend row carries
+    meta={'reason': 'E2E seeded reason <tag>'}.
+
+    Yields _STATE so step definitions can read tag / actor_email / reason.
+
+    Teardown deletes: seeded audit rows, the admin principal, and the user.
+    """
     tag = uuid.uuid4().hex[:6]
-    email = f"audittest_{tag}@beauty-test.com"
-    password = "AuditPass123!"
-    resp = requests.post(
+    admin_email = f"auditadmin_{tag}@beauty-test.com"
+    password = "AuditAdm123!"
+    seed_actor = f"auditseed_{tag}@beauty-test.com"
+    seed_reason = f"E2E seeded reason {tag}"
+
+    # 1. Create the admin user + principal
+    assert requests.post(
         f"{BACKEND_URL}/api/beauty/signup/",
-        json={"email": email, "password": password},
+        json={"email": admin_email, "password": password},
         timeout=10,
-    )
-    assert resp.status_code == 201, f"Signup failed: {resp.text}"
-    user_id = int(_shell(
+    ).status_code == 201, "Admin signup failed"
+
+    admin_id = int(_shell(
         "from beauty_api.models import BeautyUser; "
-        f"print(BeautyUser.objects.get(email='{email}').id)"
+        f"print(BeautyUser.objects.get(email='{admin_email}').id)"
     ))
-    _set_admin_principal("customer", user_id)
-    # Clear any audit rows this email may have produced before the test
-    # ran (e.g. last_active_at touch from a previous run).
-    _clear_audit_events_for(email)
-    yield {"email": email, "password": password, "user_id": user_id}
-    _clear_audit_events_for(email)
+    principal_id = int(_shell(
+        "from beauty_api.models import BeautyAdminPrincipal; "
+        "p,_=BeautyAdminPrincipal.objects.update_or_create("
+        f"  user_type='customer', user_id={admin_id},"
+        "  defaults={'role': 'owner'}); print(p.id)"
+    ))
+
+    # 2. Seed 3 x account.suspend rows (one with reason, two without)
+    _shell(
+        "from beauty_api.models import BeautyAdminAuditEvent as E; "
+        f"E.objects.create(action='account.suspend', actor_email='{seed_actor}', "
+        f"  actor_role='owner', target_label='cust_001', ip='10.0.0.1', "
+        f"  meta={{'reason': '{seed_reason}'}}); "
+        f"E.objects.create(action='account.suspend', actor_email='{seed_actor}', "
+        f"  actor_role='owner', target_label='cust_002', ip='10.0.0.1', meta={{}}); "
+        f"E.objects.create(action='account.suspend', actor_email='{seed_actor}', "
+        f"  actor_role='owner', target_label='cust_003', ip='10.0.0.1', meta={{}}); "
+        "print('suspend seeded')"
+    )
+
+    # 3. Seed 2 x ticket.status rows
+    _shell(
+        "from beauty_api.models import BeautyAdminAuditEvent as E; "
+        f"E.objects.create(action='ticket.status', actor_email='{seed_actor}', "
+        f"  actor_role='owner', target_label='TK-001', ip='10.0.0.1', meta={{}}); "
+        f"E.objects.create(action='ticket.status', actor_email='{seed_actor}', "
+        f"  actor_role='owner', target_label='TK-002', ip='10.0.0.1', meta={{}}); "
+        "print('ticket seeded')"
+    )
+
+    # 4. Login
+    _login_admin(page, admin_email, password)
+
+    _STATE.update({
+        "tag": tag,
+        "admin_email": admin_email,
+        "principal_id": principal_id,
+        "admin_id": admin_id,
+        "seed_actor": seed_actor,
+        "seed_reason": seed_reason,
+    })
+    yield _STATE
+
+    # Teardown — delete seeded audit rows, principal, user
+    _shell(
+        "from beauty_api.models import BeautyAdminAuditEvent as E; "
+        f"E.objects.filter(actor_email__contains='auditseed_{tag}').delete(); "
+        "print('cleaned audit')"
+    )
     _shell(
         "from beauty_api.models import BeautyAdminPrincipal; "
-        f"BeautyAdminPrincipal.objects.filter(user_type='customer', user_id={user_id}).delete(); "
-        "print('ok')"
+        f"BeautyAdminPrincipal.objects.filter(id={principal_id}).delete(); "
+        "print('cleaned principal')"
     )
-    delete_test_users(email)
+    delete_test_users(admin_email)
 
 
 # ---------------------------------------------------------------------------
-# Step definitions
+# Background step
 # ---------------------------------------------------------------------------
 
-@given("I am signed in as a Beauty admin")
-def signed_in(page, beauty_admin):
-    _login_admin(page, beauty_admin)
-    _STATE["admin"] = beauty_admin
-
-
-@given("no admin actions have been performed yet")
-def no_actions(page):
-    # Wipe any rows the auth gate / dashboard render created.
-    _shell(
-        "from beauty_api.models import BeautyAdminAuditEvent; "
-        "BeautyAdminAuditEvent.objects.all().delete(); "
-        "print('ok')"
-    )
-
-
-@given('I have performed a "tag.create" action')
-def perform_tag_create():
-    _seed_audit_event(_STATE["admin"]["email"], "tag.create", "Demo tag")
-
-
-@given('I have performed an "account.suspend" action')
-def perform_suspend():
-    _seed_audit_event(_STATE["admin"]["email"], "account.suspend", "cust_99")
-
-
-@when("I open the admin portal audit page")
-def open_audit_page(page):
+@given("I am signed in as a Beauty admin viewing the audit log")
+def open_audit(page, admin_on_audit):
+    page.set_viewport_size({"width": 1280, "height": 900})
     goto_route(page, "beauty_admin_portal_audit")
-    page.wait_for_selector("app-beauty-shell, [data-testid]", timeout=25000)
-    expect(page.locator(audit_page_root)).to_be_visible(timeout=10000)
+    expect(page.locator(audit_root)).to_be_visible(timeout=15000)
+    page.wait_for_selector(audit_rows, timeout=10000)
 
 
-@then("the audit page should render")
-def audit_renders(page):
-    expect(page.locator(audit_title)).to_contain_text("Audit log")
+# ---------------------------------------------------------------------------
+# Scenario: table renders seeded rows
+# ---------------------------------------------------------------------------
 
-
-@then('the empty-state title "No events yet" should be visible')
-def empty_visible(page):
-    expect(page.locator(empty_state_title)).to_contain_text("No events yet")
-
-
-@then("the most recent event row should reference the suspend action")
-def first_row_is_suspend(page):
-    page.wait_for_selector(event_rows, timeout=5000)
-    first_title = page.locator(event_rows).first.locator(event_title).inner_text()
-    assert "suspended" in first_title.lower(), (
-        f"Expected first row to be a suspend event, got: {first_title!r}"
+@then("the audit table should show the seeded actor rows")
+def shows_seeded_rows(page):
+    # At least one visible row should contain the seeded actor email
+    seed_actor = _STATE["seed_actor"]
+    expect(
+        page.locator(f"{audit_rows}", has_text=seed_actor)
+    ).to_have_count(
+        5,  # 3 suspend + 2 ticket.status
+        timeout=10000,
     )
 
 
-@then("the audit summary should report at least 2 events")
-def summary_count(page):
-    summary_text = page.locator(audit_summary).inner_text()
-    # Format: "Every admin action · immutable · last 90 days · N events"
-    import re
-    m = re.search(r"·\s*(\d+)\s+event", summary_text)
-    assert m, f"Could not parse event count from summary: {summary_text!r}"
-    assert int(m.group(1)) >= 2, f"Expected ≥2 events, got: {summary_text!r}"
+# ---------------------------------------------------------------------------
+# Scenario: action chip narrows the table
+# ---------------------------------------------------------------------------
+
+@when("I click the account.suspend action chip")
+def click_suspend_chip(page):
+    # Find the chip whose text is exactly "account.suspend"
+    chip = page.locator(audit_chips, has_text="account.suspend")
+    expect(chip).to_be_visible(timeout=8000)
+    chip.click()
+    # Stale-while-revalidate refetch — wait for the opacity fade to settle
+    page.wait_for_timeout(1000)
+
+
+@then("the visible row count matches the database count for account.suspend")
+def chip_count_matches_db(page):
+    # Query the DB for the filtered count (same filter logic as the resolver)
+    db_count = int(_shell(
+        "from beauty_api.models import BeautyAdminAuditEvent as E; "
+        "print(E.objects.filter(action__icontains='account.suspend').count())"
+    ))
+    # Cap at page size 50 (same as resolver _PAGE_SIZE)
+    expected = min(db_count, 50)
+    visible = page.locator(audit_rows).count()
+    assert visible == expected, (
+        f"Expected {expected} row(s) for account.suspend (DB={db_count}), got {visible}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Scenario: actor search narrows the table
+# ---------------------------------------------------------------------------
+
+@when("I type the seeded actor email into the actor search")
+def type_actor_search(page):
+    seed_actor = _STATE["seed_actor"]
+    page.locator(audit_actor_input).fill(seed_actor)
+    # Debounce is ~250ms; allow up to 1200ms for refetch + re-render
+    page.wait_for_timeout(1200)
+
+
+@then("every visible row shows the seeded actor email")
+def every_row_has_actor(page):
+    seed_actor = _STATE["seed_actor"]
+    rows = page.locator(audit_rows)
+    count = rows.count()
+    assert count > 0, "No rows visible after actor search"
+    for i in range(count):
+        cell_text = rows.nth(i).locator(audit_cell_who).inner_text()
+        assert seed_actor in cell_text, (
+            f"Row {i} who-cell {cell_text!r} does not contain {seed_actor!r}"
+        )
+
+
+@then("the visible row count matches the seeded actor count")
+def actor_row_count(page):
+    seed_actor = _STATE["seed_actor"]
+    db_count = int(_shell(
+        "from beauty_api.models import BeautyAdminAuditEvent as E; "
+        f"print(E.objects.filter(actor_email__icontains='{seed_actor}').count())"
+    ))
+    expected = min(db_count, 50)
+    visible = page.locator(audit_rows).count()
+    assert visible == expected, (
+        f"Expected {expected} row(s) for actor '{seed_actor}' (DB={db_count}), got {visible}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Scenario: reason column renders the seeded reason text
+# ---------------------------------------------------------------------------
+
+@then("a row in the reason column shows the seeded reason text")
+def reason_column_shows_seeded(page):
+    seed_reason = _STATE["seed_reason"]
+    # At least one reason cell should contain the seeded reason string
+    reason_cells = page.locator(f"{audit_rows} {audit_cell_reason}")
+    count = reason_cells.count()
+    assert count > 0, "No rows visible when checking reason column"
+    found = False
+    for i in range(count):
+        text = reason_cells.nth(i).inner_text()
+        if seed_reason in text:
+            found = True
+            break
+    assert found, (
+        f"No reason cell contained {seed_reason!r}. "
+        f"Reason cells seen: {[reason_cells.nth(i).inner_text() for i in range(count)]}"
+    )

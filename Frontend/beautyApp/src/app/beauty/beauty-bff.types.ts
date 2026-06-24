@@ -34,7 +34,8 @@ export interface BffFieldSchema {
   inputmode: string | null;
   autocapitalize: string | null;
   secret_toggle: boolean;
-  error_messages: Partial<Record<'required' | 'min_length' | 'pattern' | 'email' | 'server', string>>;
+  match_field?: string;
+  error_messages: Partial<Record<'required' | 'min_length' | 'pattern' | 'email' | 'match' | 'server', string>>;
 }
 
 export interface BffFooterLink {

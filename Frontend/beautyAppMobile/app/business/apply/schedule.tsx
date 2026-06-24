@@ -79,6 +79,7 @@ export default function ApplyScheduleScreen() {
         onContinue={onContinue}
         continueLoading={submitting}
         error={error}
+        centerTitle
       >
         <WeeklyHoursGrid rows={rows} onChange={setRows} />
       </WizardLayout>

@@ -19,6 +19,9 @@ import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { BottomNav } from '@/components/BottomNav';
 import { useGraceCountdown } from '@/hooks/useGraceCountdown';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_DISPLAY, FONT_MONO } from '@/theme/fonts';
+import { formatLocal } from '@/utils/dateFormatters';
 
 interface SuccessData {
   booking: {
@@ -33,43 +36,11 @@ interface SuccessData {
   };
 }
 
-const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlue: '#CFE3F5',
-  accentBlueLight: '#E8F1FA',
-  accentBlueDeep: '#7DA8CF',
-  accentBlueText: '#1a3a52',
-  ink: '#0A0A0B',
-  danger: '#C0392B',
-  white: '#FFFFFF',
-};
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
-const FONT_MONO = 'Menlo';
+const C = { ...PALETTE, accentBlueLight: '#E8F1FA' };
 
 function confirmationCode(id: number): string {
   const hex = id.toString(16).toUpperCase().padStart(8, '0');
   return `BK-${hex.slice(0, 4)}-${hex.slice(4, 8)}`;
-}
-
-function formatLocal(iso: string, tz?: string): string {
-  if (!iso) return '';
-  try {
-    const opts: Intl.DateTimeFormatOptions = {
-      weekday: 'short', month: 'short', day: 'numeric',
-      hour: 'numeric', minute: '2-digit',
-      timeZoneName: 'short',
-    };
-    if (tz) (opts as any).timeZone = tz;
-    return new Intl.DateTimeFormat(undefined, opts).format(new Date(iso));
-  } catch {
-    return '';
-  }
 }
 
 export default function BookingSuccessScreen() {

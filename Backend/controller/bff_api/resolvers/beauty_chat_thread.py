@@ -21,6 +21,7 @@ from beauty_api.models import BeautyBooking
 
 from ..services import hateoas_service as h
 from ..services.auth_service import get_authenticated_user
+from ._customer_auth import coerce_int_param
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
@@ -32,10 +33,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     user_type = user.get('user_type')
     user_id = user.get('user_id')
     booking_id_raw = (params or {}).get('bookingId')
-    try:
-        booking_id = int(booking_id_raw)
-    except (TypeError, ValueError):
-        return h.redirect_envelope('beauty_chats', 'missing_booking')
+    booking_id, redirect = coerce_int_param(booking_id_raw, 'beauty_chats', 'missing_booking')
+    if redirect:
+        return redirect
 
     try:
         booking = (

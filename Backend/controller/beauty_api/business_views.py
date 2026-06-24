@@ -20,6 +20,9 @@ immediately after sign-up.
 import hashlib
 import re
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from .timezone_utils import resolve_timezone
 
 from django.contrib.auth.hashers import check_password
 from rest_framework import status
@@ -262,7 +265,10 @@ class BusinessAvailabilityView(APIView):
         _, storefront, err = _require_business_storefront(request)
         if err:
             return err
-        return Response({'weekly_hours': get_weekly_hours(storefront)}, status=status.HTTP_200_OK)
+        return Response({
+            'weekly_hours': get_weekly_hours(storefront),
+            'timezone': resolve_timezone(storefront),
+        }, status=status.HTTP_200_OK)
 
     def put(self, request):
         _, storefront, err = _require_business_storefront(request)
@@ -272,7 +278,23 @@ class BusinessAvailabilityView(APIView):
         errors = replace_weekly_hours(storefront, rows)
         if errors:
             return Response({'detail': ' '.join(errors)}, status=status.HTTP_400_BAD_REQUEST)
-        return Response({'weekly_hours': get_weekly_hours(storefront)}, status=status.HTTP_200_OK)
+
+        # Optional IANA timezone (auto-detected client-side). Validate against
+        # the tz database before persisting so a bad value can't break slots.
+        tz = request.data.get('timezone')
+        if isinstance(tz, str) and tz:
+            try:
+                ZoneInfo(tz)
+            except (ZoneInfoNotFoundError, ValueError):
+                return Response({'detail': 'Invalid timezone.'}, status=status.HTTP_400_BAD_REQUEST)
+            if storefront.timezone != tz:
+                storefront.timezone = tz
+                storefront.save(update_fields=['timezone'])
+
+        return Response({
+            'weekly_hours': get_weekly_hours(storefront),
+            'timezone': resolve_timezone(storefront),
+        }, status=status.HTTP_200_OK)
 
 
 def _get_or_create_application(business: BusinessProvider) -> BusinessProviderApplication:
@@ -765,3 +787,35 @@ class BusinessAccountDeleteView(APIView):
         response = Response({'message': 'Account deleted.'}, status=status.HTTP_200_OK)
         response.delete_cookie(SESSION_COOKIE_NAME, path='/')
         return response
+
+
+class BusinessCancelBookingView(APIView):
+    """POST /api/beauty/protected/business/bookings/<id>/cancel/
+
+    Provider cancels an active booking on their own storefront. This is a
+    business-side cancellation (refund owed) → status becomes
+    ``cancelled_by_business``. Only the owning storefront may cancel, and
+    only bookings that are still active (booked).
+    """
+
+    def post(self, request, booking_id):
+        _, storefront, err = _require_business_storefront(request)
+        if err:
+            return err
+        try:
+            booking = BeautyBooking.objects.select_related('service').get(
+                id=booking_id, service__provider=storefront,
+            )
+        except BeautyBooking.DoesNotExist:
+            return Response({'detail': 'Booking not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if booking.status != BeautyBooking.STATUS_BOOKED:
+            return Response(
+                {'detail': 'Only active bookings can be cancelled.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # TODO: trigger Stripe refund — business-side cancellation owes one.
+        booking.status = BeautyBooking.STATUS_CANCELLED_BY_BUSINESS
+        booking.save(update_fields=['status'])
+        return Response({'id': booking.id, 'status': booking.status}, status=status.HTTP_200_OK)

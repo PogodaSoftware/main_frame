@@ -86,7 +86,7 @@ import { CustAuthLayoutComponent } from './cust-web/cust-auth-layout.component';
     .btn--secondary { background: #fff; color: var(--text); border: 1px solid var(--line); }
     .btn--secondary:hover { border-color: #7DA8CF; }
 
-    .legal-link { color: #0F1115; font-weight: 600; background: none; border: none; padding: 0; cursor: pointer; font: inherit; }
+    .legal-link { color: #0F1115; font-weight: 600; background: none; border: none; padding: 8px 4px; margin: -8px -2px; cursor: pointer; font: inherit; }
     .legal-link:hover { text-decoration: underline; }
 
     .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0,0,0,0) !important; white-space: nowrap !important; border: 0 !important; }
@@ -98,7 +98,7 @@ export class BeautyWelcomeComponent {
 
   goLogin(): void { this.router.navigate(['/login']); }
   goSignup(): void { this.router.navigate(['/signup']); }
-  goGoogle(): void { this.router.navigate(['/auth/oauth/google']); }
+  goGoogle(): void { this.router.navigate(['/auth/oauth/google/customer']); }
   // No Apple OAuth backend yet — fall back to email sign-in.
   goApple(): void { this.router.navigate(['/login']); }
   openLegal(_kind: 'terms' | 'privacy'): void { /* no-op until legal pages exist */ }

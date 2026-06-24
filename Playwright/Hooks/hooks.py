@@ -2,7 +2,7 @@ import os
 from playwright.sync_api import Page
 
 frontend_port = os.getenv('FRONTEND_PORT', '5000')
-beauty_port = os.getenv('BEAUTY_PORT', '4200')
+beauty_port = os.getenv('BEAUTY_PORT', '4300')
 
 _BEAUTY_BASE = "/pogoda/beauty"
 
@@ -24,10 +24,20 @@ _BEAUTY_ROUTES = {
     'beauty_admin_portal_team',
     'beauty_admin_portal_audit',
     'beauty_admin_portal_signin',
+    'beauty_admin_portal_2fa',
+    'beauty_admin_portal_magic',
+    'beauty_admin_portal_ip_warning',
     'beauty_admin_portal_crm',
+    'beauty_admin_portal_tag_manager',
+    'beauty_admin_portal_suspend',
+    'beauty_admin_portal_customer_detail',
+    'beauty_admin_portal_provider_detail',
+    'beauty_admin_portal_booking_detail',
+    'beauty_admin_portal_bookings',
     'beauty_admin_portal_tickets',
     'beauty_chats',
     'beauty_chat_thread',
+    'beauty_business_message_thread',
     'beauty_business_apply_entity',
     'beauty_business_apply_services',
     'beauty_business_apply_stripe',
@@ -48,6 +58,9 @@ _BEAUTY_ROUTES = {
     'beauty_booking_detail',
     'beauty_booking_success',
     'beauty_profile',
+    'beauty_favorites',
+    'beauty_business_reviews',
+    'beauty_business_messages',
 }
 
 # Static and templated routes for selecting_different_routes / goto_route.
@@ -67,6 +80,8 @@ _ROUTE_PATHS = {
     'beauty_business_settings': f'{_BEAUTY_BASE}/business/settings',
     'beauty_business_change_password': f'{_BEAUTY_BASE}/business/settings/password',
     'beauty_business_profile': f'{_BEAUTY_BASE}/business/profile',
+    'beauty_business_reviews': f'{_BEAUTY_BASE}/business/reviews',
+    'beauty_business_messages': f'{_BEAUTY_BASE}/business/messages',
     'beauty_business_apply_entity':   f'{_BEAUTY_BASE}/business/apply/entity',
     'beauty_business_apply_services': f'{_BEAUTY_BASE}/business/apply/services',
     'beauty_business_apply_stripe':   f'{_BEAUTY_BASE}/business/apply/stripe',
@@ -87,14 +102,25 @@ _ROUTE_PATHS = {
     'beauty_booking_detail': f'{_BEAUTY_BASE}/bookings/{{id}}',
     'beauty_booking_success': f'{_BEAUTY_BASE}/bookings/{{id}}/success',
     'beauty_profile': f'{_BEAUTY_BASE}/profile',
+    'beauty_favorites': f'{_BEAUTY_BASE}/saved',
     'beauty_admin_portal_dashboard': f'{_BEAUTY_BASE}/admin/portal/dashboard',
     'beauty_admin_portal_team':      f'{_BEAUTY_BASE}/admin/portal/team',
     'beauty_admin_portal_audit':     f'{_BEAUTY_BASE}/admin/portal/audit',
     'beauty_admin_portal_signin':    f'{_BEAUTY_BASE}/admin/portal/signin',
+    'beauty_admin_portal_2fa':       f'{_BEAUTY_BASE}/admin/portal/2fa',
+    'beauty_admin_portal_magic':     f'{_BEAUTY_BASE}/admin/portal/magic',
+    'beauty_admin_portal_ip_warning': f'{_BEAUTY_BASE}/admin/portal/ip-warning',
     'beauty_admin_portal_crm':       f'{_BEAUTY_BASE}/admin/portal/crm',
+    'beauty_admin_portal_tag_manager': f'{_BEAUTY_BASE}/admin/portal/crm/tags',
+    'beauty_admin_portal_suspend':   f'{_BEAUTY_BASE}/admin/portal/crm/suspend/{{type}}/{{id}}',
+    'beauty_admin_portal_customer_detail': f'{_BEAUTY_BASE}/admin/portal/crm/customer/{{id}}',
+    'beauty_admin_portal_provider_detail': f'{_BEAUTY_BASE}/admin/portal/crm/provider/{{id}}',
+    'beauty_admin_portal_booking_detail': f'{_BEAUTY_BASE}/admin/portal/bookings/{{id}}',
+    'beauty_admin_portal_bookings':  f'{_BEAUTY_BASE}/admin/portal/bookings',
     'beauty_admin_portal_tickets':   f'{_BEAUTY_BASE}/admin/portal/tickets',
     'beauty_chats': f'{_BEAUTY_BASE}/chats',
     'beauty_chat_thread': f'{_BEAUTY_BASE}/chats/{{bookingId}}',
+    'beauty_business_message_thread': f'{_BEAUTY_BASE}/business/messages/{{bookingId}}',
 }
 
 

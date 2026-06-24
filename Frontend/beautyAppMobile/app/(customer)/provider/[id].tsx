@@ -13,7 +13,7 @@
  *  - Loads via `resolve('beauty_provider_detail', { id })`.
  */
 import React, { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -23,6 +23,8 @@ import { navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { api } from '@/services/api';
 import { BottomNav } from '@/components/BottomNav';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_DISPLAY, FONT_MONO } from '@/theme/fonts';
 
 interface ProviderInfo {
   id: number;
@@ -72,25 +74,10 @@ interface ProviderDetailData {
 }
 
 const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlue: '#CFE3F5',
-  accentBlueDeep: '#7DA8CF',
-  accentBlueText: '#1a3a52',
-  ink: '#0A0A0B',
-  success: '#2F7A47',
-  danger: '#C0392B',
+  ...PALETTE,
   starFill: '#F5C36B',
   starEmpty: '#E5E5EA',
-  white: '#FFFFFF',
 };
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
-const FONT_MONO = 'Menlo';
 
 function heroSlug(name: string): string {
   return (name || 'provider').toLowerCase().replace(/\s+/g, '-');
@@ -175,7 +162,7 @@ export default function ProviderDetailScreen() {
       await api.delete(href);
       setReviews((arr) => arr.filter((r) => r.id !== review.id));
     } catch {
-      // swallow
+      Alert.alert('Could not delete review', 'Please try again.');
     }
   };
 

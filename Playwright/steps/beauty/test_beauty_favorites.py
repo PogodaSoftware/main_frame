@@ -19,6 +19,7 @@ import requests
 from playwright.sync_api import expect
 from pytest_bdd import scenarios, given, when, then, parsers
 
+from Playwright.Hooks.hooks import goto_route
 from Playwright.pages.pogoda.beauty.provider_detail_page import (
     service_favorite_btn,
 )
@@ -27,9 +28,6 @@ from Playwright.pages.pogoda.beauty.favorites_page import (
     favorites_business,
     favorites_empty,
     favorites_root,
-)
-from Playwright.pages.pogoda.beauty.profile_page import (
-    saved_services_link,
 )
 
 from .beauty_utils import (
@@ -200,7 +198,7 @@ def given_already_favorited(bag, svc):
 
 @when('the customer visits the Glow Facial Studio provider page')
 def when_visit_provider(page, bag):
-    page.goto(f"http://localhost:4200/pogoda/beauty/providers/{bag['provider_id']}")
+    goto_route(page, 'beauty_provider', id=bag['provider_id'])
     page.wait_for_timeout(1500)
 
 
@@ -214,21 +212,24 @@ def when_click_fav(page, bag, svc):
 
 @when('the customer reloads the provider page')
 def when_reload(page, bag):
-    page.goto(f"http://localhost:4200/pogoda/beauty/providers/{bag['provider_id']}")
+    goto_route(page, 'beauty_provider', id=bag['provider_id'])
     page.wait_for_timeout(1500)
 
 
 @when('the customer opens the Saved Services page from Profile')
 def when_open_saved_from_profile(page):
-    page.goto("http://localhost:4200/pogoda/beauty/profile")
+    # Profile has no "Saved" link; reach the saved page via the top-nav
+    # "Saved" button.  Navigate to profile first so the top-nav is rendered,
+    # then click the nav item.
+    goto_route(page, 'beauty_profile')
     page.wait_for_timeout(1500)
-    page.locator(saved_services_link).first.click()
+    page.locator("css=header.cust-topnav button.nav-item:has-text('Saved')").first.click()
     page.wait_for_timeout(1500)
 
 
 @when('the customer visits the Saved Services page directly')
 def when_visit_saved_direct(page):
-    page.goto("http://localhost:4200/pogoda/beauty/saved")
+    goto_route(page, 'beauty_favorites')
     page.wait_for_timeout(1500)
 
 

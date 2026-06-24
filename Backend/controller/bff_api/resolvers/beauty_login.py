@@ -43,6 +43,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'home': h.screen_link('home', 'beauty_home', prompt='Beauty'),
         'back': h.screen_link('back', 'beauty_welcome', prompt='Back'),
         'forgot': h.screen_link('forgot', 'beauty_forgot', prompt='Forgot password?'),
+        'google': h.screen_link(
+            'google', 'beauty_google_auth',
+            prompt='Continue with Google', params={'user_type': 'customer'},
+        ),
     }
     if h.is_signup_enabled():
         links['signup'] = h.screen_link('signup', 'beauty_signup', prompt='Sign up')
@@ -82,10 +86,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     return {
         'action': 'render',
         'screen': 'beauty_login',
-        'data': {
-            # Legacy field — kept for older clients / tests.
-            'links': {k: v['screen'] for k, v in links.items() if v.get('screen')},
-        },
+        'data': {},
         'meta': {'title': 'Beauty - Sign In'},
         '_links': links,
         'form': form,

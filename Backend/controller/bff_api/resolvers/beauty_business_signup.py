@@ -90,6 +90,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'business_login': h.screen_link(
             'business_login', 'beauty_business_login', prompt='Sign in',
         ),
+        'google': h.screen_link(
+            'google', 'beauty_google_auth',
+            prompt='Sign up with Google', params={'user_type': 'business'},
+        ),
     }
     return {
         'action': 'render',

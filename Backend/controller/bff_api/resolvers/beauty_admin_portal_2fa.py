@@ -4,18 +4,23 @@ Beauty Admin Portal — 2FA / TOTP resolver
 
 Visual-only first pass. Renders the 6-digit code entry screen. Real TOTP
 verification (BeautyAdminTotpSecret + drift window + recovery codes) lands
-when the full-backend auth phase wires up. Until then this screen is reachable
-post-signin as a visual gate.
+when the full-backend auth phase wires up.
 
-Gating: render to any user (auth or not) so the screen can be verified
-manually. Once real verification ships this will require `user` to be present
-with `is_beauty_admin` true and bounce otherwise.
+Gating: requires a valid admin session. Non-admins (including unauthenticated
+requests) are redirected to beauty_admin_portal_signin.
 """
 
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
+from ..services.auth_service import get_authenticated_user
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
+    cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
+    user = get_authenticated_user(cookie, device_id)
+    if not user or not h.is_beauty_admin(user):
+        return h.redirect_envelope('beauty_admin_portal_signin', 'auth_required')
+
     return {
         'action': 'render',
         'screen': 'beauty_admin_portal_2fa',

@@ -21,6 +21,9 @@ import { dispatchLink, navigateLink, nativeRouteFor } from '@/bff/linkAction';
 import { isRedirect, type BffEnvelope, type BffLink } from '@/bff/types';
 import { useGraceCountdown } from '@/hooks/useGraceCountdown';
 import { BottomNav } from '@/components/BottomNav';
+import { PALETTE } from '@/theme/colors';
+import { FONT_BODY, FONT_BODY_SEMI, FONT_DISPLAY } from '@/theme/fonts';
+import { formatLocal } from '@/utils/dateFormatters';
 
 interface BookingDetailData {
   booking: {
@@ -43,44 +46,11 @@ interface BookingDetailData {
   };
 }
 
-const C = {
-  surface: '#F2F2F2',
-  surface2: '#E9E9EB',
-  line: '#DCDCDF',
-  text: '#0F1115',
-  textMuted: '#6B6F77',
-  accentBlue: '#CFE3F5',
-  accentBlueDeep: '#7DA8CF',
-  accentBlueText: '#1a3a52',
-  ink: '#0A0A0B',
-  success: '#2F7A47',
-  successHover: '#256238',
-  danger: '#C0392B',
-  white: '#FFFFFF',
-};
-const FONT_BODY = 'Inter_400Regular';
-const FONT_BODY_SEMI = 'Inter_600SemiBold';
-const FONT_DISPLAY = 'CormorantGaramond_500Medium';
+const C = PALETTE;
 
 function titleCase(s: string): string {
   if (!s) return '';
   return s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-function formatLocal(iso: string, tz?: string | null): string {
-  if (!iso) return '';
-  try {
-    const d = new Date(iso);
-    const opts: Intl.DateTimeFormatOptions = {
-      weekday: 'short', month: 'short', day: 'numeric',
-      hour: 'numeric', minute: '2-digit',
-      timeZoneName: 'short',
-    };
-    if (tz) (opts as any).timeZone = tz;
-    return new Intl.DateTimeFormat(undefined, opts).format(d);
-  } catch {
-    return '';
-  }
 }
 
 function isCancelled(status: string): boolean {

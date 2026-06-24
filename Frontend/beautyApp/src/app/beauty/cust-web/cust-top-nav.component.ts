@@ -14,12 +14,13 @@
  * real person (email local-part) on every page. Clicks emit (follow); the
  * shell navigates by `route`.
  */
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Inject, Input, OnInit, Output, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, HostListener, Inject, Input, OnInit, Output, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 
 import { BffLink } from '../beauty-bff.types';
 import { BeautyAuthService } from '../beauty-auth.service';
+import { BeautySearchService } from '../beauty-search.service';
 import { environment } from '../../../environments/environment';
 
 interface NavItem { id: string; label: string; screen: string; route: string; }
@@ -72,8 +73,10 @@ const NAV_ITEMS: NavItem[] = [
       <div class="search">
         <svg class="search-ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B6F77" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <div class="search-slot"><ng-content select="[topnav-search]"></ng-content></div>
-        <span class="search-sep" *ngIf="city"></span>
-        <span class="search-city" *ngIf="city">
+      </div>
+      <div class="location-chip" *ngIf="city">
+        <span class="search-sep"></span>
+        <span class="search-city">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F1115" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
           {{ city }}
         </span>
@@ -83,10 +86,17 @@ const NAV_ITEMS: NavItem[] = [
 
       <!-- Account -->
       <ng-container *ngIf="signedIn; else guest">
-        <button type="button" class="bell" aria-label="Notifications">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F1115" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
-          <span class="bell-dot"></span>
-        </button>
+        <div class="bell-wrap">
+          <button type="button" class="bell" aria-label="Notifications"
+                  aria-haspopup="true" [attr.aria-expanded]="notifsOpen"
+                  (click)="toggleNotifs($event)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F1115" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg>
+          </button>
+          <div class="notif-panel" *ngIf="notifsOpen" role="menu" aria-label="Notifications">
+            <div class="notif-head">Notifications</div>
+            <div class="notif-empty">You're all caught up — no new notifications.</div>
+          </div>
+        </div>
         <button type="button" class="account" (click)="goRoute('beauty_profile', profileRoute)">
           <span class="avatar">{{ resolvedInitials }}</span>
           <span class="account-text">
@@ -144,11 +154,16 @@ const NAV_ITEMS: NavItem[] = [
     .search-slot { flex: 1; min-width: 0; display: flex; align-items: center; }
     .search-sep { width: 1px; height: 24px; background: var(--line); margin: 0 10px; flex-shrink: 0; }
     .search-city { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text); white-space: nowrap; flex-shrink: 0; }
+    .location-chip { display: flex; align-items: center; flex-shrink: 0; }
 
     .spacer { flex: 1; }
 
-    .bell { position: relative; width: 38px; height: 38px; border-radius: 50%; background: var(--surface); border: none; cursor: pointer; display: grid; place-items: center; flex-shrink: 0; }
-    .bell-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--danger); border: 1.5px solid var(--surface); }
+    .bell-wrap { position: relative; flex-shrink: 0; }
+    .bell { width: 38px; height: 38px; border-radius: 50%; background: var(--surface); border: none; cursor: pointer; display: grid; place-items: center; }
+    .bell[aria-expanded="true"] { background: var(--line); }
+    .notif-panel { position: absolute; top: 46px; right: 0; width: 300px; max-width: 80vw; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 8px; z-index: 200; }
+    .notif-head { font-family: var(--font-body); font-weight: 600; font-size: 14px; color: var(--text); padding: 8px 10px 6px; }
+    .notif-empty { font-family: var(--font-body); font-size: 13px; color: var(--text-muted); padding: 10px; }
 
     .account { display: flex; align-items: center; gap: 8px; background: none; border: none; cursor: pointer; padding: 0; flex-shrink: 0; }
     .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #C8A57E, #6B4F3A); color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 700; }
@@ -166,7 +181,7 @@ const NAV_ITEMS: NavItem[] = [
     @media (max-width: 920px) {
       .cust-topnav { height: 64px; padding: 0 16px; gap: 14px; }
       .nav { display: none; }
-      .search-city, .search-sep { display: none; }
+      .location-chip { display: none; }
       .account-text { display: none; }
       .brand-name { font-size: 24px; }
     }
@@ -182,6 +197,8 @@ export class CustTopNavComponent implements OnInit {
   @Input() userMeta = '';
   @Input() city = '';
   @Output() follow = new EventEmitter<BffLink>();
+
+  notifsOpen = false;
 
   readonly navItems = NAV_ITEMS;
   readonly homeRoute = `${BASE}/`;
@@ -199,12 +216,17 @@ export class CustTopNavComponent implements OnInit {
     private http: HttpClient,
     private auth: BeautyAuthService,
     private cdr: ChangeDetectorRef,
+    private searchSvc: BeautySearchService,
     @Inject(PLATFORM_ID) platformId: object,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
   }
 
   ngOnInit(): void {
+    if (!this.city && this.isBrowser) {
+      this.city = this.searchSvc.readProfileLocation();
+      this.cdr.markForCheck();
+    }
     // Use an explicit @Input override when given; otherwise self-fetch so the
     // avatar shows the real person on every signed-in page.
     if (!this.signedIn || this.userName || !this.isBrowser) return;
@@ -240,5 +262,23 @@ export class CustTopNavComponent implements OnInit {
 
   goRoute(screen: string, route: string): void {
     this.follow.emit({ rel: screen, href: null, method: 'NAV', screen, route, prompt: null });
+  }
+
+  toggleNotifs(ev: Event): void {
+    ev.stopPropagation();  // don't let the document handler immediately re-close it
+    this.notifsOpen = !this.notifsOpen;
+  }
+
+  @HostListener('document:click')
+  closeNotifs(): void {
+    if (this.notifsOpen) {
+      this.notifsOpen = false;
+      this.cdr.markForCheck();
+    }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeNotifs();
   }
 }

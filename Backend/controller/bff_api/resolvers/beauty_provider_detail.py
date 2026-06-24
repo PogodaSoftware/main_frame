@@ -187,16 +187,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                             prompt='Book', params={'serviceId': s.id},
                         ),
                         # POST favorite / DELETE unfavorite — same href.
-                        'favorite': h.link(
-                            rel='favorite',
-                            href=f'/api/beauty/protected/services/{s.id}/favorite/',
-                            method='POST', prompt='Save',
-                        ),
-                        'unfavorite': h.link(
-                            rel='unfavorite',
-                            href=f'/api/beauty/protected/services/{s.id}/favorite/',
-                            method='DELETE', prompt='Unsave',
-                        ),
+                        **h.service_favorite_links(s.id),
                     },
                 }
                 for s in services

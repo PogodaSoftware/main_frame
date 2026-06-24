@@ -1,21 +1,40 @@
 """Locators for the Beauty home screen (`/pogoda/beauty`).
 
-The home page now requires authentication (beautyAuthGuard). Authenticated
-users see the carousel + map sections plus a 3-tab bottom nav. The brand-name
-button and user email badge that lived on the old home header have been
-removed. For unauthenticated visitors the route redirects to the welcome page.
+Redesigned home (BeautyMainComponent): root is `div.cust-home`, inner content
+in `main.home-main`. Authenticated users see:
+  - hero section (`section.hero`)
+  - category grid (`section.cats` > `div.cat-grid` > `button.cat`)
+  - studios-near-you row (`section.studios`) — presentational only, no BFF data
+  - map section (`section.map-row`)
+  - top nav (`header.cust-topnav` in app-cust-top-nav, with `nav.nav` > `button.nav-item`)
+
+There is NO bottom nav and NO carousel in the redesign.
+Unauthenticated visitors are redirected to the welcome page.
 """
 
-home_page_root = "css=div.beauty-app"
+home_page_root = "css=div.cust-home"
 
-# Carousel and map sections on home.
-services_section = "css=div.beauty-app section.services-section"
-services_carousel = "css=div.beauty-app .services-carousel"
-home_carousel = "css=[data-testid='home-carousel']"
-carousel_item = "css=div.beauty-app button.carousel-item"
-map_section = "css=div.beauty-app section.map-section"
+# Main content wrapper.
+home_main = "css=div.cust-home main.home-main"
 
-# Home page search bar (above the carousel).
+# Category section (BFF-driven services → `button.cat` tiles).
+# Replaces the old services_section / services_carousel / carousel_item.
+services_section = "css=div.cust-home section.cats"
+cat_grid = "css=div.cust-home .cat-grid"
+cat_item = "css=div.cust-home .cat-grid button.cat"
+
+# Map section.
+map_section = "css=div.cust-home section.map-row"
+
+# Studios-near-you row (presentational demo data, no BFF feed yet).
+studios_section = "css=div.cust-home section.studios"
+studio_card = "css=div.cust-home article.studio-card"
+
+# Filter chips inside the studios section.
+studio_filter_chip = "css=div.cust-home section.studios button.chip"
+active_studio_filter = "css=div.cust-home section.studios button.chip.is-active"
+
+# Home page search bar (projected into top-nav search slot via BeautyHomeSearchComponent).
 home_search_section = "css=[data-testid='home-search']"
 home_search_input = "css=[data-testid='home-search-input']"
 home_search_status = "css=[data-testid='home-search-status']"
@@ -31,18 +50,60 @@ home_pagination_next = "css=button.pagination-next, button[aria-label='Next page
 home_pagination_prev = "css=button.pagination-prev, button[aria-label='Previous page']"
 home_pagination_numbers = "css=.pagination, ul.pagination li"
 
-# Bottom nav (auth-only). Tabs in DOM order: bookings, home, profile.
-bottom_nav = "css=div.beauty-app nav.bottom-nav"
-nav_tab_bookings = "css=div.beauty-app nav.bottom-nav button.nav-tab >> text=Bookings"
-nav_tab_home = "css=div.beauty-app nav.bottom-nav button.nav-tab >> text=Home"
-nav_tab_profile = "css=div.beauty-app nav.bottom-nav button.nav-tab >> text=Profile"
-active_nav_tab = "css=div.beauty-app nav.bottom-nav button.nav-tab.is-active"
+# Top nav (auth-only, desktop sticky). Replaces the old bottom_nav.
+# Rendered by app-cust-top-nav → header.cust-topnav.
+# Labels: Discover / My bookings / Saved / Messages.
+top_nav = "css=header.cust-topnav"
+nav_item = "css=header.cust-topnav nav.nav button.nav-item"
+nav_tab_discover = "css=header.cust-topnav nav.nav button.nav-item:has-text('Discover')"
+nav_tab_bookings = "css=header.cust-topnav nav.nav button.nav-item:has-text('My bookings')"
+nav_tab_saved = "css=header.cust-topnav nav.nav button.nav-item:has-text('Saved')"
+nav_tab_messages = "css=header.cust-topnav nav.nav button.nav-item:has-text('Messages')"
+active_nav_item = "css=header.cust-topnav nav.nav button.nav-item.is-active"
 
-# Header CTA buttons appear only when the home BFF resolver returns
-# corresponding link rels (e.g. legacy unauthenticated render). Auth users no
-# longer see the header at all — these locators are kept so older feature
-# specs that exercise the unauth branch continue to compile.
-signin_button = "css=div.beauty-app .header-actions button.btn-login"
-signup_button = "css=div.beauty-app .header-actions button.btn-signup"
-business_login_button = "css=div.beauty-app .header-actions button.btn-business-login"
-signout_button = "css=div.beauty-app .header-actions button.btn-logout"
+# Notification bell + its dropdown panel (signed-in only).
+notif_bell = "css=header.cust-topnav button.bell"
+notif_panel = "css=header.cust-topnav .notif-panel"
+
+# Aliases kept so any step that referenced the old names still resolves.
+# Point at the new equivalents — bottom_nav pointed at the old mobile nav;
+# now the nearest equivalent is the top nav header.
+bottom_nav = top_nav
+nav_tab_home = nav_tab_discover
+
+# Profile entry point: the account button (avatar + name) in the top nav.
+# Replaces the old bottom-nav profile tab.
+nav_tab_profile = "css=header.cust-topnav button.account"
+
+# Carousel aliases — the home carousel was replaced by the category grid.
+# Steps that clicked carousel_item / home_carousel to start a booking flow
+# should now click a cat_item tile. Aliased here so imports don't break;
+# update the step logic if the intent was to pick a specific category.
+carousel_item = cat_item
+home_carousel = cat_grid
+
+# Guest (signed-out) CTA buttons inside the top-nav.
+signin_button = "css=header.cust-topnav button.btn.btn--secondary"
+signup_button = "css=header.cust-topnav button.btn.btn--primary"
+# business_login_button: no dedicated business-login button in the new nav.
+business_login_button = "css=header.cust-topnav button.btn.btn--primary"
+# signout_button: no explicit sign-out button in the topnav (profile menu).
+signout_button = "css=header.cust-topnav .account"
+
+# ---------------------------------------------------------------------------
+# Location chip (Fix 1 + Fix 3)
+# After redesign, .location-chip is a DIRECT CHILD of header.cust-topnav —
+# a SIBLING of .search, not a descendant.  Contains .search-sep and
+# .search-city spans (which must NOT exist inside .search anymore).
+# ---------------------------------------------------------------------------
+location_chip = "css=header.cust-topnav .location-chip"
+# Negative selector: these children must be absent from inside .search pill.
+search_sep_inside_search = "css=header.cust-topnav .search .search-sep"
+search_city_inside_search = "css=header.cust-topnav .search .search-city"
+
+# ---------------------------------------------------------------------------
+# Search pill width fix
+# The projected search fills the pill (native ✕ flush-right) and the
+# results/empty dropdown spans the pill width, not a fixed 440px.
+# ---------------------------------------------------------------------------
+search_pill = "css=header.cust-topnav .search"

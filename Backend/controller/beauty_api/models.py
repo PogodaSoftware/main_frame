@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import make_password
 class BeautyUser(models.Model):
     email = models.EmailField(unique=True)
     password = models.CharField(max_length=255)
+    city = models.CharField(max_length=128, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
     is_suspended = models.BooleanField(default=False)
     suspended_at = models.DateTimeField(null=True, blank=True)
@@ -105,6 +106,12 @@ class BeautyProvider(models.Model):
     long_description = models.TextField(blank=True, default='')
     location_label = models.CharField(max_length=255, blank=True, default='')
     business_provider_id = models.IntegerField(null=True, blank=True)
+    # Canonical IANA timezone (e.g. "America/New_York") the storefront's
+    # recurring weekly hours are expressed in. Booking instants stay UTC; this
+    # anchors the wall-clock -> UTC conversion (DST-correct via zoneinfo).
+    # Blank = not explicitly set: resolve_timezone() then derives from
+    # location_label. Auto-detected from the provider's device at onboarding.
+    timezone = models.CharField(max_length=64, blank=True, default='')
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

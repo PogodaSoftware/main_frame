@@ -14,92 +14,79 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 import { BffLink } from '../beauty-bff.types';
-import {
-  AdmStatusBarComponent,
-  AdmHomeIndicatorComponent,
-  AdmBrandRowComponent,
-  AdmBtnComponent,
-} from './atoms';
+import { BeautyAdminWebAuthLayoutComponent } from '../admin-web/admin-web-auth-layout.component';
 
 @Component({
   selector: 'app-admin-portal-2fa',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    AdmStatusBarComponent,
-    AdmHomeIndicatorComponent,
-    AdmBrandRowComponent,
-    AdmBtnComponent,
-  ],
+  imports: [CommonModule, FormsModule, BeautyAdminWebAuthLayoutComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="adm-app adm-2fa">
-      <adm-status-bar tone="slate"></adm-status-bar>
+    <app-admin-web-auth-layout
+      eyebrow="Two-factor authentication"
+      title="One more step."
+      sub="Enter the 6-digit code from your authenticator app. Codes refresh every 30 seconds."
+      footerNote="Lost your authenticator? Use a backup code or magic-link sign-in.">
+      <div class="aw-card">
+        <h2 class="aw-h2">Enter your code</h2>
+        <div class="aw-cardsub">From Authy, 1Password, or your provisioned authenticator.</div>
 
-      <section class="hero">
-        <adm-brand-row></adm-brand-row>
-        <div class="eyebrow adm-eyebrow">Step 2 of 2</div>
-        <h1 class="title adm-display">Verify it's you</h1>
-        <p class="sub">Open your authenticator app and enter the 6-digit code for Beauty Admin.</p>
-      </section>
-
-      <main class="body" role="main">
         <div class="digits" role="group" aria-label="6-digit verification code">
           <label class="sr-only" for="totp-input">Verification code</label>
           <input id="totp-input" #totpInput class="sr-only" inputmode="numeric" autocomplete="one-time-code"
                  maxlength="6" pattern="[0-9]{6}" [(ngModel)]="code"
                  (input)="onCode($event)" />
           <div class="cell" *ngFor="let i of cells; let idx = index"
+               [class.is-on]="digit(idx)"
                [class.is-focus]="idx === focusIndex"
-               (click)="totpInput.focus()">{{ digit(idx) }}</div>
+               (click)="totpInput.focus()">{{ digit(idx) || '·' }}</div>
         </div>
 
-        <div class="timer">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 2"/>
-          </svg>
-          <span>Code expires in <span class="mono">{{ countdown }}</span></span>
+        <div class="meta">
+          <span>Code expires in <span class="mono on">{{ countdown }}</span></span>
+          <a href="#" class="aw-link" (click)="onLink($event, 'magic')">Use backup code</a>
         </div>
 
-        <div class="server-err" role="alert" *ngIf="errorMessage">{{ errorMessage }}</div>
+        <div class="aw-err" role="alert" *ngIf="errorMessage">{{ errorMessage }}</div>
 
-        <adm-btn variant="slatePrimary" size="lg" [full]="true" type="button"
-                 [disabled]="code.length !== 6"
-                 (press)="onVerify()">Verify code →</adm-btn>
+        <button type="button" class="aw-primary" [disabled]="code.length !== 6" (click)="onVerify()">
+          Verify &amp; sign in
+        </button>
 
         <div class="recover">
-          Lost your authenticator?
-          <a href="#" (click)="onLink($event, 'recovery')">Use a recovery code</a>
-          or <a href="#" (click)="onLink($event, 'magic')">email a magic link</a>.
+          Not you? <a href="#" class="aw-link" (click)="onLink($event, 'back')">Back to sign-in</a>
         </div>
-      </main>
-
-      <adm-home-indicator tone="slate"></adm-home-indicator>
-    </div>
+      </div>
+    </app-admin-web-auth-layout>
   `,
   styles: [`
-    :host { display: block; min-height: 100dvh; background: var(--adm-slate); }
-    .adm-2fa { min-height: 100dvh; }
+    :host { display: block; min-height: 100dvh; }
+    * { box-sizing: border-box; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .aw-card { background: #fff; border: 1px solid #DCDCDF; border-radius: 14px; padding: 28px; font-family: 'Inter', system-ui, sans-serif; }
+    .aw-h2 { margin: 0 0 4px; font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.625rem; font-weight: 500; color: #0F1115; line-height: 1.1; }
+    .aw-cardsub { font-size: 0.75rem; color: #6B6F77; margin-bottom: 22px; }
 
-    .hero { padding: 20px 24px 24px; color: #fff; }
-    .hero .eyebrow { margin: 28px 0 8px; }
-    .hero .title { margin: 0; font-size: 32px; color: #fff; }
-    .hero .sub { margin-top: 8px; font-size: 13px; color: var(--adm-slate-muted); max-width: 320px; line-height: 1.5; }
+    .digits { display: flex; gap: 8px; margin-bottom: 14px; }
+    .cell {
+      flex: 1; height: 60px; border-radius: 10px; border: 1.5px solid #DCDCDF; background: #fff;
+      display: grid; place-items: center; font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      font-size: 1.625rem; font-weight: 600; color: #CFCFD3; line-height: 1; cursor: text;
+    }
+    .cell.is-on { color: #0F1115; border-color: #0F1115; }
+    .cell.is-focus { border-color: #0F1115; box-shadow: 0 0 0 2px rgba(15,17,21,0.12); }
 
-    .body { flex: 1; padding: 4px 24px 0; position: relative; }
+    .meta { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; font-size: 0.75rem; color: #6B6F77; font-family: ui-monospace, monospace; }
+    .meta .mono.on { color: #0F1115; font-weight: 700; }
+    .aw-link { color: #0F1115; font-weight: 600; text-decoration: none; cursor: pointer; font-family: 'Inter', system-ui, sans-serif; }
 
-    .digits { display: flex; gap: 8px; margin-bottom: 18px; }
-    .cell { width: 46px; height: 56px; background: var(--adm-slate-2); border: 1px solid var(--adm-slate-line); border-radius: 12px; display: grid; place-items: center; font-family: var(--adm-font-mono); font-size: 24px; font-weight: 600; color: #fff; line-height: 1; cursor: text; }
-    .cell.is-focus { background: #fff; border: 2px solid var(--adm-red); color: #0F1115; }
+    .aw-err { background: #FCE8E5; border: 1px solid rgba(178,58,45,0.30); color: #C0392B; border-radius: 10px; padding: 10px 12px; font-size: 0.8125rem; margin-bottom: 14px; }
 
-    .timer { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--adm-slate-2); border: 1px solid var(--adm-slate-line); border-radius: 10px; margin-bottom: 14px; color: var(--adm-slate-muted); font-size: 12px; }
-    .timer .mono { font-family: var(--adm-font-mono); color: #fff; font-weight: 600; }
+    .aw-primary { width: 100%; height: 48px; border-radius: 10px; background: #0F1115; color: #fff; border: 1px solid #0F1115; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+    .aw-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .aw-primary:not(:disabled):hover { background: #000; }
 
-    .server-err { background: rgba(178,58,45,0.12); border: 1px solid rgba(178,58,45,0.30); color: #FCC2B7; border-radius: 10px; padding: 10px 12px; font-size: 12px; margin-bottom: 14px; }
-
-    .recover { margin-top: 18px; font-size: 12px; color: var(--adm-slate-muted); line-height: 1.6; }
-    .recover a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+    .recover { text-align: center; margin-top: 14px; font-size: 0.75rem; color: #6B6F77; }
   `],
 })
 export class AdminPortal2FAComponent {

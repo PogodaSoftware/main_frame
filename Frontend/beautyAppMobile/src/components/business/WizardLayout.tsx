@@ -15,6 +15,7 @@ import Svg, { Path } from 'react-native-svg';
 import { beautyTokens } from '../../../tamagui.config';
 import { navigateLink } from '@/bff/linkAction';
 import type { BffEnvelope, BffLink } from '@/bff/types';
+import type { SaveState } from '@/hooks/useAutosave';
 
 const STEP_LABELS = ['About', 'Services', 'Payments', 'Hours', 'Tools', 'Review'];
 
@@ -34,6 +35,10 @@ export interface WizardLayoutProps<T extends WizardData> {
   continueDisabled?: boolean;
   continueLoading?: boolean;
   error?: string | null;
+  /** Live autosave state — renders a "Saving…/Saved" line above the footer. */
+  saveState?: SaveState;
+  /** Center the step title + subtitle (e.g. Services, Payments, Hours). */
+  centerTitle?: boolean;
 }
 
 export function WizardLayout<T extends WizardData>({
@@ -45,7 +50,14 @@ export function WizardLayout<T extends WizardData>({
   continueDisabled = false,
   continueLoading = false,
   error,
+  saveState = 'idle',
+  centerTitle = false,
 }: WizardLayoutProps<T>) {
+  const autosaveText =
+    saveState === 'saving' ? 'Saving…'
+    : saveState === 'saved' ? 'Saved'
+    : saveState === 'error' ? "Couldn't save"
+    : '';
   const router = useRouter();
   const progressRef = React.useRef<ScrollView>(null);
 
@@ -121,15 +133,31 @@ export function WizardLayout<T extends WizardData>({
       </View>
 
       <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        <View style={styles.titleBlock}>
-          <Text style={styles.title} testID="wizard-step-title">{step_title}</Text>
-          {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        <View style={[styles.titleBlock, centerTitle && styles.titleBlockCentered]}>
+          <Text style={[styles.title, centerTitle && styles.textCenter]} testID="wizard-step-title">{step_title}</Text>
+          {!!subtitle && <Text style={[styles.subtitle, centerTitle && styles.textCenter]}>{subtitle}</Text>}
         </View>
         {children}
         {!!error && (
           <Text style={styles.serverError} testID="wizard-error" accessibilityRole="alert">{error}</Text>
         )}
       </ScrollView>
+
+      {autosaveText ? (
+        <View style={styles.autosaveRow}>
+          <Text
+            style={[
+              styles.autosaveText,
+              saveState === 'saving' && styles.autosaveSaving,
+              saveState === 'error' && styles.autosaveError,
+            ]}
+            accessibilityLiveRegion="polite"
+            testID="wizard-autosave"
+          >
+            {autosaveText}
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.footerActions}>
         {prev ? (
@@ -228,9 +256,20 @@ const styles = StyleSheet.create({
   body: { flex: 1, backgroundColor: beautyTokens.surface },
   bodyContent: { padding: 16, paddingBottom: 28, gap: 14 },
   titleBlock: { gap: 4 },
+  titleBlockCentered: { alignItems: 'center' },
+  textCenter: { textAlign: 'center' },
   title: { fontFamily: beautyTokens.fontDisplay, fontSize: 26, fontWeight: '500', color: beautyTokens.text },
   subtitle: { fontSize: 12, color: beautyTokens.textMuted, lineHeight: 18, fontFamily: beautyTokens.fontBody },
   serverError: { color: beautyTokens.danger, fontSize: 13, fontFamily: beautyTokens.fontBody },
+
+  autosaveRow: {
+    paddingHorizontal: 16, paddingTop: 8,
+    alignItems: 'flex-end',
+    backgroundColor: '#FFFFFF',
+  },
+  autosaveText: { fontFamily: 'Menlo', fontSize: 11, color: beautyTokens.textMuted },
+  autosaveSaving: { color: beautyTokens.accentBlueText },
+  autosaveError: { color: beautyTokens.danger },
 
   footerActions: {
     flexDirection: 'row', gap: 10,

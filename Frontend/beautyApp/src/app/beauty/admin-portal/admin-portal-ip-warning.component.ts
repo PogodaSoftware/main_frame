@@ -10,82 +10,69 @@ import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from 
 import { CommonModule } from '@angular/common';
 
 import { BffLink } from '../beauty-bff.types';
-import {
-  AdmStatusBarComponent,
-  AdmHomeIndicatorComponent,
-  AdmBrandRowComponent,
-  AdmBtnComponent,
-} from './atoms';
+import { BeautyAdminWebAuthLayoutComponent } from '../admin-web/admin-web-auth-layout.component';
 
 @Component({
   selector: 'app-admin-portal-ip-warning',
   standalone: true,
-  imports: [
-    CommonModule,
-    AdmStatusBarComponent,
-    AdmHomeIndicatorComponent,
-    AdmBrandRowComponent,
-    AdmBtnComponent,
-  ],
+  imports: [CommonModule, BeautyAdminWebAuthLayoutComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="adm-app adm-ip">
-      <adm-status-bar tone="slate"></adm-status-bar>
-
-      <section class="header">
-        <adm-brand-row></adm-brand-row>
-      </section>
-
-      <main class="body" role="main">
-        <div class="warn-icon" aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#FFD27A" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 9v4M12 17h.01M10.3 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+    <app-admin-web-auth-layout
+      eyebrow="Access denied"
+      title="This network isn't allowlisted."
+      sub="Your IP is outside the corporate allowlist for the admin tool. Connect to the office network or the corporate VPN, then try again."
+      footerNote="Need temporary access? Ask an admin to add your IP in Team → IP allowlist.">
+      <div class="aw-card">
+        <div class="alert" role="alert">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#C0392B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2l10 18H2L12 2z"/><path d="M12 9v5M12 17h.01"/>
           </svg>
+          <div>
+            <div class="ahead">IP allowlist mismatch</div>
+            <div class="abody">We saw the request from <span class="mono">{{ yourIp }}</span>. This network is not on the allowlist (<span class="mono">{{ allowlist }}</span>).</div>
+          </div>
         </div>
 
-        <h1 class="title adm-display">This network isn't allowlisted</h1>
-        <p class="sub">
-          Admin sign-in is restricted to corporate networks. Connect through the
-          company VPN, or request a temporary exception from your security lead.
-        </p>
-
-        <div class="ip-block">
-          <div class="lbl">Your IP</div>
-          <div class="val">{{ yourIp }}</div>
-          <div class="lbl">Allowlist</div>
-          <div class="val">{{ allowlist }}</div>
+        <div class="net-grid">
+          <div class="net">
+            <div class="nlbl">CORP VPN</div>
+            <div class="nname">corp.beauty.io</div>
+            <div class="nsub">Recommended</div>
+          </div>
+          <div class="net">
+            <div class="nlbl">OFFICE WIFI</div>
+            <div class="nname">Beauty-Office</div>
+            <div class="nsub">203.0.113.0/24</div>
+          </div>
         </div>
 
-        <adm-btn variant="slatePrimary" size="lg" [full]="true" (press)="onVpn()">Connect to VPN</adm-btn>
-
-        <div class="exception">
-          <a href="#" (click)="onException($event)">Request exception →</a>
-        </div>
-      </main>
-
-      <adm-home-indicator tone="slate"></adm-home-indicator>
-    </div>
+        <button type="button" class="aw-primary" (click)="onVpn()">Retry on a new network</button>
+        <div class="exception"><a href="#" class="aw-link" (click)="onException($event)">Request exception →</a></div>
+      </div>
+    </app-admin-web-auth-layout>
   `,
   styles: [`
-    :host { display: block; min-height: 100dvh; background: var(--adm-slate); }
-    .adm-ip { min-height: 100dvh; }
+    :host { display: block; min-height: 100dvh; }
+    * { box-sizing: border-box; }
+    .aw-card { background: #fff; border: 1px solid #DCDCDF; border-radius: 14px; padding: 28px; font-family: 'Inter', system-ui, sans-serif; }
 
-    .header { padding: 20px 24px 0; }
+    .alert { background: #FCE8E5; color: #C0392B; border: 1px solid rgba(192,57,43,0.20); border-radius: 12px; padding: 20px; margin-bottom: 18px; display: flex; gap: 14px; align-items: flex-start; }
+    .alert svg { flex-shrink: 0; margin-top: 2px; }
+    .ahead { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.25rem; font-weight: 500; margin-bottom: 4px; }
+    .abody { font-size: 0.75rem; line-height: 1.55; }
+    .mono { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-weight: 700; }
 
-    .body { flex: 1; padding: 0 24px; display: flex; flex-direction: column; justify-content: center; color: #fff; }
+    .net-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+    .net { background: #fff; border: 1px solid #DCDCDF; border-radius: 10px; padding: 14px; }
+    .nlbl { font-size: 0.5625rem; font-weight: 700; letter-spacing: 1.4px; color: #6B6F77; text-transform: uppercase; }
+    .nname { font-size: 0.875rem; font-weight: 600; margin-top: 4px; color: #0F1115; }
+    .nsub { font-family: ui-monospace, monospace; font-size: 0.625rem; color: #6B6F77; margin-top: 2px; }
 
-    .warn-icon { width: 64px; height: 64px; border-radius: 16px; background: rgba(255,196,0,0.12); border: 1px solid rgba(255,196,0,0.30); display: grid; place-items: center; margin-bottom: 20px; }
-
-    .title { margin: 0 0 10px; font-size: 28px; color: #fff; }
-    .sub { margin: 0 0 18px; font-size: 13px; color: var(--adm-slate-muted); line-height: 1.55; }
-
-    .ip-block { background: var(--adm-slate-2); border: 1px solid var(--adm-slate-line); border-radius: 12px; padding: 14px; margin-bottom: 14px; font-family: var(--adm-font-mono); font-size: 11px; }
-    .ip-block .lbl { color: var(--adm-slate-muted); margin-bottom: 4px; }
-    .ip-block .val { color: #fff; font-size: 13px; margin-bottom: 10px; }
-    .ip-block .val:last-child { margin-bottom: 0; }
-
-    .exception { margin-top: 12px; text-align: center; font-size: 12px; }
-    .exception a { color: #fff; text-decoration: underline; text-underline-offset: 3px; opacity: 0.85; }
+    .aw-primary { width: 100%; height: 48px; border-radius: 10px; background: #0F1115; color: #fff; border: 1px solid #0F1115; font-family: 'Inter', system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; }
+    .aw-primary:hover { background: #000; }
+    .exception { margin-top: 14px; text-align: center; font-size: 0.75rem; }
+    .aw-link { color: #0F1115; font-weight: 600; text-decoration: none; cursor: pointer; }
   `],
 })
 export class AdminPortalIpWarningComponent {

@@ -23,9 +23,17 @@ import { beautyTokens } from '../../tamagui.config';
 interface AvailabilityData {
   storefront?: { id: number; name: string };
   weekly_hours?: WeeklyHourRow[];
+  timezone?: string;
+  timezone_explicit?: boolean;
   submit_method?: string;
   submit_href?: string;
   badges?: { messages_unread?: number; bookings_unread?: number };
+}
+
+/** Device IANA timezone (Hermes Intl), or '' if unavailable. */
+function deviceTimezone(): string {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone || ''; }
+  catch { return ''; }
 }
 
 export default function BusinessAvailabilityScreen() {
@@ -64,7 +72,10 @@ export default function BusinessAvailabilityScreen() {
     setSaving(true);
     setMessage(null);
     try {
-      await putWeeklyHours(href, rows);
+      // Auto-detect: adopt this device's zone only when the storefront has
+      // no explicit timezone yet, so we never clobber a web-set choice.
+      const tz = env.data?.timezone_explicit ? undefined : (deviceTimezone() || undefined);
+      await putWeeklyHours(href, rows, tz);
       setMessage({ text: 'Saved.', isError: false });
     } catch (err: any) {
       setMessage({
@@ -80,8 +91,12 @@ export default function BusinessAvailabilityScreen() {
   const badges = env?.action === 'render' ? (env.data?.badges ?? {}) : {};
 
   const goBack = () => {
+    // Pop to wherever we came from (Services, Dashboard, …) instead of
+    // always jumping to the dashboard. Fall back to home on a fresh stack
+    // (e.g. deep-link entry) where there's nothing to pop.
+    if (router.canGoBack()) { router.back(); return; }
     const link = links['business_home'];
-    if (link) navigateLink(router, link);
+    if (link) navigateLink(router, link, { replace: true });
     else router.replace('/business/home' as any);
   };
 
@@ -111,7 +126,7 @@ export default function BusinessAvailabilityScreen() {
     <BeautyShell>
       <Stack.Screen options={{ headerShown: false }} />
       <ProvSubHeader
-        back="Dashboard"
+        back="Back"
         title="Weekly hours"
         onBackPress={goBack}
         right={

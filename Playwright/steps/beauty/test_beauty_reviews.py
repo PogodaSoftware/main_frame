@@ -50,6 +50,7 @@ from .beauty_utils import (
     delete_test_users,
     login_business_via_api,
 )
+from Playwright.Hooks.hooks import goto_route
 
 import pytest
 
@@ -197,6 +198,16 @@ def resource_bag():
         'service_id': None,
         'last_status': None,
     }
+    # Pristine baseline: the shared "Glow Facial Studio" provider accumulates
+    # stray reviews across runs (and the dev seed has duplicate Glow rows). Wipe
+    # all reviews on it so r1 sees the empty state and r2/r4/r6 are deterministic.
+    try:
+        _shell(
+            "from beauty_api.models import BeautyReview; "
+            f"BeautyReview.objects.filter(service__provider__name='{GLOW_PROVIDER_NAME}').delete()"
+        )
+    except Exception:
+        pass
     yield bag
     try:
         if bag['customer_email']:
@@ -304,8 +315,12 @@ def given_business_owns_glow(page, resource_bag):
 def when_visit_provider(page, resource_bag):
     provider_id = resource_bag.get('provider_id') or _get_provider_id(GLOW_PROVIDER_NAME)
     resource_bag['provider_id'] = provider_id
-    page.goto(f"http://localhost:4200/pogoda/beauty/providers/{provider_id}")
+    goto_route(page, 'beauty_provider', id=provider_id)
     page.wait_for_timeout(1500)
+    # Provider detail is tabbed (services default); the reviews section only
+    # renders under the Reviews tab. Activate it so review assertions resolve.
+    page.locator("button.tab", has_text="Reviews").first.click()
+    page.wait_for_timeout(500)
 
 
 @when('the customer clicks Leave-a-review')
@@ -369,7 +384,7 @@ def when_customer_delete(page):
 @when('the business visits the Customer reviews page')
 def when_business_visits_reviews(page, resource_bag):
     attach_business_session_cookie(page, resource_bag['business_cookie'])
-    page.goto("http://localhost:4200/pogoda/beauty/business/reviews")
+    goto_route(page, 'beauty_business_reviews')
     page.wait_for_timeout(1500)
 
 
@@ -391,6 +406,7 @@ def then_reviews_section_visible(page):
 
 @then('the reviews-empty state should be visible')
 def then_reviews_empty(page):
+    _activate_reviews_tab(page)
     expect(page.locator(reviews_empty)).to_be_visible()
 
 
@@ -399,9 +415,19 @@ def then_no_leave_review(page):
     assert page.locator(leave_review_btn).count() == 0
 
 
+def _activate_reviews_tab(page):
+    """Provider detail resets to the services tab on (re)load; click Reviews so
+    review cards / empty-state become visible."""
+    tab = page.locator("button.tab", has_text="Reviews")
+    if tab.count():
+        tab.first.click()
+        page.wait_for_timeout(500)
+
+
 @then('the customer should land on the Glow Facial Studio provider page')
 def then_back_on_provider(page, resource_bag):
     expect(page).to_have_url(re.compile(rf"/providers/{resource_bag['provider_id']}(?:[/?#].*)?$"))
+    _activate_reviews_tab(page)
 
 
 @then(parsers.parse('a review card with text "{needle}" should be visible'))

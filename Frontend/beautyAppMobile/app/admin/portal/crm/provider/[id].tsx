@@ -52,6 +52,7 @@ interface ProviderData {
   has_active_booking: boolean;
   attached_tags: DetailTag[];
   suggested_tags: DetailTag[];
+  available_tags: DetailTag[];
   performance: PerfStat[];
   services: ServiceItem[];
   payouts: Payout[];
@@ -110,6 +111,8 @@ export default function AdminProviderDetail() {
   const [noteError, setNoteError] = useState<string | null>(null);
   const [noteSaved, setNoteSaved] = useState(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [tagPickerOpen, setTagPickerOpen] = useState(false);
+  const [tagSearch, setTagSearch] = useState('');
 
   const load = useCallback(async () => {
     setError(null);
@@ -407,7 +410,7 @@ export default function AdminProviderDetail() {
           <View style={styles.sec}>
             <View style={styles.secHead}>
               <Text style={styles.secTitle}>Tags</Text>
-              <Pressable onPress={onManageTags}><Text style={styles.action}>Manage →</Text></Pressable>
+              <Pressable onPress={onManageTags}><Text style={styles.action}>Manage tags →</Text></Pressable>
             </View>
             <Text style={styles.secSub}>Admin-only · filter via CRM</Text>
             <AdmCard padding={12}>
@@ -429,8 +432,17 @@ export default function AdminProviderDetail() {
                     <Text style={[styles.tchipX, { color: t.color }]}>×</Text>
                   </Pressable>
                 ))}
-                <Pressable style={styles.addTag} onPress={onManageTags}>
-                  <Text style={styles.addTagText}>+ Add tag</Text>
+                <Pressable
+                  style={[styles.addTag, tagPickerOpen && styles.addTagActive]}
+                  onPress={() => {
+                    setTagPickerOpen((v) => !v);
+                    setTagSearch('');
+                  }}
+                  accessibilityLabel="Open tag picker"
+                >
+                  <Text style={[styles.addTagText, tagPickerOpen && { color: admTokens.text }]}>
+                    {tagPickerOpen ? '× Close' : '+ Add tag'}
+                  </Text>
                 </Pressable>
               </View>
               <View style={[styles.grpHead, { marginTop: 4 }]}>
@@ -452,6 +464,53 @@ export default function AdminProviderDetail() {
                 ))}
               </View>
             </AdmCard>
+
+            {tagPickerOpen ? (
+              <View style={styles.tagPicker}>
+                <TextInput
+                  style={styles.tagPickerSearch}
+                  value={tagSearch}
+                  onChangeText={setTagSearch}
+                  placeholder="Search tags…"
+                  placeholderTextColor={admTokens.textMuted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                />
+                {(() => {
+                  const q = tagSearch.toLowerCase();
+                  const filtered = (data.available_tags ?? []).filter((t) =>
+                    t.label.toLowerCase().includes(q)
+                  );
+                  if (filtered.length === 0) {
+                    return (
+                      <Text style={styles.tagPickerEmpty}>
+                        {tagSearch ? 'No tags match.' : 'All tags are already attached.'}
+                      </Text>
+                    );
+                  }
+                  return (
+                    <View style={styles.tagPickerList}>
+                      {filtered.map((t) => (
+                        <Pressable
+                          key={t.id}
+                          onPress={() => {
+                            onAssignTag(t.id);
+                            setTagPickerOpen(false);
+                            setTagSearch('');
+                          }}
+                          accessibilityLabel={`Attach tag ${t.label}`}
+                          style={[styles.tchip, { backgroundColor: t.tone, borderColor: t.color + '33' }]}
+                        >
+                          <View style={[styles.tchipDot, { backgroundColor: t.color }]} />
+                          <Text style={[styles.tchipText, { color: t.color }]}>{t.label}</Text>
+                          <Text style={[styles.tchipPlus, { color: t.color }]}>+</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  );
+                })()}
+              </View>
+            ) : null}
           </View>
 
           {/* Performance */}
@@ -745,7 +804,34 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: admTokens.line,
   },
+  addTagActive: {
+    backgroundColor: admTokens.surface,
+    borderStyle: 'solid',
+    borderColor: admTokens.text,
+  },
   addTagText: { fontSize: 11, color: admTokens.textMuted },
+  tagPicker: {
+    marginTop: 8,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: admTokens.line,
+    borderRadius: 12,
+    padding: 10,
+  },
+  tagPickerSearch: {
+    backgroundColor: admTokens.surface,
+    borderWidth: 1,
+    borderColor: admTokens.line,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    fontSize: 12,
+    color: admTokens.text,
+    marginBottom: 10,
+  },
+  tagPickerList: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  tagPickerEmpty: { fontSize: 11, color: admTokens.textMuted, textAlign: 'center', paddingVertical: 8 },
+  tchipPlus: { marginLeft: 2, fontSize: 11, fontFamily: admTokens.fontMono, opacity: 0.8 },
   tsug: {
     flexDirection: 'row',
     alignItems: 'center',

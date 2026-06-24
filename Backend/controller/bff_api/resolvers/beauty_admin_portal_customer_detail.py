@@ -2,52 +2,19 @@
 Beauty Admin Portal — Customer detail resolver
 """
 
-from datetime import datetime, timezone
 from decimal import Decimal
 
 from django.db.models import Count, Sum
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
+from beauty_api import chat_service
 from beauty_api.models import (
     BeautyAdminAuditEvent, BeautyAdminNote, BeautyAdminTag, BeautyAdminTagAssignment,
     BeautyAdminTicket, BeautyBooking, BeautySession, BeautyUser,
 )
-from ..services.auth_service import get_authenticated_user
+from beauty_api.middleware import SESSION_COOKIE_NAME
 from ..services import hateoas_service as h
-
-
-def _humanize_dt(dt) -> str:
-    if not dt:
-        return '—'
-    return dt.strftime('%b %-d, %Y') if hasattr(dt, 'strftime') else str(dt)
-
-
-def _humanize_relative(dt) -> str:
-    if not dt:
-        return '—'
-    delta = datetime.now(timezone.utc) - dt
-    s = int(delta.total_seconds())
-    if s < 60:
-        return 'just now'
-    if s < 3600:
-        return f'{s // 60}m ago'
-    if s < 86400:
-        return f'{s // 3600}h ago'
-    return f'{s // 86400}d ago'
-
-
-_MONTH_ABBR = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
-_WEEKDAY_ABBR = ['MON','TUE','WED','THU','FRI','SAT','SUN']
-
-
-def _date_parts(dt) -> dict:
-    if not dt:
-        return {'mon': '—', 'day': 0, 'weekday': '—'}
-    return {
-        'mon': _MONTH_ABBR[dt.month - 1],
-        'day': dt.day,
-        'weekday': _WEEKDAY_ABBR[dt.weekday()],
-    }
+from ..services.auth_service import get_authenticated_user
+from ._admin_datetime import date_parts as _date_parts, humanize_dt as _humanize_dt, humanize_relative as _humanize_relative
 
 
 def _status_to_chip(status: str) -> str:
@@ -212,6 +179,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         ],
     }
 
+    has_thread = chat_service.has_messageable_thread('customer', target.id)
+
     return {
         'action': 'render',
         'screen': 'beauty_admin_portal_customer_detail',
@@ -238,6 +207,13 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                     assignments__user_id=target.id,
                 ).order_by('label')[:4]
             ],
+            'available_tags': [
+                {'id': t.slug, 'label': t.label, 'color': t.color, 'tone': t.tone}
+                for t in BeautyAdminTag.objects.exclude(
+                    assignments__user_type='customer',
+                    assignments__user_id=target.id,
+                ).order_by('label')
+            ],
             'lifetime_stats': lifetime_stats,
             'bookings': bk_rows,
             'total_bookings': total_bookings,
@@ -253,7 +229,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 }
                 for n in BeautyAdminNote.objects.filter(target_type='customer', target_id=target.id).order_by('-created_at')[:25]
             ],
-            'has_active_booking': BeautyBooking.objects.filter(customer_id=target.id).exclude(status__in=BeautyBooking.CANCELLED_STATUSES).exists(),
+            'has_active_booking': has_thread,
+            'has_messageable_thread': has_thread,
             'risk_score': risk_score,
             'risk_label': risk_label,
             'tab_badges': h.admin_tab_badges(),

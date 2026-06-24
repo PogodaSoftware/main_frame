@@ -156,7 +156,9 @@ def auth_customer_with_booking(page, test_customer, chat_business, chat_booking)
 def auth_business_chats(page, chat_business, test_customer, chat_booking):
     cookie = login_business_via_api(chat_business["email"], chat_business["password"])
     attach_business_session_cookie(page, cookie)
-    goto_route(page, 'beauty_chats')
+    # Business chat lives in the provider portal (/business/messages) — the
+    # customer /chats route is bounced to /business by beautyAuthGuard.
+    goto_route(page, 'beauty_business_messages')
     timeout_for_testing(page)
     page.evaluate(f"window.__chatBookingId = {chat_booking}")
 
@@ -169,11 +171,19 @@ def auth_customer_with_past(page, test_customer, chat_business, chat_booking_pas
 
 
 @when("the customer opens the chat thread for that booking")
-@when("the business opens the chat thread for that booking")
 def open_chat(page):
     booking_id = page.evaluate("window.__chatBookingId")
     page.locator(thread_card(int(booking_id))).click()
     page.wait_for_url("**/chats/**", timeout=10_000)
+    timeout_for_testing(page)
+
+
+@when("the business opens the chat thread for that booking")
+def open_chat_business(page):
+    # Provider Messages is a two-pane inbox: clicking a conversation loads the
+    # thread in the right pane (no navigation). One fresh booking → one convo.
+    page.locator("css=button.convo").first.click()
+    expect(page.locator("css=input.composer-input")).to_be_visible()
     timeout_for_testing(page)
 
 
@@ -186,8 +196,9 @@ def customer_send_msg(page):
 
 @when('the business types "Yes, see you Saturday" and clicks send')
 def business_send_msg(page):
-    page.locator(input_box).fill("Yes, see you Saturday")
-    page.locator(send_button).click()
+    # Provider Messages composer (two-pane), not the customer chat-thread input.
+    page.locator("css=input.composer-input").fill("Yes, see you Saturday")
+    page.locator("css=button.send-btn").click()
     timeout_for_testing(page)
 
 

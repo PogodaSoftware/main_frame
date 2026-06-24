@@ -17,3 +17,9 @@ Feature: Beauty Welcome Page Validation
     Given I navigate to the beauty welcome page
     When I click the welcome create account button
     Then I should land on the beauty signup page
+
+  # Responsive: mobile (390px) must not scroll sideways and CTAs go full-width.
+  Scenario: Welcome page is responsive on a mobile viewport
+    Given I view the beauty welcome page at a 390px mobile width
+    Then the welcome page should not scroll horizontally
+    And the welcome sign in button should span the mobile content width

@@ -92,6 +92,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'action': 'render',
         'screen': 'beauty_business_service_form',
         'data': {
+            'business': {
+                'email': business.email,
+                'business_name': business.business_name,
+            },
+            'storefront': {'id': storefront.id, 'name': storefront.name},
             'is_edit': is_edit,
             'service_id': svc.id if svc else None,
             'form': form,
