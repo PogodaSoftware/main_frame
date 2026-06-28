@@ -1,12 +1,12 @@
 Feature: Beauty Authentication Flow
 
-  Scenario: A new user signs up and lands back on the welcome page
+  Scenario: A new user signs up and is logged in on the home page
     Given I prepare fresh signup credentials
     And I navigate to the beauty signup page
     When I fill in the signup email and password
     And I submit the signup form
-    Then I should be on the beauty welcome page after signup
-    And the welcome sign in button should be visible after signup
+    Then I should be on the beauty home page after signup
+    And the bottom nav should be visible after signup
 
   Scenario: A registered user logs in with valid credentials
     Given a test customer account exists for login

@@ -22,6 +22,7 @@ from Playwright.pages.pogoda.beauty.admin_portal_bookings_ledger_page import (
     bl_chips,
     bl_root,
     bl_rows,
+    bl_sort,
 )
 from .beauty_utils import (
     BACKEND_URL,
@@ -103,6 +104,25 @@ def shows_rows(page):
 def click_cancelled(page):
     page.locator(bl_chips, has_text="Cancelled").first.click()
     page.wait_for_timeout(1200)  # stale-while-revalidate refetch (no navigation)
+
+
+@when('I click the "Pending" status chip')
+def click_pending(page):
+    page.locator(bl_chips, has_text="Pending").first.click()
+    page.wait_for_timeout(1200)  # stale-while-revalidate refetch (no navigation)
+
+
+@then("the Sort control should sit on the same row as the status chips")
+def sort_inline_with_chips(page):
+    chips = page.locator(bl_chips)
+    first = chips.first.bounding_box()
+    last = chips.last.bounding_box()
+    sort_box = page.locator(bl_sort).bounding_box()
+    assert first and last and sort_box
+    # All status chips on a single row (no internal wrap).
+    assert abs(first["y"] - last["y"]) <= 4, f"chips wrapped: first y={first['y']} last y={last['y']}"
+    # Sort sits on that same row, not dropped to a line below (the regression).
+    assert abs(sort_box["y"] - first["y"]) <= 8, f"Sort not inline: sort y={sort_box['y']} chips y={first['y']}"
 
 
 @then("the visible rows should equal the real cancelled-booking count")

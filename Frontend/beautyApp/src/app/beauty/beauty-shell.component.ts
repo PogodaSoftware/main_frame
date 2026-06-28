@@ -64,19 +64,11 @@ import { BeautyBusinessProfileComponent } from './beauty-business-profile.compon
 import { BeautyBusinessEmailContactComponent } from './beauty-business-email-contact.component';
 import { BeautyProviderNewMessageToastComponent } from './provider/beauty-provider-new-message-toast.component';
 import { BeautyProviderToastService, ToastPayload } from './provider/beauty-provider-toast.service';
-import {
-  AdminFlag,
-  AdminFlagAuditEntry,
-  BeautyAdminFlagsComponent,
-  FlagToggleEvent,
-} from './beauty-admin-flags.component';
-import { BeautyAdminCrmComponent } from './beauty-admin-crm.component';
 import { AdminPortalSignInComponent } from './admin-portal/admin-portal-signin.component';
 import { AdminPortal2FAComponent } from './admin-portal/admin-portal-2fa.component';
 import { AdminPortalMagicLinkComponent } from './admin-portal/admin-portal-magic.component';
 import { AdminPortalIpWarningComponent } from './admin-portal/admin-portal-ip-warning.component';
 import { AdminPortalDashboardComponent } from './admin-portal/admin-portal-dashboard.component';
-import { AdminPortalDashboardV2Component } from './admin-portal/admin-portal-dashboard-v2.component';
 import { AdminPortalCrmListComponent } from './admin-portal/admin-portal-crm-list.component';
 import { AdminPortalTagManagerComponent } from './admin-portal/admin-portal-tag-manager.component';
 import { AdminPortalSuspendConfirmComponent } from './admin-portal/admin-portal-suspend-confirm.component';
@@ -87,6 +79,7 @@ import { AdminPortalBookingDetailComponent } from './admin-portal/admin-portal-b
 import { AdminPortalTicketsComponent } from './admin-portal/admin-portal-tickets.component';
 import { AdminPortalTeamComponent } from './admin-portal/admin-portal-team.component';
 import { AdminPortalAuditLogComponent } from './admin-portal/admin-portal-audit.component';
+import { AdminPortalFlagsComponent } from './admin-portal/admin-portal-flags.component';
 import { BffLink, BffResponse } from './beauty-bff.types';
 
 @Component({
@@ -102,14 +95,11 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBusinessApplicationComponent,
     BeautyBusinessHomeComponent,
     BeautyWireframeComponent,
-    BeautyAdminFlagsComponent,
-    BeautyAdminCrmComponent,
     AdminPortalSignInComponent,
     AdminPortal2FAComponent,
     AdminPortalMagicLinkComponent,
     AdminPortalIpWarningComponent,
     AdminPortalDashboardComponent,
-    AdminPortalDashboardV2Component,
     AdminPortalCrmListComponent,
     AdminPortalTagManagerComponent,
     AdminPortalSuspendConfirmComponent,
@@ -120,6 +110,7 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     AdminPortalTicketsComponent,
     AdminPortalTeamComponent,
     AdminPortalAuditLogComponent,
+    AdminPortalFlagsComponent,
     BeautyCategoryComponent,
     BeautyProviderDetailComponent,
     BeautyBookComponent,
@@ -196,23 +187,6 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         (followLink)="followLink($event)"
       />
       <app-beauty-wireframe *ngIf="bffResponse!.screen === 'beauty_wireframe'" />
-      <app-beauty-admin-flags
-        *ngIf="bffResponse!.screen === 'beauty_admin_flags'"
-        [flags]="adminFlags"
-        [audit]="adminAudit"
-        [adminEmail]="adminEmail"
-        [busyKey]="busyFlagKey"
-        [links]="bffResponse!._links ?? {}"
-        (toggleFlag)="onFlagToggle($event)"
-        (followLink)="followLink($event)"
-        (goHomeRequested)="goHome()"
-      />
-      <app-beauty-admin-crm
-        *ngIf="bffResponse!.screen === 'beauty_admin_crm'"
-        [data]="bffResponse!.data ?? {}"
-        [links]="bffResponse!._links ?? {}"
-        (followLink)="followLink($event)"
-      />
       <app-admin-portal-signin
         *ngIf="bffResponse!.screen === 'beauty_admin_portal_signin'"
         [data]="bffResponse!.data ?? {}"
@@ -244,12 +218,6 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-admin-portal-dashboard
         *ngIf="bffResponse!.screen === 'beauty_admin_portal_dashboard'"
-        [data]="bffResponse!.data ?? {}"
-        [links]="bffResponse!._links ?? {}"
-        (followLink)="followLink($event)"
-      />
-      <app-admin-portal-dashboard-v2
-        *ngIf="bffResponse!.screen === 'beauty_admin_portal_dashboard_v2'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
@@ -329,6 +297,12 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-admin-portal-audit
         *ngIf="bffResponse!.screen === 'beauty_admin_portal_audit'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-flags
+        *ngIf="bffResponse!.screen === 'beauty_admin_flags'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
@@ -488,11 +462,6 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
   isLoading = true;
   serverError = false;
 
-  // Admin-flags screen state — populated whenever the BFF returns it.
-  adminFlags: AdminFlag[] = [];
-  adminAudit: AdminFlagAuditEntry[] = [];
-  adminEmail: string | null = null;
-  busyFlagKey: string | null = null;
   @ViewChild('adminPortalCustomerDetail') adminPortalCustomerDetailRef?: AdminPortalCustomerDetailComponent;
   @ViewChild('adminPortalProviderDetail') adminPortalProviderDetailRef?: AdminPortalProviderDetailComponent;
   @ViewChild('adminPortalTickets') adminPortalTicketsRef?: AdminPortalTicketsComponent;
@@ -642,7 +611,6 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_business_application_review: '/business/apply/review',
     beauty_wireframe: '/wireframe',
     beauty_admin_flags: '/admin/flags',
-    beauty_admin_crm: '/admin/crm',
     beauty_admin_portal_signin: '/admin/portal/signin',
     beauty_admin_portal_2fa: '/admin/portal/2fa',
     beauty_admin_portal_magic: '/admin/portal/magic',
@@ -693,28 +661,6 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     }
     // Last resort: re-resolve the current screen.
     this.retry();
-  }
-
-  /** Called by the admin-flags child when the user clicks a toggle. */
-  onFlagToggle(event: FlagToggleEvent): void {
-    if (this.busyFlagKey) return;
-    this.busyFlagKey = event.body.key;
-
-    this.authService.follow(event.link, event.body).subscribe({
-      next: () => {
-        this.busyFlagKey = null;
-        // Re-resolve so we render the freshly-saved value AND a new audit row.
-        this.retry();
-      },
-      error: () => {
-        this.busyFlagKey = null;
-        this.serverError = true;
-      },
-    });
-  }
-
-  goHome(): void {
-    this.router.navigateByUrl('/');
   }
 
   /** Submit handler for /admin/portal/signin — posts to the BFF submit link
@@ -905,12 +851,6 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
 
   private applyResponse(response: BffResponse): void {
     this.isLoading = false;
-    if (response.action === 'render' && response.screen === 'beauty_admin_flags') {
-      const data = (response.data ?? {}) as Record<string, unknown>;
-      this.adminFlags = (data['flags'] as AdminFlag[]) ?? [];
-      this.adminAudit = (data['audit'] as AdminFlagAuditEntry[]) ?? [];
-      this.adminEmail = (data['admin_email'] as string) ?? null;
-    }
     if (response.action === 'redirect') {
       const target = response._links?.['target'];
       if (target) {

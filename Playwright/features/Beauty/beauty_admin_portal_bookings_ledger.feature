@@ -13,6 +13,11 @@ Feature: Beauty Admin Portal — Bookings ledger (desktop)
     When I click the "Cancelled" status chip
     Then the visible rows should equal the real cancelled-booking count
 
+  Scenario: The Sort control stays inline with the status chips on All and Pending
+    Then the Sort control should sit on the same row as the status chips
+    When I click the "Pending" status chip
+    Then the Sort control should sit on the same row as the status chips
+
   Scenario: A row opens the desktop booking detail and Back returns to the desktop ledger
     When I click the first booking row
     Then the desktop booking detail should open
