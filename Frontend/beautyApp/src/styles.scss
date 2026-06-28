@@ -126,7 +126,9 @@ html, body {
 .cust-auth .signup-title { font-size: 38px !important; margin-top: 0 !important; margin-bottom: 8px !important; }
 .cust-auth .login-subtitle,
 .cust-auth .signup-subtitle { font-size: 14px !important; margin-bottom: 32px !important; }
-.cust-auth .form-input { height: 40px !important; }
+/* 40px inputs are a desktop-pane choice; on mobile let the component's 44px
+   touch-target height stand. */
+@media (min-width: 920px) { .cust-auth .form-input { height: 40px !important; } }
 .cust-auth .btn-login,
 .cust-auth .btn-continue {
   height: 44px !important;

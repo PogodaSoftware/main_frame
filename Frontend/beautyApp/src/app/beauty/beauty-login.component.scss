@@ -302,10 +302,10 @@
   font-family: var(--font-body);
   font-size: 0.8rem;
   font-weight: 600;
-  /* Enlarge tap target to ~32px without disturbing the footer row height
+  /* Enlarge tap target to ~40px without disturbing the footer row height
      (negative margin absorbs the padding). */
-  padding: 8px 4px;
-  margin: -8px 0;
+  padding: 12px 4px;
+  margin: -12px 0;
   text-decoration: none;
 
   &:hover { color: var(--accent-blue-deep); text-decoration: underline; text-underline-offset: 2px; }
