@@ -25,7 +25,7 @@ import { BffLink } from '../beauty-bff.types';
 
 export type AdminWebNav =
   | 'dashboard' | 'crm-customers' | 'crm-providers' | 'bookings'
-  | 'tickets' | 'audit' | 'team' | 'settings';
+  | 'tickets' | 'audit' | 'team' | 'settings' | 'flags';
 
 interface AdminNavDef {
   id: AdminWebNav;
@@ -76,6 +76,8 @@ const NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { id: 'team', label: 'Team & access', screen: 'beauty_admin_portal_team', route: '/admin/portal/team',
         icon: ICON('<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3z"/>') },
+      { id: 'flags', label: 'Feature flags', screen: 'beauty_admin_flags', route: '/admin/flags',
+        icon: ICON('<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/>') },
       { id: 'settings', label: 'Settings', screen: 'beauty_admin_portal_team', route: '/admin/portal/team',
         icon: ICON('<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3 1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8 1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>') },
     ],

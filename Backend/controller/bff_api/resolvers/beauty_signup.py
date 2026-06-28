@@ -34,6 +34,11 @@ _PRESENTATION = {
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
+    # Signup disabled by flag → bounce to welcome (don't serve the form on
+    # direct navigation; the entry-point links are already hidden elsewhere).
+    if not h.is_signup_enabled():
+        return h.redirect_envelope('beauty_welcome', 'signup_disabled')
+
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
 

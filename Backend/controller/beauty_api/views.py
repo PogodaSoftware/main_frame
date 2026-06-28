@@ -155,10 +155,19 @@ class SignUpView(APIView):
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            return Response(
+            device_id = (request.data.get('device_id') or '').strip()
+            response = Response(
                 {'message': 'Account created successfully.', 'email': user.email},
                 status=status.HTTP_201_CREATED,
             )
+            # Auto-login: bind a session cookie so the success link lands the
+            # new customer on an authenticated home (mirrors business signup).
+            if device_id:
+                payload = _make_cookie_payload(user.id, BeautySession.USER_TYPE_CUSTOMER, device_id)
+                signed_token = signing.dumps(payload)
+                _create_session(user.id, BeautySession.USER_TYPE_CUSTOMER, device_id, signed_token)
+                _set_auth_cookie(response, signed_token)
+            return response
         if _signup_duplicate_email(serializer):
             email = (request.data.get('email') or '').lower().strip()
             existing = find_existing_role(email)

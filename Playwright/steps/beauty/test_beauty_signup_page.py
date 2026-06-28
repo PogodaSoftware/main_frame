@@ -28,6 +28,33 @@ def verify_signup_page_visible(page):
     expect(page.locator(signup_page_root)).to_be_visible()
 
 
+@given("I view the beauty signup page at a 390px mobile width")
+def navigate_signup_mobile(page):
+    page.set_viewport_size({"width": 390, "height": 844})
+    selecting_different_routes(page, 'beauty_signup')
+    timeout_for_testing(page)
+
+
+@then("the signup page should not scroll horizontally")
+def signup_no_horizontal_scroll(page):
+    overflow = page.evaluate(
+        "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+    )
+    assert overflow <= 1, f"signup page scrolls horizontally by {overflow}px at 390px"
+
+
+@then("the signup submit button should span the mobile content width")
+def signup_submit_full_width(page):
+    w = page.locator(submit_button).bounding_box()["width"]
+    assert w >= 390 * 0.8, f"submit button only {w}px wide at 390px viewport"
+
+
+@then("the signup inputs should be at least 44px tall")
+def signup_inputs_tall(page):
+    h = page.locator(email_input).bounding_box()["height"]
+    assert h >= 43, f"signup input only {h}px tall at 390px (expected ~44px touch target)"
+
+
 @then(parsers.parse('the signup title should display "{title}"'))
 def verify_signup_title(page, title):
     expect(page.locator(signup_title)).to_have_text(title)

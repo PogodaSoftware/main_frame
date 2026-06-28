@@ -404,7 +404,6 @@ SCREEN_ROUTES = {
     'beauty_admin_portal_magic':       '/pogoda/beauty/admin/portal/magic',
     'beauty_admin_portal_ip_warning':  '/pogoda/beauty/admin/portal/ip-warning',
     'beauty_admin_portal_dashboard':   '/pogoda/beauty/admin/portal/dashboard',
-    'beauty_admin_portal_dashboard_v2':'/pogoda/beauty/admin/portal/dashboard/v2',
     'beauty_admin_portal_crm':         '/pogoda/beauty/admin/portal/crm',
     'beauty_admin_portal_tag_manager': '/pogoda/beauty/admin/portal/crm/tags',
     'beauty_admin_portal_suspend':     '/pogoda/beauty/admin/portal/crm/suspend/:type/:id',
@@ -746,5 +745,6 @@ def signup_form(
         'footer_links': footer_links or [],
         'error_status_map': {},
         'error_default': 'Please check your details and try again.',
-        'include_device_id': False,
+        # Send device_id so SignUpView can bind a session cookie (auto-login).
+        'include_device_id': True,
     }
