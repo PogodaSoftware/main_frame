@@ -74,20 +74,21 @@ interface StatusBucket { id: 'All' | 'Upcoming' | 'Pending' | 'Past' | 'Cancelle
                      (keydown.enter)="onSearchSubmit()" placeholder="Booking ID, customer, provider…" aria-label="Search bookings" />
               <button type="button" class="aw-clear" *ngIf="searchInput" (click)="clearSearch()" aria-label="Clear search">×</button>
             </div>
-            <div class="aw-chips" role="tablist" aria-label="Booking status">
-              <button type="button" *ngFor="let b of statusBuckets" class="aw-chip"
-                      role="tab" [class.is-active]="activeStatus === b.id" [attr.aria-selected]="activeStatus === b.id"
-                      (click)="onStatus(b.id)">
-                {{ b.id }}<span class="aw-chip-count mono">{{ b.count }}</span>
-              </button>
-            </div>
-            <span class="grow"></span>
-            <label class="aw-sort">
+            <div class="aw-chips-sort">
+              <div class="aw-chips" role="tablist" aria-label="Booking status">
+                <button type="button" *ngFor="let b of statusBuckets" class="aw-chip"
+                        role="tab" [class.is-active]="activeStatus === b.id" [attr.aria-selected]="activeStatus === b.id"
+                        (click)="onStatus(b.id)">
+                  {{ b.id }}<span class="aw-chip-count mono">{{ b.count }}</span>
+                </button>
+              </div>
+              <label class="aw-sort">
               <span class="aw-sort-label">Sort</span>
               <select [ngModel]="sort" (ngModelChange)="onSort($event)" aria-label="Sort bookings">
                 <option *ngFor="let o of sortOptions" [value]="o.value">{{ o.label }}</option>
               </select>
-            </label>
+              </label>
+            </div><!-- aw-chips-sort -->
           </div>
 
           <div class="aw-body">
@@ -144,7 +145,6 @@ interface StatusBucket { id: 'All' | 'Upcoming' | 'Pending' | 'Past' | 'Cancelle
     }
     * { box-sizing: border-box; }
     .mono { font-family: var(--font-mono); }
-    .grow { flex: 1; }
     .muted { color: var(--text-muted); }
 
     .aw-shell { display: flex; width: 100%; height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); overflow: hidden; }
@@ -154,16 +154,18 @@ interface StatusBucket { id: 'All' | 'Upcoming' | 'Pending' | 'Past' | 'Cancelle
 
     .aw-filterbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 14px 28px; background: #fff; border-bottom: 1px solid var(--line); }
     .aw-search { display: flex; align-items: center; gap: 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; height: 38px; padding: 0 12px; min-width: 280px; }
+    .aw-chips-sort { display: flex; align-items: center; gap: 8px; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; }
     .aw-search input { flex: 1; border: none; outline: none; background: transparent; font-family: var(--font-body); font-size: 0.8125rem; color: var(--text); }
     .aw-clear { background: #fff; border: 1px solid var(--line); border-radius: 999px; width: 20px; height: 20px; color: var(--text-muted); cursor: pointer; font-size: 0.875rem; line-height: 1; display: grid; place-items: center; padding: 0; }
 
-    .aw-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+    .aw-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1 1 auto; min-width: 0; }
+    .aw-chip { flex: 0 0 auto; }
     .aw-chip { height: 32px; padding: 0 10px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
     .aw-chip.is-active { background: #0F1115; color: #fff; border-color: #0F1115; }
     .aw-chip-count { font-size: 0.625rem; color: var(--text-muted); }
     .aw-chip.is-active .aw-chip-count { color: rgba(255,255,255,0.7); }
 
-    .aw-sort { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted); }
+    .aw-sort { display: inline-flex; align-items: center; gap: 6px; font-size: 0.75rem; color: var(--text-muted); flex: 0 0 auto; margin-left: auto; }
     .aw-sort select { appearance: none; background: #fff; border: 1px solid var(--line); border-radius: 8px; height: 32px; padding: 0 24px 0 10px; font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; color: var(--text); cursor: pointer; outline: none; }
 
     .aw-tablecard { background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; margin-top: 20px; transition: opacity 120ms ease; }
