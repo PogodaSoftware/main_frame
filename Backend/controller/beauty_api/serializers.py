@@ -11,6 +11,7 @@ DUPLICATE_EMAIL_MESSAGE = 'An account with this email already exists.'
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8, write_only=True)
+    device_id = serializers.CharField(max_length=255)
 
     def validate_email(self, value):
         value = value.lower().strip()
@@ -26,6 +27,12 @@ class SignUpSerializer(serializers.Serializer):
     def validate_password(self, value):
         if len(value) < 8:
             raise serializers.ValidationError('Password must be at least 8 characters.')
+        return value
+
+    def validate_device_id(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Device ID is required.')
         return value
 
     def create(self, validated_data):

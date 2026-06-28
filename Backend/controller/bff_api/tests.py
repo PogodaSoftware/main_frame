@@ -1276,3 +1276,110 @@ class ResolverLevelCrossRoleTests(TestCase):
             resp = dashres.resolve(self._request(), 'beauty_admin_portal_dashboard', 'dev-1')
         self.assertEqual(resp['action'], 'redirect')
         self.assertEqual(resp['_links']['target']['screen'], 'beauty_admin_portal_signin')
+
+
+# ---------------------------------------------------------------------------
+# SignUpView — signup-disabled flag guard (B2) + device_id required (S1)
+# ---------------------------------------------------------------------------
+
+from beauty_api.views import SignUpView
+
+# The view does `from bff_api.services.hateoas_service import is_signup_enabled`,
+# so the bound name lives in beauty_api.views — patch it there.
+_SIGNUP_FLAG = 'beauty_api.views.is_signup_enabled'
+
+
+class SignUpViewFlagTests(TestCase):
+    """B2: POST /api/beauty/signup/ must respect the signup-disabled flag."""
+
+    def setUp(self):
+        self.rf = APIRequestFactory()
+
+    def _post(self, body):
+        return self.rf.post('/api/beauty/signup/', body, format='json')
+
+    def test_signup_disabled_flag_returns_403_before_account_creation(self):
+        """When is_signup_enabled() is False, SignUpView returns 403 and creates no user."""
+        initial_count = BeautyUser.objects.count()
+        view = SignUpView.as_view()
+        with mock.patch(_SIGNUP_FLAG, return_value=False):
+            resp = view(self._post({
+                'email': 'blocked@beauty-test.com',
+                'password': 'Test1234!',
+                'device_id': 'dev-test-1',
+            }))
+        self.assertEqual(resp.status_code, 403)
+        self.assertIn('disabled', resp.data.get('detail', '').lower())
+        # No account must have been created.
+        self.assertEqual(BeautyUser.objects.count(), initial_count)
+
+    def test_signup_enabled_flag_allows_account_creation(self):
+        """When is_signup_enabled() is True, a valid payload creates the account."""
+        view = SignUpView.as_view()
+        with mock.patch(_SIGNUP_FLAG, return_value=True):
+            resp = view(self._post({
+                'email': 'newuser@beauty-test.com',
+                'password': 'Test1234!',
+                'device_id': 'dev-test-2',
+            }))
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(BeautyUser.objects.filter(email='newuser@beauty-test.com').exists())
+
+
+class SignUpViewDeviceIdTests(TestCase):
+    """S1: POST /api/beauty/signup/ must require device_id (mirrors LoginView)."""
+
+    def setUp(self):
+        self.rf = APIRequestFactory()
+
+    def _post(self, body):
+        return self.rf.post('/api/beauty/signup/', body, format='json')
+
+    def test_missing_device_id_returns_400(self):
+        """No device_id in payload → 400; no account created."""
+        initial_count = BeautyUser.objects.count()
+        view = SignUpView.as_view()
+        with mock.patch(_SIGNUP_FLAG, return_value=True):
+            resp = view(self._post({
+                'email': 'nodevice@beauty-test.com',
+                'password': 'Test1234!',
+            }))
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('device_id', resp.data)
+        self.assertEqual(BeautyUser.objects.count(), initial_count)
+
+    def test_empty_device_id_returns_400(self):
+        """Blank device_id → 400 (validate_device_id rejects it)."""
+        initial_count = BeautyUser.objects.count()
+        view = SignUpView.as_view()
+        with mock.patch(_SIGNUP_FLAG, return_value=True):
+            resp = view(self._post({
+                'email': 'emptydevice@beauty-test.com',
+                'password': 'Test1234!',
+                'device_id': '   ',
+            }))
+        self.assertEqual(resp.status_code, 400)
+        self.assertEqual(BeautyUser.objects.count(), initial_count)
+
+    def test_valid_device_id_creates_account_and_sets_cookie(self):
+        """Valid device_id → 201 + session cookie bound (auto-login)."""
+        view = SignUpView.as_view()
+        with mock.patch(_SIGNUP_FLAG, return_value=True):
+            resp = view(self._post({
+                'email': 'withdevice@beauty-test.com',
+                'password': 'Test1234!',
+                'device_id': 'dev-test-3',
+            }))
+        self.assertEqual(resp.status_code, 201)
+        self.assertTrue(BeautyUser.objects.filter(email='withdevice@beauty-test.com').exists())
+        # Auto-login: a beauty_auth session must exist for this device.
+        user = BeautyUser.objects.get(email='withdevice@beauty-test.com')
+        from beauty_api.models import BeautySession
+        self.assertTrue(
+            BeautySession.objects.filter(
+                user_id=user.id,
+                user_type=BeautySession.USER_TYPE_CUSTOMER,
+                device_id='dev-test-3',
+                is_active=True,
+            ).exists()
+        )
