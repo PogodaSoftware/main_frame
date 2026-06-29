@@ -28,7 +28,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'title': 'Email me a sign-in link',
             'sub': "We'll send a one-time link to your work email. Link expires in 5 minutes and can only be used once.",
             'resend_in': '00:48',
-            'sent_to': user.email,
+            'sent_to': user['email'],
         },
         'meta': {'title': 'Beauty — Admin magic-link'},
         '_links': {

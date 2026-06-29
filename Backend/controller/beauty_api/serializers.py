@@ -68,6 +68,7 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8, write_only=True)
     business_name = serializers.CharField(max_length=255)
+    device_id = serializers.CharField(max_length=255)
 
     def validate_email(self, value):
         value = value.lower().strip()
@@ -87,6 +88,12 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
         value = value.strip()
         if not value:
             raise serializers.ValidationError('Business name is required.')
+        return value
+
+    def validate_device_id(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Device ID is required.')
         return value
 
     def create(self, validated_data):
