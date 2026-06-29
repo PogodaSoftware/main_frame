@@ -68,6 +68,7 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8, write_only=True)
     business_name = serializers.CharField(max_length=255)
+    device_id = DeviceIdField()
 
     def validate_email(self, value):
         value = value.lower().strip()

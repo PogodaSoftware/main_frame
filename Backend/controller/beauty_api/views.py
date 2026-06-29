@@ -314,7 +314,11 @@ class BusinessProviderSignUpView(APIView):
 
         provider = serializer.save()
 
-        device_id = (request.data.get('device_id') or '').strip()
+        device_id = serializer.validated_data['device_id']
+        payload = _make_cookie_payload(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id)
+        signed_token = signing.dumps(payload)
+        _create_session(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id, signed_token)
+        ensure_storefront(provider)
         response = Response(
             {
                 'message': 'Business account created successfully.',
@@ -323,12 +327,7 @@ class BusinessProviderSignUpView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-        if device_id:
-            payload = _make_cookie_payload(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id)
-            signed_token = signing.dumps(payload)
-            _create_session(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id, signed_token)
-            ensure_storefront(provider)
-            _set_auth_cookie(response, signed_token)
+        _set_auth_cookie(response, signed_token)
         return response
 
 

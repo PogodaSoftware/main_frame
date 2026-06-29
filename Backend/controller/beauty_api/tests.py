@@ -64,6 +64,7 @@ class RoleSeparationTests(TestCase):
                 'email': 'shared@example.com',
                 'password': 'pw-correct-1',
                 'business_name': 'Shared Biz',
+                'device_id': 'dev-1',
             },
             content_type='application/json',
         )
@@ -175,3 +176,57 @@ class RoleSeparationTests(TestCase):
             HTTP_X_DEVICE_ID='dev-1',
         )
         self.assertEqual(resp.status_code, 403)
+
+
+class BusinessSignUpDeviceIdRequiredTests(TestCase):
+    """device_id is now a required field on BusinessProviderSignUpSerializer.
+    Signup without it must return 400; with it must return 201 + session cookie."""
+
+    def setUp(self):
+        self.client = Client()
+
+    def test_signup_without_device_id_returns_400(self):
+        resp = self.client.post(
+            '/api/beauty/business/signup/',
+            data={
+                'email': 'newbiz@example.com',
+                'password': 'securepass1',
+                'business_name': 'New Biz',
+                # device_id intentionally omitted
+            },
+            content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('device_id', resp.json())
+        self.assertEqual(BusinessProvider.objects.filter(email='newbiz@example.com').count(), 0)
+
+    def test_signup_with_blank_device_id_returns_400(self):
+        resp = self.client.post(
+            '/api/beauty/business/signup/',
+            data={
+                'email': 'newbiz2@example.com',
+                'password': 'securepass1',
+                'business_name': 'New Biz 2',
+                'device_id': '   ',
+            },
+            content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('device_id', resp.json())
+        self.assertEqual(BusinessProvider.objects.filter(email='newbiz2@example.com').count(), 0)
+
+    def test_signup_with_device_id_returns_201_and_sets_cookie(self):
+        from beauty_api.middleware import SESSION_COOKIE_NAME
+        resp = self.client.post(
+            '/api/beauty/business/signup/',
+            data={
+                'email': 'cookiebiz@example.com',
+                'password': 'securepass1',
+                'business_name': 'Cookie Biz',
+                'device_id': 'test-device-99',
+            },
+            content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 201)
+        self.assertIn(SESSION_COOKIE_NAME, resp.cookies)
+        self.assertEqual(BusinessProvider.objects.filter(email='cookiebiz@example.com').count(), 1)
