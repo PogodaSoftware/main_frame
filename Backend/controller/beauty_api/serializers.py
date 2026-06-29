@@ -8,9 +8,29 @@ from .models import BeautyUser, BusinessProvider
 DUPLICATE_EMAIL_MESSAGE = 'An account with this email already exists.'
 
 
+class DeviceIdField(serializers.CharField):
+    """Required device-id string: trimmed, non-blank.
+
+    Shared by every serializer that binds a session to a device (login and
+    signup, customer and business) so the validation lives in one place
+    instead of a copy-pasted ``validate_device_id`` on each serializer.
+    """
+
+    def __init__(self, **kwargs):
+        kwargs.setdefault('max_length', 255)
+        super().__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        value = super().to_internal_value(data).strip()
+        if not value:
+            raise serializers.ValidationError('Device ID is required.')
+        return value
+
+
 class SignUpSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(min_length=8, write_only=True)
+    device_id = DeviceIdField()
 
     def validate_email(self, value):
         value = value.lower().strip()
@@ -38,16 +58,10 @@ class SignUpSerializer(serializers.Serializer):
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-    device_id = serializers.CharField(max_length=255)
+    device_id = DeviceIdField()
 
     def validate_email(self, value):
         return value.lower().strip()
-
-    def validate_device_id(self, value):
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError('Device ID is required.')
-        return value
 
 
 class BusinessProviderSignUpSerializer(serializers.Serializer):
@@ -88,13 +102,7 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
 class BusinessLoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True)
-    device_id = serializers.CharField(max_length=255)
+    device_id = DeviceIdField()
 
     def validate_email(self, value):
         return value.lower().strip()
-
-    def validate_device_id(self, value):
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError('Device ID is required.')
-        return value

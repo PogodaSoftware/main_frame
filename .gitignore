@@ -291,3 +291,6 @@ graphify-out/cache/stat-index.json
 graphify-out/
 Frontend/beautyAppMobile/.tamagui/
 .playwright-mcp/
+
+# Django settings carry SECRET_KEY — keep untracked (real key via env / .env)
+settings.py

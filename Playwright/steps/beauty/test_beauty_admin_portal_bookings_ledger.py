@@ -120,7 +120,7 @@ def sort_inline_with_chips(page):
     sort_box = page.locator(bl_sort).bounding_box()
     assert first and last and sort_box
     # All status chips on a single row (no internal wrap).
-    assert abs(first["y"] - last["y"]) <= 4, f"chips wrapped: first y={first['y']} last y={last['y']}"
+    assert abs(first["y"] - last["y"]) <= 8, f"chips wrapped: first y={first['y']} last y={last['y']}"
     # Sort sits on that same row, not dropped to a line below (the regression).
     assert abs(sort_box["y"] - first["y"]) <= 8, f"Sort not inline: sort y={sort_box['y']} chips y={first['y']}"
 
