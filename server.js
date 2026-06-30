@@ -24,19 +24,19 @@ app.use('/api', createProxyMiddleware({
 
 app.use('/pogoda/beauty', express.static(BEAUTY_DIR));
 
-app.get(['/pogoda/beauty', '/pogoda/beauty/*'], (req, res) => {
+app.get(['/pogoda/beauty', '/pogoda/beauty/{*path}'], (req, res) => {
   res.sendFile(path.join(BEAUTY_DIR, 'index.html'));
 });
 
 app.use('/kevin', express.static(PORTFOLIO_DIR));
 
-app.get(['/kevin', '/kevin/*'], (req, res) => {
+app.get(['/kevin', '/kevin/{*path}'], (req, res) => {
   res.sendFile(path.join(PORTFOLIO_DIR, 'index.html'));
 });
 
 app.use(express.static(PORTFOLIO_DIR));
 
-app.get('*', (req, res) => {
+app.get('/{*path}', (req, res) => {
   res.sendFile(path.join(PORTFOLIO_DIR, 'index.html'));
 });
 
