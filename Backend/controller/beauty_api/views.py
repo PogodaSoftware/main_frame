@@ -35,9 +35,10 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
-# Cookie Secure flag is intentionally decoupled from DEBUG.
-# Always True in production; set DJANGO_DEBUG=true only in local dev over http.
-COOKIE_SECURE = os.environ.get('DJANGO_DEBUG', 'false').lower() != 'true'
+# Cookie Secure flag is fully independent of debug mode.
+# Defaults to True in all environments. Only set BEAUTY_COOKIE_INSECURE=true
+# for local development over plain http — never in any deployed environment.
+COOKIE_SECURE = os.environ.get('BEAUTY_COOKIE_INSECURE', 'false').lower() != 'true'
 
 
 def _make_cookie_payload(user_id: int, user_type: str, device_id: str) -> dict:
