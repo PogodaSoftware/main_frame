@@ -13,6 +13,7 @@ Security measures applied:
 
 import hashlib
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
@@ -34,7 +35,9 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
-COOKIE_SECURE = not settings.DEBUG
+# Cookie Secure flag is intentionally decoupled from DEBUG.
+# Always True in production; set DJANGO_DEBUG=true only in local dev over http.
+COOKIE_SECURE = os.environ.get('DJANGO_DEBUG', 'false').lower() != 'true'
 
 
 def _make_cookie_payload(user_id: int, user_type: str, device_id: str) -> dict:
