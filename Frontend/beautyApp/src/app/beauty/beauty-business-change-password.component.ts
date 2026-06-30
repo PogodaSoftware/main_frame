@@ -63,7 +63,8 @@ import { BeautyProviderButtonComponent } from './provider/prov-btn.component';
               <div class="strength-hint" *ngIf="newPassword">{{ strengthLabel }}</div>
             </div>
 
-            <app-prov-btn variant="primary" type="submit" [full]="true" size="lg" [disabled]="busy">
+            <app-prov-btn variant="primary" type="submit" [full]="true" size="lg" [disabled]="busy"
+                          data-testid="change-password-submit">
               {{ busy ? 'Saving…' : 'Update password' }}
             </app-prov-btn>
           </form>

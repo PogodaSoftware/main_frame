@@ -22,6 +22,8 @@ import re
 from datetime import datetime, timezone
 
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -630,9 +632,19 @@ class BusinessAccountPasswordView(APIView):
                 {'detail': 'New password must be at least 8 characters.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        # Verify the current password before giving any feedback on the new
+        # password's strength, so policy details aren't leaked to a caller who
+        # cannot prove they know the existing password.
         if not check_password(current, business.password):
             return Response(
                 {'detail': 'Current password is incorrect.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            validate_password(new_password, business)
+        except DjangoValidationError as exc:
+            return Response(
+                {'detail': ' '.join(exc.messages)},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

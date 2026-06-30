@@ -1,3 +1,5 @@
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 from .models import BeautyUser, BusinessProvider
 
@@ -12,13 +14,12 @@ class SignUpSerializer(serializers.Serializer):
             raise serializers.ValidationError('An account with this email already exists.')
         return value
 
-    def validate_password(self, value):
-        if len(value) < 8:
-            raise serializers.ValidationError('Password must be at least 8 characters.')
-        return value
-
     def create(self, validated_data):
         user = BeautyUser(email=validated_data['email'])
+        try:
+            validate_password(validated_data['password'], user)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({'password': list(exc.messages)})
         user.set_password(validated_data['password'])
         user.save()
         return user
@@ -50,11 +51,6 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
             raise serializers.ValidationError('An account with this email already exists.')
         return value
 
-    def validate_password(self, value):
-        if len(value) < 8:
-            raise serializers.ValidationError('Password must be at least 8 characters.')
-        return value
-
     def validate_business_name(self, value):
         value = value.strip()
         if not value:
@@ -66,6 +62,10 @@ class BusinessProviderSignUpSerializer(serializers.Serializer):
             email=validated_data['email'],
             business_name=validated_data['business_name'],
         )
+        try:
+            validate_password(validated_data['password'], provider)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({'password': list(exc.messages)})
         provider.set_password(validated_data['password'])
         provider.save()
         return provider

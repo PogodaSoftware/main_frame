@@ -1,0 +1,1 @@
+- [Beauty Playwright tests](beauty-playwright-tests.md) — authed page tests need a device-id seed; many fail on stale selectors from the portal redesign, not on functionality.
