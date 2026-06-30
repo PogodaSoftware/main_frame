@@ -18,6 +18,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     if not user:
         return h.redirect_envelope('beauty_login', 'auth_required')
 
+    if not h.is_beauty_admin(user):
+        return h.redirect_envelope('beauty_home', 'forbidden')
+
     qs = (
         BeautyUser.objects.all()
         .order_by('-created_at')
