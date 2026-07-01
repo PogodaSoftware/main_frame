@@ -294,3 +294,12 @@ Frontend/beautyAppMobile/.tamagui/
 
 # Django settings carry SECRET_KEY — keep untracked (real key via env / .env)
 settings.py
+
+# Local environment overrides for Django settings (untracked, optional)
+settings.local.json
+.env
+.local/
+.github/
+.playwright/
+.design-handoff/
+.config/
