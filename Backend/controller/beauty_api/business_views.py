@@ -49,10 +49,25 @@ VALID_CATEGORIES = {c[0] for c in BeautyService.CATEGORY_CHOICES}
 VALID_TOOLS = {'google_calendar', 'icloud', 'outlook', 'square', 'mindbody', 'vagaro'}
 
 
-def _require_business_storefront(request) -> tuple[BusinessProvider | None, BeautyProvider | None, Response | None]:
+def _require_business_storefront(
+    request, *, require_accepted: bool = True
+) -> tuple[BusinessProvider | None, BeautyProvider | None, Response | None]:
     """
     Returns (business_provider, storefront, error_response).
     On success error_response is None. On failure the other two are None.
+
+    Secure by default: unless a caller explicitly passes
+    ``require_accepted=False``, the business's onboarding application must be
+    ``accepted`` before the endpoint runs. This is the server-side gate that
+    stops an unapproved business from operating a live storefront (creating
+    services, viewing the dashboard, reading bookings/earnings, etc.) by
+    calling the protected REST API directly — mirroring the accepted-application
+    gate the BFF already applies to the business portal screens.
+
+    ``require_accepted=False`` is reserved for the endpoints that must work
+    *during* onboarding — the application wizard and the schedule-step weekly
+    hours editor — and for account-management endpoints (password, contact,
+    delete) a business needs regardless of approval status.
     """
     user_id = getattr(request, 'beauty_user_id', None)
     user_type = getattr(request, 'beauty_user_type', None)
@@ -68,6 +83,15 @@ def _require_business_storefront(request) -> tuple[BusinessProvider | None, Beau
             {'detail': 'Business account not found.'},
             status=status.HTTP_404_NOT_FOUND,
         )
+    if require_accepted:
+        app = BusinessProviderApplication.objects.filter(
+            business_provider=business
+        ).first()
+        if app is None or app.status != BusinessProviderApplication.STATUS_ACCEPTED:
+            return None, None, Response(
+                {'detail': 'Your business application must be approved before you can access this.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
     storefront = ensure_storefront(business)
     return business, storefront, None
 
@@ -261,13 +285,17 @@ class BusinessAvailabilityView(APIView):
     """
 
     def get(self, request):
-        _, storefront, err = _require_business_storefront(request)
+        # Weekly hours are edited during the onboarding schedule step, before
+        # the application is accepted — so this endpoint stays ungated.
+        _, storefront, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
         return Response({'weekly_hours': get_weekly_hours(storefront)}, status=status.HTTP_200_OK)
 
     def put(self, request):
-        _, storefront, err = _require_business_storefront(request)
+        # Edited during the onboarding schedule step (pre-acceptance), so this
+        # stays ungated; marketplace visibility is gated separately.
+        _, storefront, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
         rows = request.data.get('weekly_hours') or []
@@ -327,14 +355,14 @@ class BusinessApplicationView(APIView):
     """
 
     def get(self, request):
-        business, _store, err = _require_business_storefront(request)
+        business, _store, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
         app = _get_or_create_application(business)
         return Response({'application': _application_to_dict(app)}, status=status.HTTP_200_OK)
 
     def patch(self, request):
-        business, _store, err = _require_business_storefront(request)
+        business, _store, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
         app = _get_or_create_application(business)
@@ -444,7 +472,7 @@ class BusinessApplicationSubmitView(APIView):
     """
 
     def post(self, request):
-        business, _store, err = _require_business_storefront(request)
+        business, _store, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
         app = _get_or_create_application(business)
@@ -615,7 +643,8 @@ class BusinessAccountPasswordView(APIView):
     """
 
     def post(self, request):
-        business, _store, err = _require_business_storefront(request)
+        # Account management works regardless of onboarding approval status.
+        business, _store, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
         data = request.data or {}
@@ -681,13 +710,13 @@ class BusinessAccountContactView(APIView):
     """
 
     def get(self, request):
-        business, _store, err = _require_business_storefront(request)
+        business, _store, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
         return Response(self._payload(business), status=status.HTTP_200_OK)
 
     def patch(self, request):
-        business, _store, err = _require_business_storefront(request)
+        business, _store, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
         data = request.data or {}
@@ -740,7 +769,8 @@ class BusinessAccountDeleteView(APIView):
     """
 
     def post(self, request):
-        business, storefront, err = _require_business_storefront(request)
+        # A business must be able to delete its account regardless of approval.
+        business, storefront, err = _require_business_storefront(request, require_accepted=False)
         if err:
             return err
 
