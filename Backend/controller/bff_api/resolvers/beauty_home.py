@@ -5,6 +5,7 @@ Determines what the Beauty home screen should show.
 Orchestrates: AuthService + BeautyConfigService + HateoasService.
 """
 
+from beauty_api.availability_service import marketplace_visibility_q
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyProvider
 from ..services.auth_service import get_authenticated_user
@@ -70,7 +71,9 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
                 'detail': h.screen_link('detail', 'beauty_provider_detail', prompt=p.name, params={'id': p.id}),
             },
         }
-        for p in BeautyProvider.objects.filter(services__isnull=False).distinct().order_by('name')[:6]
+        for p in BeautyProvider.objects.filter(services__isnull=False)
+                                       .filter(marketplace_visibility_q())
+                                       .distinct().order_by('name')[:6]
     ]
 
     # Per-category navigation link for each tile on the home services row.

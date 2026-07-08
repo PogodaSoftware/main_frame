@@ -41,6 +41,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .auth_security import client_ip
+from .availability_service import marketplace_visibility_q
 from .booking_views import _require_authenticated, _provider_to_dict
 from .models import BeautyFavorite, BeautyService, BeautySession
 
@@ -172,7 +173,10 @@ class ServiceSearchView(APIView):
         )
         include_future = _bool_param(request.GET.get('includeFuture'), True)
 
-        qs = BeautyService.objects.select_related('provider')
+        qs = (
+            BeautyService.objects.select_related('provider')
+            .filter(marketplace_visibility_q('provider__'))
+        )
 
         if q:
             qs = qs.filter(

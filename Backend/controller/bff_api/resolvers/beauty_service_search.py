@@ -10,6 +10,7 @@ Auth required — redirects unauthenticated visitors to ``beauty_login``.
 
 from django.db.models import Q
 
+from beauty_api.availability_service import marketplace_visibility_q
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyFavorite, BeautyService, BeautySession
 from beauty_api.search_views import (
@@ -39,7 +40,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     )
     include_future = _bool_param(params.get('includeFuture'), True)
 
-    qs = BeautyService.objects.select_related('provider')
+    qs = (
+        BeautyService.objects.select_related('provider')
+        .filter(marketplace_visibility_q('provider__'))
+    )
     if q:
         qs = qs.filter(
             Q(name__icontains=q)

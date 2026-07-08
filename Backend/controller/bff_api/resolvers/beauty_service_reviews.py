@@ -7,6 +7,7 @@ has_more for paging on the service-detail screen.
 Auth required — redirects unauthenticated visitors to ``beauty_login``.
 """
 
+from beauty_api.availability_service import marketplace_visibility_q
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyReview, BeautyService
 from beauty_api.review_views import (
@@ -31,7 +32,8 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         service_id = int(params.get('serviceId') or params.get('service_id'))
     except (TypeError, ValueError):
         return h.redirect_envelope('beauty_home', 'invalid_service')
-    if not BeautyService.objects.filter(id=service_id).exists():
+    if not (BeautyService.objects.filter(id=service_id)
+            .filter(marketplace_visibility_q('provider__')).exists()):
         return h.redirect_envelope('beauty_home', 'service_not_found')
 
     offset = _coerce_int(params.get('offset'), 0, minimum=0)

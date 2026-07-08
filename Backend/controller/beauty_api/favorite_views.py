@@ -18,6 +18,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .availability_service import marketplace_visibility_q
 from .booking_views import (
     _provider_to_dict,
     _require_authenticated,
@@ -80,7 +81,8 @@ class ServiceFavoriteView(APIView):
                 {'detail': 'Only customers can favorite services.'},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if not BeautyService.objects.filter(id=service_id).exists():
+        if not (BeautyService.objects.filter(id=service_id)
+                .filter(marketplace_visibility_q('provider__')).exists()):
             return Response({'detail': 'Service not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         fav, created = BeautyFavorite.objects.get_or_create(
