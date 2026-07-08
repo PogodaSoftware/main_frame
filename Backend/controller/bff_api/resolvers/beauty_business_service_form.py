@@ -49,7 +49,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     if is_edit:
         submit_href = f'/api/beauty/protected/business/services/{svc.id}/'
         submit_method = 'PUT'
-        submit_label = 'Save changes'
+        submit_label = 'Save'
         title = f'Edit · {svc.name}'
         defaults = {
             'name': svc.name,
@@ -84,7 +84,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             {'name': 'category', 'type': 'select', 'label': 'Category', 'required': True, 'value': defaults['category'], 'options': CATEGORY_OPTIONS},
             {'name': 'description', 'type': 'text', 'label': 'Description', 'required': False, 'value': defaults['description']},
             {'name': 'price_dollars', 'type': 'price_dollars', 'label': 'Price', 'required': True, 'value': defaults['price_dollars'], 'min': 0, 'pattern': r'^\d+(\.\d{1,2})?$'},
-            {'name': 'duration_minutes', 'type': 'number', 'label': 'Duration', 'required': True, 'value': defaults['duration_minutes'], 'min': 15, 'max': 480, 'suffix': 'min'},
+            {'name': 'duration_minutes', 'type': 'number', 'label': 'Duration', 'required': True, 'value': defaults['duration_minutes'], 'min': 15, 'max': 480, 'suffix': 'min(s)'},
         ],
     }
 
@@ -92,6 +92,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'action': 'render',
         'screen': 'beauty_business_service_form',
         'data': {
+            'business': {
+                'email': business.email,
+                'business_name': business.business_name,
+            },
+            'storefront': {'id': storefront.id, 'name': storefront.name},
             'is_edit': is_edit,
             'service_id': svc.id if svc else None,
             'form': form,
@@ -107,6 +112,15 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             ),
             'business_home': h.screen_link(
                 'business_home', 'beauty_business_home', prompt='Dashboard',
+            ),
+            # Delete action-link — only on the edit form (a real service exists).
+            **(
+                {'delete': h.link(
+                    rel='delete',
+                    href=f'/api/beauty/protected/business/services/{svc.id}/',
+                    method='DELETE',
+                    prompt='Delete service',
+                )} if is_edit and svc else {}
             ),
         },
     }

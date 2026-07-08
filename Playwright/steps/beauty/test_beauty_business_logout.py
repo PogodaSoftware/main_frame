@@ -7,7 +7,7 @@ from playwright.sync_api import expect
 from Playwright.Hooks.hooks import goto_route, timeout_for_testing
 from Playwright.pages.pogoda.beauty.business_home_page import (
     home_root,
-    gear_button,
+    profile_button,
 )
 from Playwright.pages.pogoda.beauty.business_login_page import business_login_page_root
 from .beauty_utils import (
@@ -19,7 +19,7 @@ from .beauty_utils import (
     login_business_via_api,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_logout.feature")
+scenarios("../../features/Beauty/beauty_business_logout.feature")
 
 
 @pytest.fixture(scope="function")
@@ -53,8 +53,11 @@ def open_home(page):
 
 @when("I click the business sign-out button")
 def click_signout(page):
-    # Sign-out lives under the gear → settings menu now.
-    page.locator(gear_button).click()
+    from Playwright.pages.pogoda.beauty.business_profile_page import settings_button
+    # Sign-out lives under the Profile tab -> gear -> settings menu now.
+    page.locator(profile_button).click()
+    page.wait_for_url("**/business/profile", timeout=10_000)
+    page.locator(settings_button).click()
     page.wait_for_url("**/business/settings", timeout=10_000)
     page.locator("[data-testid='settings-logout']").click()
     # Confirm modal — primary action

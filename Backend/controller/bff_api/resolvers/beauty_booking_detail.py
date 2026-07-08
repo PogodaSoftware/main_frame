@@ -22,25 +22,22 @@ edit by the business doesn't rewrite history.
 
 from datetime import datetime, timezone
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyBooking
-from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
 from ..services.beauty_timezone_service import provider_timezone as _provider_timezone
+from ._customer_auth import coerce_int_param, require_customer_auth
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
-    cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
-    user = get_authenticated_user(cookie, device_id)
-    if not user or user.get('user_type') != 'customer':
-        return h.redirect_envelope('beauty_login', 'auth_required')
+    user, redirect = require_customer_auth(request, device_id)
+    if redirect:
+        return redirect
 
     params = params or {}
     raw_id = params.get('id') or params.get('bookingId')
-    try:
-        booking_id = int(raw_id)
-    except (TypeError, ValueError):
-        return h.redirect_envelope('beauty_bookings', 'invalid_booking')
+    booking_id, redirect = coerce_int_param(raw_id, 'beauty_bookings', 'invalid_booking')
+    if redirect:
+        return redirect
 
     try:
         b = (
@@ -61,6 +58,14 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     links: dict = {
         'self': h.self_link('beauty_booking_detail', params={'id': b.id}),
         'bookings': h.screen_link('bookings', 'beauty_bookings', prompt='Back to My Bookings'),
+        # Review-write submit target (action-link). The write screen posts the
+        # rating/body here; the endpoint enforces completed-appointment +
+        # one-review-per-service rules.
+        'submit_review': h.link(
+            rel='submit_review',
+            href=f'/api/beauty/protected/services/{b.service.id}/reviews/',
+            method='POST', prompt='Post review',
+        ),
         'provider': h.screen_link(
             'provider', 'beauty_provider_detail',
             prompt='View provider', params={'id': b.service.provider.id},

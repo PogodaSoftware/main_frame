@@ -4,7 +4,7 @@ from pytest_bdd import scenarios, given, when, then, parsers
 
 from .beauty_utils import BACKEND_URL, delete_test_users
 
-scenarios("../../features/Pogoda/Beauty/beauty_api_signup.feature")
+scenarios("../../features/Beauty/beauty_api_signup.feature")
 
 _signup_state = {}
 
@@ -66,13 +66,24 @@ def verify_signup_status_400():
     assert resp.status_code == 400, f"Expected 400, got {resp.status_code}: {resp.text}"
 
 
+@then("the signup response status should be 409")
+def verify_signup_status_409():
+    resp = _signup_state["signup_response"]
+    assert resp.status_code == 409, f"Expected 409, got {resp.status_code}: {resp.text}"
+
+
 @then("the signup response should indicate the email already exists")
 def verify_duplicate_email_error():
     body = _signup_state["signup_response"].json()
+    # The duplicate-email response is now a top-level `detail` string
+    # (409 Conflict). Older callers used a per-field `email` array — we
+    # accept either shape so legacy assertions don't break mid-rollout.
+    detail = str(body.get("detail", ""))
     email_errors = body.get("email", [])
-    assert any("already exists" in str(e) for e in email_errors), (
-        f"Expected duplicate email error, got: {body}"
-    )
+    assert (
+        "already exists" in detail
+        or any("already exists" in str(e) for e in email_errors)
+    ), f"Expected duplicate email error, got: {body}"
 
 
 @when("I POST customer signup data with a password shorter than 8 characters")

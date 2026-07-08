@@ -13,7 +13,7 @@ from Playwright.pages.pogoda.beauty.business_signup_page import (
     business_login_link,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_signup_page.feature")
+scenarios("../../features/Beauty/beauty_business_signup_page.feature")
 
 
 @pytest.fixture

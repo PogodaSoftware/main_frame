@@ -9,7 +9,9 @@ WORKDIR /app
 # - Security: Fixed high severity SSR vulnerability
 # - Result: 308 fewer packages (-27% reduction)
 COPY package.json package-lock.json ./
-RUN npm install && \
+# npm 10 bundled with node:22-alpine crashes ("Exit handler never called") on this dependency tree
+RUN npm install -g npm@11 && \
+    npm ci && \
     npm cache clean --force && \
     rm -rf /root/.npm && \
     rm -rf /tmp/*

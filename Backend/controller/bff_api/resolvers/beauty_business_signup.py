@@ -17,18 +17,18 @@ _PRESENTATION = {
     'title_class': 'signup-title',
     'subtitle_class': 'signup-subtitle',
     'form_class': 'signup-form',
-    'submit_class': 'btn-login btn-business',
-    'header_brand_icon': '🏢',
+    'submit_class': 'btn-login',
+    'header_brand_icon': '✨',
     'header_brand_label': 'Beauty',
-    'header_badge_text': 'Business Portal',
-    'header_badge_class': 'business-badge',
     'show_field_labels': True,
-    'hide_top_header': False,
+    'hide_top_header': True,
     'show_back_bar': True,
-    'show_brand_block': False,
-    'show_terms_checkbox': False,
-    'show_or_divider': False,
-    'show_social': False,
+    'show_brand_block': True,
+    'brand_block_badge': 'Business Portal',
+    'show_terms_checkbox': True,
+    'show_or_divider': True,
+    'show_social': True,
+    'social_button_label': 'Sign up with Google',
 }
 
 
@@ -56,7 +56,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
 
     form = h.signup_form(
         title='Create business account',
-        subtitle='Then walk through a 5-step application to unlock your portal.',
+        subtitle='A few seconds — then walk through a quick application to unlock your portal.',
         submit_href='/api/beauty/business/signup/',
         submit_prompt='Create account',
         success_screen='beauty_business_application_entity',
@@ -89,6 +89,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'back': h.screen_link('back', 'beauty_business_login', prompt='Back'),
         'business_login': h.screen_link(
             'business_login', 'beauty_business_login', prompt='Sign in',
+        ),
+        'google': h.screen_link(
+            'google', 'beauty_google_auth',
+            prompt='Sign up with Google', params={'user_type': 'business'},
         ),
     }
     return {

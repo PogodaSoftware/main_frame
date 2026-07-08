@@ -7,13 +7,13 @@ from Playwright.pages.pogoda.beauty.error_page import (
     eyebrow as err_eyebrow,
     title as err_title,
     body as err_body,
-    code as err_code,
-    try_again_button,
-    go_home_button,
+    any_cta_button,
+    primary_cta_button,
+    secondary_cta_button,
     contact_support_link,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_error_pages.feature")
+scenarios("../../features/Beauty/beauty_error_pages.feature")
 
 
 @given(parsers.parse('I navigate to the beauty error route "{route}"'))
@@ -42,21 +42,22 @@ def verify_body(page):
     expect(page.locator(err_body)).to_be_visible()
 
 
-@then("the error code should be visible")
-def verify_code(page):
-    expect(page.locator(err_code)).to_be_visible()
+@then("the error action button should be visible")
+def verify_any_cta(page):
+    """At least one CTA button present on every variant."""
+    expect(page.locator(any_cta_button).first).to_be_visible()
 
 
-@then("the error try again button should be visible")
-def verify_try_again(page):
-    expect(page.locator(try_again_button)).to_be_visible()
+@then("the error primary CTA button should be visible")
+def verify_primary_cta(page):
+    expect(page.locator(primary_cta_button)).to_be_visible()
 
 
-@then("the error go home button should be visible")
-def verify_go_home(page):
-    expect(page.locator(go_home_button)).to_be_visible()
+@then("the error secondary CTA button should be visible")
+def verify_secondary_cta(page):
+    expect(page.locator(secondary_cta_button)).to_be_visible()
 
 
-@then("the error contact support link should be visible")
+@then("the error contact support button should be visible")
 def verify_contact_support(page):
     expect(page.locator(contact_support_link)).to_be_visible()

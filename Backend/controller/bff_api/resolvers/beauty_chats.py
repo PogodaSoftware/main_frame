@@ -34,7 +34,7 @@ def _customer_threads(user_id: int, now) -> list[dict]:
         BeautyBooking.objects.select_related('service', 'service__provider')
         .filter(customer_id=user_id)
     )
-    return _build_threads(qs, viewer_type='customer', now=now)
+    return _build_threads(qs, viewer_type='customer', viewer_id=user_id, now=now)
 
 
 def _business_threads(user_id: int, now) -> list[dict]:
@@ -45,10 +45,10 @@ def _business_threads(user_id: int, now) -> list[dict]:
         BeautyBooking.objects.select_related('service', 'service__provider', 'customer')
         .filter(service__provider_id__in=provider_ids)
     )
-    return _build_threads(qs, viewer_type='business', now=now)
+    return _build_threads(qs, viewer_type='business', viewer_id=user_id, now=now)
 
 
-def _build_threads(qs, *, viewer_type: str, now) -> list[dict]:
+def _build_threads(qs, *, viewer_type: str, viewer_id: int, now) -> list[dict]:
     out: list[dict] = []
     for b in qs:
         if b.status in BeautyBooking.CANCELLED_STATUSES:
@@ -75,6 +75,7 @@ def _build_threads(qs, *, viewer_type: str, now) -> list[dict]:
             'peer_name': peer,
             'last_message': last.body if last else '',
             'last_at': last.created_at.isoformat() if last else None,
+            'unread_count': chat_service.unread_count_for(b, viewer_type=viewer_type, viewer_id=viewer_id),
             'is_active': chat_service.is_chat_active(b, now=now),
             'expires_at': expires.isoformat(),
             '_links': {
@@ -125,6 +126,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
             'threads': threads,
             'viewer_type': user_type,
             'total': len(threads),
+            'unread_total': sum(t['unread_count'] for t in threads),
         },
         'meta': {'title': 'Messages'},
         '_links': {

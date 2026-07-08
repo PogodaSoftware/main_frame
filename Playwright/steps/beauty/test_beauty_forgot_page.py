@@ -12,7 +12,7 @@ from Playwright.pages.pogoda.beauty.forgot_page import (
     back_to_signin_link,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_forgot_page.feature")
+scenarios("../../features/Beauty/beauty_forgot_page.feature")
 
 
 @given("I navigate to the beauty forgot page")

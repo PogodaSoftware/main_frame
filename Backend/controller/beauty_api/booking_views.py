@@ -21,6 +21,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from django.db.models import Avg, Count
+
 from .availability_service import (
     is_provider_publicly_visible,
     is_slot_available,
@@ -29,6 +31,7 @@ from .availability_service import (
 from .models import (
     BeautyBooking,
     BeautyProvider,
+    BeautyReview,
     BeautyService,
     BeautySession,
     BeautyUser,
@@ -194,6 +197,11 @@ class ProviderDetailView(APIView):
             return Response({'detail': 'Provider not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         services = list(provider.services.all().order_by('category', 'name'))
+        agg = BeautyReview.objects.filter(
+            service__provider_id=provider.id,
+        ).aggregate(avg=Avg('rating'), count=Count('id'))
+        avg_rating = float(agg['avg']) if agg['avg'] is not None else None
+        review_count = int(agg['count'] or 0)
         return Response(
             {
                 'id': provider.id,
@@ -202,6 +210,8 @@ class ProviderDetailView(APIView):
                 'long_description': provider.long_description,
                 'location_label': provider.location_label,
                 'services': [_service_to_dict(s) for s in services],
+                'avg_rating': avg_rating,
+                'review_count': review_count,
             },
             status=status.HTTP_200_OK,
         )

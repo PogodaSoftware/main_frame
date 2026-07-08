@@ -38,7 +38,7 @@ from Playwright.pages.pogoda.beauty.booking_detail_page import (
 
 from ._auth_helpers import ui_login
 
-scenarios("../../features/Pogoda/Beauty/beauty_e2e_booking_flow.feature")
+scenarios("../../features/Beauty/beauty_e2e_booking_flow.feature")
 
 
 @given(

@@ -1,0 +1,27 @@
+- generic [ref=e38]:
+  - banner [ref=e39]:
+    - generic [ref=e40]:
+      - generic [ref=e41]: 🏢
+      - button "Beauty" [ref=e42] [cursor=pointer]
+    - generic [ref=e43]: Business Portal
+  - main [ref=e44]:
+    - heading "Business Sign In" [level=1] [ref=e45]
+    - paragraph [ref=e46]: Access your business provider account
+    - generic [ref=e47]:
+      - generic [ref=e48]:
+        - generic [ref=e49]: Business Email
+        - textbox "Business Email" [ref=e50]:
+          - /placeholder: Enter your business email
+      - generic [ref=e51]:
+        - generic [ref=e52]: Password
+        - generic [ref=e53]:
+          - textbox "Password" [ref=e54]:
+            - /placeholder: Enter your password
+          - button "Toggle password visibility" [ref=e55] [cursor=pointer]: Show
+      - button "Sign in" [disabled] [ref=e56]
+    - generic [ref=e57]:
+      - generic [ref=e58]: New here?
+      - button "Sign up" [ref=e59] [cursor=pointer]
+    - generic [ref=e60]:
+      - generic [ref=e61]: Not a business provider?
+      - button "Customer sign in" [ref=e62] [cursor=pointer]

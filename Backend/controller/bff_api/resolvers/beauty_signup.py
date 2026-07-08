@@ -34,6 +34,11 @@ _PRESENTATION = {
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
+    # Signup disabled by flag → bounce to welcome (don't serve the form on
+    # direct navigation; the entry-point links are already hidden elsewhere).
+    if not h.is_signup_enabled():
+        return h.redirect_envelope('beauty_welcome', 'signup_disabled')
+
     cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
     user = get_authenticated_user(cookie, device_id)
 
@@ -45,6 +50,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'home': h.screen_link('home', 'beauty_home', prompt='Beauty'),
         'back': h.screen_link('back', 'beauty_welcome', prompt='Back'),
         'login': h.screen_link('login', 'beauty_login', prompt='Sign in'),
+        'google': h.screen_link(
+            'google', 'beauty_google_auth',
+            prompt='Sign up with Google', params={'user_type': 'customer'},
+        ),
     }
 
     form = h.signup_form(
@@ -57,6 +66,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         fields=[
             h.name_field(),
             h.email_field(placeholder='you@example.com'),
+            h.confirm_email_field(),
             h.password_field(
                 placeholder='At least 8 characters',
                 autocomplete='new-password',
@@ -76,9 +86,7 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     return {
         'action': 'render',
         'screen': 'beauty_signup',
-        'data': {
-            'links': {k: v['screen'] for k, v in links.items() if v.get('screen')},
-        },
+        'data': {},
         'meta': {'title': 'Beauty - Sign Up'},
         '_links': links,
         'form': form,

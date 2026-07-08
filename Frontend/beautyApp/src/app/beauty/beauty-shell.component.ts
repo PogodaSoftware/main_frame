@@ -23,6 +23,7 @@ import {
   OnDestroy,
   OnInit,
   PLATFORM_ID,
+  ViewChild,
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -49,6 +50,8 @@ import { BeautyBookingDetailComponent } from './beauty-booking-detail.component'
 import { BeautyRescheduleComponent } from './beauty-reschedule.component';
 import { BeautyProfileComponent } from './beauty-profile.component';
 import { BeautyChatsComponent } from './beauty-chats.component';
+import { BeautyProviderMessagesComponent } from './prov-web/beauty-provider-messages.component';
+import { BeautyBusinessReviewsComponent } from './beauty-business-reviews.component';
 import { BeautyChatThreadComponent } from './beauty-chat-thread.component';
 import { BeautyBusinessDashboardComponent } from './beauty-business-dashboard.component';
 import { BeautyBusinessServicesComponent } from './beauty-business-services.component';
@@ -61,13 +64,22 @@ import { BeautyBusinessProfileComponent } from './beauty-business-profile.compon
 import { BeautyBusinessEmailContactComponent } from './beauty-business-email-contact.component';
 import { BeautyProviderNewMessageToastComponent } from './provider/beauty-provider-new-message-toast.component';
 import { BeautyProviderToastService, ToastPayload } from './provider/beauty-provider-toast.service';
-import {
-  AdminFlag,
-  AdminFlagAuditEntry,
-  BeautyAdminFlagsComponent,
-  FlagToggleEvent,
-} from './beauty-admin-flags.component';
-import { BeautyAdminCrmComponent } from './beauty-admin-crm.component';
+import { AdminPortalSignInComponent } from './admin-portal/admin-portal-signin.component';
+import { AdminPortal2FAComponent } from './admin-portal/admin-portal-2fa.component';
+import { AdminPortalMagicLinkComponent } from './admin-portal/admin-portal-magic.component';
+import { AdminPortalIpWarningComponent } from './admin-portal/admin-portal-ip-warning.component';
+import { AdminPortalDashboardComponent } from './admin-portal/admin-portal-dashboard.component';
+import { AdminPortalCrmListComponent } from './admin-portal/admin-portal-crm-list.component';
+import { AdminPortalTagManagerComponent } from './admin-portal/admin-portal-tag-manager.component';
+import { AdminPortalSuspendConfirmComponent } from './admin-portal/admin-portal-suspend-confirm.component';
+import { AdminPortalCustomerDetailComponent } from './admin-portal/admin-portal-customer-detail.component';
+import { AdminPortalProviderDetailComponent } from './admin-portal/admin-portal-provider-detail.component';
+import { AdminPortalBookingsLedgerComponent } from './admin-portal/admin-portal-bookings-ledger.component';
+import { AdminPortalBookingDetailComponent } from './admin-portal/admin-portal-booking-detail.component';
+import { AdminPortalTicketsComponent } from './admin-portal/admin-portal-tickets.component';
+import { AdminPortalTeamComponent } from './admin-portal/admin-portal-team.component';
+import { AdminPortalAuditLogComponent } from './admin-portal/admin-portal-audit.component';
+import { AdminPortalFlagsComponent } from './admin-portal/admin-portal-flags.component';
 import { BffLink, BffResponse } from './beauty-bff.types';
 
 @Component({
@@ -83,8 +95,22 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBusinessApplicationComponent,
     BeautyBusinessHomeComponent,
     BeautyWireframeComponent,
-    BeautyAdminFlagsComponent,
-    BeautyAdminCrmComponent,
+    AdminPortalSignInComponent,
+    AdminPortal2FAComponent,
+    AdminPortalMagicLinkComponent,
+    AdminPortalIpWarningComponent,
+    AdminPortalDashboardComponent,
+    AdminPortalCrmListComponent,
+    AdminPortalTagManagerComponent,
+    AdminPortalSuspendConfirmComponent,
+    AdminPortalCustomerDetailComponent,
+    AdminPortalProviderDetailComponent,
+    AdminPortalBookingsLedgerComponent,
+    AdminPortalBookingDetailComponent,
+    AdminPortalTicketsComponent,
+    AdminPortalTeamComponent,
+    AdminPortalAuditLogComponent,
+    AdminPortalFlagsComponent,
     BeautyCategoryComponent,
     BeautyProviderDetailComponent,
     BeautyBookComponent,
@@ -103,6 +129,8 @@ import { BffLink, BffResponse } from './beauty-bff.types';
     BeautyBusinessSettingsComponent,
     BeautyBusinessChangePasswordComponent,
     BeautyBusinessProfileComponent,
+    BeautyProviderMessagesComponent,
+    BeautyBusinessReviewsComponent,
     BeautyBusinessEmailContactComponent,
     BeautyProviderNewMessageToastComponent,
   ],
@@ -159,19 +187,122 @@ import { BffLink, BffResponse } from './beauty-bff.types';
         (followLink)="followLink($event)"
       />
       <app-beauty-wireframe *ngIf="bffResponse!.screen === 'beauty_wireframe'" />
-      <app-beauty-admin-flags
-        *ngIf="bffResponse!.screen === 'beauty_admin_flags'"
-        [flags]="adminFlags"
-        [audit]="adminAudit"
-        [adminEmail]="adminEmail"
-        [busyKey]="busyFlagKey"
+      <app-admin-portal-signin
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_signin'"
+        [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
-        (toggleFlag)="onFlagToggle($event)"
+        [errorMessage]="adminPortalSigninError"
+        (submitLogin)="onAdminPortalSignin($event)"
         (followLink)="followLink($event)"
-        (goHomeRequested)="goHome()"
       />
-      <app-beauty-admin-crm
-        *ngIf="bffResponse!.screen === 'beauty_admin_crm'"
+      <app-admin-portal-2fa
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_2fa'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        [errorMessage]="adminPortal2faError"
+        (verify)="onAdminPortal2faVerify($event)"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-magic
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_magic'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (send)="onAdminPortalMagicSend($event)"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-ip-warning
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_ip_warning'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-dashboard
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_dashboard'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-crm-list
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_crm'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (bulkSuspend)="onAdminPortalBulkSuspend($event)"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-tag-manager
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_tag_manager'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (createTag)="onAdminPortalCreateTag($event)"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-suspend-confirm
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_suspend'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (confirm)="onAdminPortalSuspendConfirm($event)"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-customer-detail
+        #adminPortalCustomerDetail
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_customer_detail'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+        (sendMessage)="onAdminPortalSendMessage($event)"
+        (saveNote)="onAdminPortalSaveNote($event)"
+        (exportAccount)="onAdminPortalExportAccount()"
+      />
+      <app-admin-portal-tickets
+        #adminPortalTickets
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_tickets'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+        (createTicket)="onAdminPortalCreateTicket($event)"
+        (assignTicket)="onAdminPortalAssignTicket($event)"
+        (statusTicket)="onAdminPortalStatusTicket($event)"
+      />
+      <app-admin-portal-bookings-ledger
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_bookings'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-booking-detail
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_booking_detail'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-provider-detail
+        #adminPortalProviderDetail
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_provider_detail'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+        (sendMessage)="onAdminPortalProviderSendMessage($event)"
+        (saveNote)="onAdminPortalProviderSaveNote($event)"
+        (exportAccount)="onAdminPortalExportAccount()"
+      />
+      <app-admin-portal-team
+        #adminPortalTeam
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_team'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+        (inviteAdmin)="onAdminPortalInviteAdmin($event)"
+        (changeRole)="onAdminPortalChangeRole($event)"
+        (revokeAdmin)="onAdminPortalRevokeAdmin($event)"
+      />
+      <app-admin-portal-audit
+        *ngIf="bffResponse!.screen === 'beauty_admin_portal_audit'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-admin-portal-flags
+        *ngIf="bffResponse!.screen === 'beauty_admin_flags'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
@@ -232,6 +363,18 @@ import { BffLink, BffResponse } from './beauty-bff.types';
       />
       <app-beauty-chat-thread
         *ngIf="bffResponse!.screen === 'beauty_chat_thread'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-provider-messages
+        *ngIf="bffResponse!.screen === 'beauty_business_messages'"
+        [data]="bffResponse!.data ?? {}"
+        [links]="bffResponse!._links ?? {}"
+        (followLink)="followLink($event)"
+      />
+      <app-beauty-business-reviews
+        *ngIf="bffResponse!.screen === 'beauty_business_reviews'"
         [data]="bffResponse!.data ?? {}"
         [links]="bffResponse!._links ?? {}"
         (followLink)="followLink($event)"
@@ -319,11 +462,12 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
   isLoading = true;
   serverError = false;
 
-  // Admin-flags screen state — populated whenever the BFF returns it.
-  adminFlags: AdminFlag[] = [];
-  adminAudit: AdminFlagAuditEntry[] = [];
-  adminEmail: string | null = null;
-  busyFlagKey: string | null = null;
+  @ViewChild('adminPortalCustomerDetail') adminPortalCustomerDetailRef?: AdminPortalCustomerDetailComponent;
+  @ViewChild('adminPortalProviderDetail') adminPortalProviderDetailRef?: AdminPortalProviderDetailComponent;
+  @ViewChild('adminPortalTickets') adminPortalTicketsRef?: AdminPortalTicketsComponent;
+  @ViewChild('adminPortalTeam') adminPortalTeamRef?: AdminPortalTeamComponent;
+  adminPortalSigninError: string | null = null;
+  adminPortal2faError: string | null = null;
 
   private currentScreen = 'beauty_home';
   private currentParams: Record<string, string | number> = {};
@@ -372,14 +516,18 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
 
     // Re-resolve whenever the route data OR the path params change so that
     // `/category/:slug`, `/providers/:id`, `/book/:serviceId` all work.
-    this.routeSub = combineLatest([this.route.data, this.route.paramMap])
+    this.routeSub = combineLatest([this.route.data, this.route.paramMap, this.route.queryParamMap])
       .pipe(
-        switchMap(([data, paramMap]) => {
+        switchMap(([data, paramMap, queryParamMap]) => {
           this.currentScreen = (data['screen'] as string) || 'beauty_home';
           const params: Record<string, string | number> = {};
           for (const key of paramMap.keys) {
             const value = paramMap.get(key);
             if (value != null) params[key] = value;
+          }
+          for (const key of queryParamMap.keys) {
+            const value = queryParamMap.get(key);
+            if (value != null && !(key in params)) params[key] = value;
           }
           this.currentParams = params;
           this.isLoading = true;
@@ -454,10 +602,14 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     beauty_business_application_review: '/business/apply/review',
     beauty_wireframe: '/wireframe',
     beauty_admin_flags: '/admin/flags',
-    beauty_admin_crm: '/admin/crm',
+    beauty_admin_portal_signin: '/admin/portal/signin',
+    beauty_admin_portal_2fa: '/admin/portal/2fa',
+    beauty_admin_portal_magic: '/admin/portal/magic',
+    beauty_admin_portal_ip_warning: '/admin/portal/ip-warning',
     beauty_bookings: '/bookings',
     beauty_profile: '/profile',
     beauty_chats: '/chats',
+    beauty_favorites: '/saved',
     // beauty_reschedule and beauty_booking_detail are param routes — the
     // BFF always supplies a substituted `route`, so no fallback entry.
     beauty_business_home: '/business',
@@ -502,26 +654,173 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
     this.retry();
   }
 
-  /** Called by the admin-flags child when the user clicks a toggle. */
-  onFlagToggle(event: FlagToggleEvent): void {
-    if (this.busyFlagKey) return;
-    this.busyFlagKey = event.body.key;
-
-    this.authService.follow(event.link, event.body).subscribe({
-      next: () => {
-        this.busyFlagKey = null;
-        // Re-resolve so we render the freshly-saved value AND a new audit row.
-        this.retry();
-      },
-      error: () => {
-        this.busyFlagKey = null;
-        this.serverError = true;
-      },
+  /** Submit handler for /admin/portal/signin — posts to the BFF submit link
+   *  and forwards via the link's route on success. On error the resolver
+   *  is re-run so the form re-renders with a fresh CSRF state. */
+  onAdminPortalSignin(payload: { email: string; password: string }): void {
+    const link = this.bffResponse?._links?.['submit'];
+    if (!link) return;
+    this.adminPortalSigninError = null;
+    this.authService.follow(link, payload, true).subscribe({
+      next: () => this.navigateToLink(link),
+      error: () => { this.adminPortalSigninError = 'Invalid email or password.'; },
     });
   }
 
-  goHome(): void {
-    this.router.navigateByUrl('/');
+  onAdminPortalBulkSuspend(ev: { type: 'customers' | 'providers'; ids: number[] }): void {
+    const link = this.bffResponse?._links?.['suspend'];
+    if (!link || !ev.ids.length) return;
+    const dtype = ev.type === 'customers' ? 'customer' : 'business';
+    const pending = ev.ids.map((id) =>
+      this.authService.follow(link, { type: dtype, id, suspended: true }, true).toPromise(),
+    );
+    Promise.all(pending).then(() => this.retry()).catch(() => this.retry());
+  }
+
+  onAdminPortalSendMessage(body: string): void {
+    const link = this.bffResponse?._links?.['message'];
+    if (!link) return;
+    this.authService.follow(link, { body }, true).subscribe({
+      next: () => this.adminPortalCustomerDetailRef?.messageResult(true),
+      error: (e) => this.adminPortalCustomerDetailRef?.messageResult(false, (e?.error?.detail) ?? 'Failed to send.'),
+    });
+  }
+
+  onAdminPortalSaveNote(body: string): void {
+    const link = this.bffResponse?._links?.['note'];
+    if (!link) return;
+    this.authService.follow(link, { body }, true).subscribe({
+      next: () => { this.adminPortalCustomerDetailRef?.noteResult(true); this.retry(); },
+      error: (e) => this.adminPortalCustomerDetailRef?.noteResult(false, (e?.error?.detail) ?? 'Failed to save.'),
+    });
+  }
+
+  onAdminPortalProviderSendMessage(body: string): void {
+    const link = this.bffResponse?._links?.['message'];
+    if (!link) return;
+    this.authService.follow(link, { body }, true).subscribe({
+      next: () => this.adminPortalProviderDetailRef?.messageResult(true),
+      error: (e) => this.adminPortalProviderDetailRef?.messageResult(false, (e?.error?.detail) ?? 'Failed to send.'),
+    });
+  }
+
+  onAdminPortalProviderSaveNote(body: string): void {
+    const link = this.bffResponse?._links?.['note'];
+    if (!link) return;
+    this.authService.follow(link, { body }, true).subscribe({
+      next: () => { this.adminPortalProviderDetailRef?.noteResult(true); this.retry(); },
+      error: (e) => this.adminPortalProviderDetailRef?.noteResult(false, (e?.error?.detail) ?? 'Failed to save.'),
+    });
+  }
+
+  onAdminPortalCreateTicket(payload: { subject: string; priority: string; category: string; source: string; body: string }): void {
+    const link = this.bffResponse?._links?.['create'];
+    if (!link) return;
+    this.authService.follow(link, payload, true).subscribe({
+      next: () => { this.adminPortalTicketsRef?.createResult(true); this.retry(); },
+      error: (e) => this.adminPortalTicketsRef?.createResult(false, (e?.error?.detail) ?? 'Failed.'),
+    });
+  }
+
+  onAdminPortalAssignTicket(ev: { id: number; assignee_email: string }): void {
+    const tmpl = this.bffResponse?._links?.['assign_template'];
+    if (!tmpl) return;
+    const link: BffLink = { ...tmpl, href: (tmpl.href || '').replace(':id', String(ev.id)) };
+    this.authService.follow(link, { assignee_email: ev.assignee_email }, true).subscribe({
+      next: () => this.retry(),
+      error: () => this.retry(),
+    });
+  }
+
+  onAdminPortalStatusTicket(ev: { id: number; status: string }): void {
+    const tmpl = this.bffResponse?._links?.['status_template'];
+    if (!tmpl) return;
+    const link: BffLink = { ...tmpl, href: (tmpl.href || '').replace(':id', String(ev.id)) };
+    this.authService.follow(link, { status: ev.status }, true).subscribe({
+      next: () => this.retry(),
+      error: () => this.retry(),
+    });
+  }
+
+  onAdminPortalExportAccount(): void {
+    const link = this.bffResponse?._links?.['export'];
+    if (!link?.href) return;
+    if (typeof window !== 'undefined') {
+      // Open in new tab so HttpOnly cookies still authenticate the GET.
+      window.open(link.href, '_blank');
+    }
+  }
+
+  onAdminPortalSuspendConfirm(payload: { type: 'customer' | 'business'; id: number; reason: string; suspended: boolean }): void {
+    const link = this.bffResponse?._links?.['submit'];
+    if (!link) return;
+    this.authService.follow(link, {
+      type: payload.type, id: payload.id, suspended: payload.suspended, reason: payload.reason,
+    }, true).subscribe({
+      next: () => this.navigateToLink(link),
+      error: () => this.navigateToLink(link),
+    });
+  }
+
+  onAdminPortalCreateTag(payload: { label: string; color: string; tone: string }): void {
+    const link = this.bffResponse?._links?.['create'];
+    if (!link) return;
+    this.authService.follow(link, payload, true).subscribe({
+      next: () => this.retry(),
+      error: () => { /* swallow; client-side validation already caught most */ },
+    });
+  }
+
+  onAdminPortalMagicSend(email: string): void {
+    const link = this.bffResponse?._links?.['send'];
+    if (!link) return;
+    this.authService.follow(link, { email }, true).subscribe({
+      next: () => { /* success-card already visible */ },
+      error: () => { /* visual stub */ },
+    });
+  }
+
+  onAdminPortalInviteAdmin(payload: { email: string; role: string }): void {
+    const link = this.bffResponse?._links?.['invite'];
+    if (!link) return;
+    this.authService.follow(link, payload, true).subscribe({
+      next: () => { this.adminPortalTeamRef?.inviteResult(true); this.retry(); },
+      error: (e) => this.adminPortalTeamRef?.inviteResult(false, (e?.error?.detail) ?? 'Failed to send invite.'),
+    });
+  }
+
+  onAdminPortalChangeRole(ev: { principal_id: number; role: string }): void {
+    const tmpl = this.bffResponse?._links?.['role_template'];
+    if (!tmpl) return;
+    const link: BffLink = { ...tmpl, href: (tmpl.href || '').replace(':id', String(ev.principal_id)) };
+    this.authService.follow(link, { role: ev.role }, true).subscribe({
+      next: () => { this.adminPortalTeamRef?.roleResult(true); this.retry(); },
+      error: (e) => this.adminPortalTeamRef?.roleResult(false, (e?.error?.detail) ?? 'Failed to update role.'),
+    });
+  }
+
+  onAdminPortalRevokeAdmin(ev: { principal_id: number; email: string }): void {
+    const tmpl = this.bffResponse?._links?.['revoke_template'];
+    if (!tmpl) return;
+    const link: BffLink = { ...tmpl, href: (tmpl.href || '').replace(':id', String(ev.principal_id)) };
+    if (typeof window !== 'undefined') {
+      const ok = window.confirm(`Revoke admin access for ${ev.email}?`);
+      if (!ok) return;
+    }
+    this.authService.follow(link, {}, true).subscribe({
+      next: () => this.retry(),
+      error: (e) => this.adminPortalTeamRef?.roleResult(false, (e?.error?.detail) ?? 'Failed to revoke.'),
+    });
+  }
+
+  onAdminPortal2faVerify(code: string): void {
+    const link = this.bffResponse?._links?.['submit'];
+    if (!link) return;
+    this.adminPortal2faError = null;
+    this.authService.follow(link, { code }, true).subscribe({
+      next: () => this.navigateToLink(link),
+      error: () => { this.adminPortal2faError = 'Invalid code. Try again.'; },
+    });
   }
 
   private static readonly WIZARD_SCREENS = new Set([
@@ -543,12 +842,6 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
 
   private applyResponse(response: BffResponse): void {
     this.isLoading = false;
-    if (response.action === 'render' && response.screen === 'beauty_admin_flags') {
-      const data = (response.data ?? {}) as Record<string, unknown>;
-      this.adminFlags = (data['flags'] as AdminFlag[]) ?? [];
-      this.adminAudit = (data['audit'] as AdminFlagAuditEntry[]) ?? [];
-      this.adminEmail = (data['admin_email'] as string) ?? null;
-    }
     if (response.action === 'redirect') {
       const target = response._links?.['target'];
       if (target) {

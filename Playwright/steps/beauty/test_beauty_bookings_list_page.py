@@ -12,7 +12,7 @@ from Playwright.pages.pogoda.beauty.bookings_list_page import (
 
 from ._auth_helpers import ui_login
 
-scenarios("../../features/Pogoda/Beauty/beauty_bookings_list_page.feature")
+scenarios("../../features/Beauty/beauty_bookings_list_page.feature")
 
 
 @given("an authenticated customer is on the bookings list page")

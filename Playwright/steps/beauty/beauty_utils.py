@@ -5,7 +5,8 @@ from typing import Iterable
 import requests
 
 BACKEND_PORT = os.getenv('BACKEND_PORT', '8000')
-BACKEND_URL = f"http://localhost:{BACKEND_PORT}"
+BEAUTY_PORT = os.getenv('BEAUTY_PORT', '4300')
+BACKEND_URL = f"http://localhost:{BEAUTY_PORT}"
 TEST_DEVICE_ID = "test-device-playwright-beauty-001"
 BEAUTY_SESSION_COOKIE = "beauty_auth"
 
@@ -21,8 +22,7 @@ def delete_test_users(email: str) -> None:
         f"BusinessProvider.objects.filter(email='{email}').delete()"
     )
     subprocess.run(
-        ["python", "manage.py", "shell", "-c", cmd],
-        cwd=os.path.abspath(_MANAGE_PY_DIR),
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
         timeout=30,
     )
@@ -67,8 +67,28 @@ def attach_business_session_cookie(page, cookie_value: str) -> None:
             "httpOnly": False,
         })
     page.context.add_cookies(cookies)
-    page.add_init_script(
-        f"window.localStorage.setItem('beauty_device_id', '{TEST_DEVICE_ID}');"
+    page.add_init_script(f"window.localStorage.setItem('beauty_device_id', '{TEST_DEVICE_ID}');")
+
+
+def advance_to_schedule_step_via_api(email: str) -> None:
+    """Mark entity/services/stripe wizard steps complete so /apply/schedule
+    is reachable. Used by tests that only need to exercise the schedule UI."""
+    cmd = (
+        "from beauty_api.models import BusinessProvider, BusinessProviderApplication; "
+        f"bp = BusinessProvider.objects.get(email='{email}'); "
+        "app, _ = BusinessProviderApplication.objects.get_or_create(business_provider=bp); "
+        "app.entity_type = 'person'; "
+        "app.applicant_first_name = 'Pat'; "
+        "app.applicant_last_name = 'Owner'; "
+        "app.business_name = bp.business_name; "
+        "app.selected_categories = ['nails']; "
+        "app.completed_steps = ['entity','services','stripe']; "
+        "app.save()"
+    )
+    subprocess.run(
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
+        capture_output=True,
+        timeout=30,
     )
 
 
@@ -93,8 +113,7 @@ def accept_application_via_api(email: str) -> None:
         "app.save()"
     )
     subprocess.run(
-        ["python", "manage.py", "shell", "-c", cmd],
-        cwd=os.path.abspath(_MANAGE_PY_DIR),
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
         timeout=30,
     )

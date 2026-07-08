@@ -85,6 +85,7 @@ interface FieldState {
               </svg>
             </div>
             <div class="auth-brand-name">Beauty</div>
+            <div *ngIf="p.brand_block_badge" class="auth-brand-badge">{{ p.brand_block_badge }}</div>
           </div>
 
           <h1 *ngIf="form.title" [class]="p.title_class">{{ form.title }}</h1>
@@ -280,23 +281,17 @@ export class BeautyDynamicFormComponent implements OnChanges {
   }
 
   emitGoogle(): void {
-    const link: BffLink = this.links['google'] || {
-      rel: 'google',
-      href: null,
-      method: 'NAV',
-      screen: 'beauty_login',
-      route: '/login',
-      prompt: 'Continue with Google',
-      params: { provider: 'google' },
-    };
-    this.emitFollow(link);
+    // The BFF supplies the google link (NAV to the chooser). No link → no-op,
+    // never a self-route guess.
+    this.emitFollow(this.links['google']);
   }
 
   resolveFooterLink(fl: BffFooterLink): BffLink | null {
     return this.links[fl.rel] || null;
   }
 
-  emitFollow(link: BffLink): void {
+  emitFollow(link: BffLink | null | undefined): void {
+    if (!link) return;
     this.followLink.emit(link);
   }
 
@@ -321,6 +316,12 @@ export class BeautyDynamicFormComponent implements OnChanges {
         }
       } catch {
         // Bad pattern from server — fail open rather than block the user.
+      }
+    }
+    if (f.schema.match_field) {
+      const target = this.fields.find((x) => x.schema.name === f.schema.match_field);
+      if (target && v !== target.value) {
+        return msgs['match'] || 'Does not match.';
       }
     }
     return null;

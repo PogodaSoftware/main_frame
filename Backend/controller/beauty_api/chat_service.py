@@ -22,7 +22,7 @@ scheduled task. ``prune_all_expired()`` is provided for admin/cron use.
 
 from datetime import datetime, timedelta, timezone
 
-from .models import BeautyBooking, BeautyChatMessage
+from .models import BeautyBooking, BeautyChatMessage, BeautyChatRead
 
 
 CHAT_RETENTION_HOURS = 24
@@ -45,6 +45,43 @@ def is_chat_active(booking: BeautyBooking, *, now: datetime | None = None) -> bo
         return False
     n = now or datetime.now(timezone.utc)
     return n < chat_expires_at(booking)
+
+
+_MESSAGEABLE_CANDIDATE_LIMIT = 20  # enough to cover any realistic 24h window
+
+
+def find_messageable_booking(target_type: str, target_id: int) -> BeautyBooking | None:
+    """Most-recent booking whose chat thread is still deliverable for a target.
+
+    "Deliverable" = not cancelled AND within the 24h post-service window
+    (``is_chat_active``). ``target_type`` is ``'customer'`` (``target_id`` =
+    ``BeautyUser.id``) or ``'business'`` (``target_id`` = ``BusinessProvider.id``,
+    the same key ``can_user_access`` compares). Returns ``None`` if none.
+
+    Single source of truth for both the admin send path and the detail
+    resolvers' button gate, so they never disagree.
+    """
+    base = (
+        BeautyBooking.objects
+        .select_related('service', 'service__provider', 'customer')
+        .exclude(status__in=BeautyBooking.CANCELLED_STATUSES)
+        .order_by('-slot_at')
+    )
+    if target_type == 'customer':
+        qs = base.filter(customer_id=target_id)
+    elif target_type == 'business':
+        qs = base.filter(service__provider__business_provider_id=target_id)
+    else:
+        return None
+    for booking in qs[:_MESSAGEABLE_CANDIDATE_LIMIT]:
+        if is_chat_active(booking):
+            return booking
+    return None
+
+
+def has_messageable_thread(target_type: str, target_id: int) -> bool:
+    """True if an admin can deliver an in-app message to this target."""
+    return find_messageable_booking(target_type, target_id) is not None
 
 
 def prune_expired_for(booking: BeautyBooking, *, now: datetime | None = None) -> int:
@@ -124,3 +161,45 @@ def post_message(
         body=body,
     )
     return msg
+
+
+# ---------------------------------------------------------------------------
+# Read-state / unread counts
+# ---------------------------------------------------------------------------
+
+def mark_read(
+    booking: BeautyBooking,
+    *,
+    viewer_type: str,
+    viewer_id: int,
+    now: datetime | None = None,
+) -> None:
+    """Stamp this viewer's read marker for the thread to ``now``.
+
+    Idempotent upsert keyed on (booking, viewer_type, viewer_id). After
+    this, ``unread_count_for`` returns 0 for the viewer until the peer
+    sends another message.
+    """
+    n = now or datetime.now(timezone.utc)
+    BeautyChatRead.objects.update_or_create(
+        booking_id=booking.id,
+        viewer_type=viewer_type,
+        viewer_id=viewer_id,
+        defaults={'last_read_at': n},
+    )
+
+
+def unread_count_for(booking: BeautyBooking, *, viewer_type: str, viewer_id: int) -> int:
+    """Count messages from the *other* party newer than the viewer's last read.
+
+    Own messages never count. A missing read marker means everything from
+    the peer is unread.
+    """
+    qs = BeautyChatMessage.objects.filter(booking_id=booking.id).exclude(sender_type=viewer_type)
+    try:
+        marker = BeautyChatRead.objects.get(
+            booking_id=booking.id, viewer_type=viewer_type, viewer_id=viewer_id,
+        )
+    except BeautyChatRead.DoesNotExist:
+        return qs.count()
+    return qs.filter(created_at__gt=marker.last_read_at).count()

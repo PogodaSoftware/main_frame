@@ -31,7 +31,7 @@ from .beauty_utils import (
     login_business_via_api,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_application.feature")
+scenarios("../../features/Beauty/beauty_business_application.feature")
 
 
 @pytest.fixture(scope="function")
@@ -86,7 +86,8 @@ def fill_entity(page, full_name, biz):
     last = parts[1] if len(parts) > 1 else ''
     page.locator(entity_first_input).fill(first)
     page.locator(entity_last_input).fill(last)
-    page.locator(entity_business_name_input).fill(biz)
+    if page.locator(entity_business_name_input).is_visible():
+        page.locator(entity_business_name_input).fill(biz)
 
 
 @when("I submit the entity step")
@@ -97,7 +98,8 @@ def submit_entity(page):
 
 @when(parsers.parse('I select the "{cat}" service category'))
 def select_category(page, cat):
-    page.locator(service_checkbox.format(category=cat)).check()
+    # Services step now uses button.cat-btn (toggle button), not a checkbox.
+    page.locator(service_checkbox.format(category=cat)).click()
 
 
 @when("I submit the services step")
@@ -131,7 +133,8 @@ def submit_disabled(page):
 
 @when("I tick the terms of service checkbox")
 def tick_tos(page):
-    page.locator(tos_checkbox).check()
+    # tos_checkbox now targets label.tos-agree (input is sr-only); use click.
+    page.locator(tos_checkbox).click()
 
 
 @then("the submit application button should be enabled")
@@ -148,12 +151,14 @@ def submit_app(page):
 @then("I should land on the business home page")
 def land_on_dashboard(page):
     assert "/business" in page.url
-    expect(page.locator(shell_root.replace('business-shell', 'business-shell.business-home'))).to_be_visible()
+    from Playwright.pages.pogoda.beauty.business_home_page import home_root
+    expect(page.locator(home_root)).to_be_visible()
 
 
 @when("I choose the business entity option")
 def choose_business(page):
-    page.locator(entity_radio_business).check()
+    # entity_radio_business now targets label.legal-opt (input is sr-only); use click.
+    page.locator(entity_radio_business).click()
 
 
 @when("I leave the ITIN field blank")

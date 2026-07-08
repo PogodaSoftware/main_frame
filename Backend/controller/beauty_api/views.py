@@ -9,11 +9,16 @@ Security measures applied:
 - Cookie payload is Django-signed (tamper-proof, time-limited).
 - Session records stored with a SHA-256 hash of the raw token.
 - Generic error messages on auth failure (no user enumeration).
+- Strict customer/business role separation: an email may belong to at
+  most one role, signups across roles are rejected with 409, and
+  login attempts on the wrong portal are blocked + audited + rate
+  limited per source IP. See ``auth_security.py``.
 """
 
 import hashlib
 import logging
 import os
+import secrets
 from datetime import datetime, timedelta, timezone
 
 from django.conf import settings
@@ -23,15 +28,29 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .auth_security import (
+    client_ip,
+    find_existing_role,
+    is_rate_limited,
+    record_xrole_failure,
+    reset_xrole_counter,
+    write_audit,
+)
 from .availability_service import ensure_storefront
 from .middleware import SESSION_COOKIE_NAME, SESSION_MAX_AGE_SECONDS
-from .models import BeautySession, BeautyUser, BusinessProvider
+from .models import (
+    BeautyAuthAuditLog,
+    BeautySession,
+    BeautyUser,
+    BusinessProvider,
+)
 from .serializers import (
     BusinessLoginSerializer,
     BusinessProviderSignUpSerializer,
     LoginSerializer,
     SignUpSerializer,
 )
+from bff_api.services.hateoas_service import is_signup_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +58,11 @@ logger = logging.getLogger(__name__)
 # Defaults to True in all environments. Only set BEAUTY_COOKIE_INSECURE=true
 # for local development over plain http — never in any deployed environment.
 COOKIE_SECURE = os.environ.get('BEAUTY_COOKIE_INSECURE', 'false').lower() != 'true'
+
+# Single shared response body for every auth failure so the API never
+# leaks whether a particular email exists in either user store.
+GENERIC_AUTH_FAILURE = {'detail': 'Invalid email or password.'}
+GENERIC_RATE_LIMIT = {'detail': 'Too many failed attempts. Try again later.'}
 
 
 def _make_cookie_payload(user_id: int, user_type: str, device_id: str) -> dict:
@@ -87,20 +111,97 @@ def _create_session(user_id: int, user_type: str, device_id: str, signed_token: 
     )
 
 
+def _signup_duplicate_email(serializer) -> bool:
+    """The signup serializers raise a ``ValidationError`` on duplicate
+    email (across BOTH role tables). We translate that single field
+    error into a 409 Conflict instead of the default 400 so the
+    frontend can disambiguate "this email is taken" from "the request
+    body was malformed". Any other validation error stays a 400."""
+    errors = serializer.errors or {}
+    email_errors = errors.get('email') or []
+    return any('already exists' in str(err) for err in email_errors)
+
+
+def _reject_cross_role_login(request, email: str, attempted_role: str,
+                             existing_role: str):
+    """Common rejection path for a login that targeted the wrong portal.
+
+    Writes an audit row, bumps the per-IP rate-limit counter, and either
+    returns a 429 (counter past threshold) or a 401 with the generic
+    failure body. The caller just returns whatever this helper returns.
+    """
+    ip = client_ip(request)
+    write_audit(
+        BeautyAuthAuditLog.EVENT_CROSS_ROLE_LOGIN,
+        email=email,
+        ip=ip,
+        attempted_role=attempted_role,
+        existing_role=existing_role,
+    )
+    new_count = record_xrole_failure(ip)
+    if new_count > 5:
+        write_audit(
+            BeautyAuthAuditLog.EVENT_RATE_LIMITED,
+            email=email,
+            ip=ip,
+            attempted_role=attempted_role,
+            existing_role=existing_role,
+        )
+        return Response(GENERIC_RATE_LIMIT, status=status.HTTP_429_TOO_MANY_REQUESTS)
+    return Response(GENERIC_AUTH_FAILURE, status=status.HTTP_401_UNAUTHORIZED)
+
+
 class SignUpView(APIView):
     def post(self, request):
+        if not is_signup_enabled():
+            return Response(
+                {'detail': 'Sign-up is currently disabled.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        email = (request.data.get('email') or '').lower().strip()
+        confirm_email = (request.data.get('confirm_email') or '').lower().strip()
+        if confirm_email and confirm_email != email:
+            return Response({'detail': 'Email addresses do not match.'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = SignUpSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
-            return Response(
+            device_id = serializer.validated_data['device_id']
+            response = Response(
                 {'message': 'Account created successfully.', 'email': user.email},
                 status=status.HTTP_201_CREATED,
+            )
+            # Auto-login: bind a session cookie so the success link lands the
+            # new customer on an authenticated home (mirrors business signup).
+            payload = _make_cookie_payload(user.id, BeautySession.USER_TYPE_CUSTOMER, device_id)
+            signed_token = signing.dumps(payload)
+            _create_session(user.id, BeautySession.USER_TYPE_CUSTOMER, device_id, signed_token)
+            _set_auth_cookie(response, signed_token)
+            return response
+        if _signup_duplicate_email(serializer):
+            email = (request.data.get('email') or '').lower().strip()
+            existing = find_existing_role(email)
+            # Audit only when the collision crosses the role boundary —
+            # a same-role duplicate is not a security event.
+            if existing and existing != BeautySession.USER_TYPE_CUSTOMER:
+                write_audit(
+                    BeautyAuthAuditLog.EVENT_CROSS_ROLE_SIGNUP,
+                    email=email,
+                    ip=client_ip(request),
+                    attempted_role=BeautySession.USER_TYPE_CUSTOMER,
+                    existing_role=existing,
+                )
+            return Response(
+                {'detail': 'An account with this email already exists.'},
+                status=status.HTTP_409_CONFLICT,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
     def post(self, request):
+        if is_rate_limited(client_ip(request)):
+            return Response(GENERIC_RATE_LIMIT, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -112,16 +213,19 @@ class LoginView(APIView):
         try:
             user = BeautyUser.objects.get(email=email)
         except BeautyUser.DoesNotExist:
-            return Response(
-                {'detail': 'Invalid email or password.'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            # Email not a customer. If it IS a business provider, this
+            # is a cross-role attempt (V4) and gets the dedicated path.
+            if BusinessProvider.objects.filter(email=email).exists():
+                return _reject_cross_role_login(
+                    request,
+                    email,
+                    attempted_role=BeautySession.USER_TYPE_CUSTOMER,
+                    existing_role=BeautySession.USER_TYPE_BUSINESS,
+                )
+            return Response(GENERIC_AUTH_FAILURE, status=status.HTTP_401_UNAUTHORIZED)
 
         if not check_password(raw_password, user.password):
-            return Response(
-                {'detail': 'Invalid email or password.'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            return Response(GENERIC_AUTH_FAILURE, status=status.HTTP_401_UNAUTHORIZED)
 
         if getattr(user, 'is_suspended', False):
             return Response(
@@ -133,6 +237,7 @@ class LoginView(APIView):
         signed_token = signing.dumps(payload)
 
         _create_session(user.id, BeautySession.USER_TYPE_CUSTOMER, device_id, signed_token)
+        reset_xrole_counter(client_ip(request))
 
         response = Response(
             {'message': 'Login successful.', 'email': user.email},
@@ -154,14 +259,70 @@ class LogoutView(APIView):
         return response
 
 
+class ForgotPasswordView(APIView):
+    """
+    Accept a password-reset request and return 200 regardless of whether
+    the email is on file. Returning the same response for known and
+    unknown emails prevents account-enumeration through this endpoint.
+
+    The actual email dispatch is intentionally not wired here — SMTP
+    plumbing is out of scope for the initial RN port. A real
+    implementation would generate a single-use reset token, persist it
+    with a short TTL, and send the link via the transactional mail
+    provider. The endpoint already returns the user-facing success state
+    so the client UX is fully testable end-to-end.
+    """
+
+    def post(self, request):
+        email = (request.data.get('email') or '').strip().lower()
+        if not email or '@' not in email:
+            return Response(
+                {'detail': 'A valid email address is required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        # Best-effort lookup so we can log a useful audit row without
+        # leaking the result to the caller. The user model is referenced
+        # lazily here to avoid widening the import footprint when the
+        # feature is disabled.
+        try:
+            from .models import BeautyUser  # local import to avoid cycles
+            BeautyUser.objects.filter(email__iexact=email).only('id').first()
+        except Exception:  # pragma: no cover — best-effort only
+            logger.exception('forgot-password lookup failed')
+        return Response(
+            {'message': 'If the address is on file, a reset link is on its way.'},
+            status=status.HTTP_200_OK,
+        )
+
+
 class BusinessProviderSignUpView(APIView):
     def post(self, request):
         serializer = BusinessProviderSignUpSerializer(data=request.data)
         if not serializer.is_valid():
+            if _signup_duplicate_email(serializer):
+                email = (request.data.get('email') or '').lower().strip()
+                existing = find_existing_role(email)
+                if existing and existing != BeautySession.USER_TYPE_BUSINESS:
+                    write_audit(
+                        BeautyAuthAuditLog.EVENT_CROSS_ROLE_SIGNUP,
+                        email=email,
+                        ip=client_ip(request),
+                        attempted_role=BeautySession.USER_TYPE_BUSINESS,
+                        existing_role=existing,
+                    )
+                return Response(
+                    {'detail': 'An account with this email already exists.'},
+                    status=status.HTTP_409_CONFLICT,
+                )
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         provider = serializer.save()
 
-        device_id = (request.data.get('device_id') or '').strip()
+        device_id = serializer.validated_data['device_id']
+        payload = _make_cookie_payload(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id)
+        signed_token = signing.dumps(payload)
+        _create_session(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id, signed_token)
+        ensure_storefront(provider)
         response = Response(
             {
                 'message': 'Business account created successfully.',
@@ -170,17 +331,15 @@ class BusinessProviderSignUpView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-        if device_id:
-            payload = _make_cookie_payload(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id)
-            signed_token = signing.dumps(payload)
-            _create_session(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id, signed_token)
-            ensure_storefront(provider)
-            _set_auth_cookie(response, signed_token)
+        _set_auth_cookie(response, signed_token)
         return response
 
 
 class BusinessLoginView(APIView):
     def post(self, request):
+        if is_rate_limited(client_ip(request)):
+            return Response(GENERIC_RATE_LIMIT, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
         serializer = BusinessLoginSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -192,16 +351,19 @@ class BusinessLoginView(APIView):
         try:
             provider = BusinessProvider.objects.get(email=email)
         except BusinessProvider.DoesNotExist:
-            return Response(
-                {'detail': 'Invalid email or password.'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            # Cross-role check (V3): if the email is registered as a
+            # customer, log + rate-limit + generic 401.
+            if BeautyUser.objects.filter(email=email).exists():
+                return _reject_cross_role_login(
+                    request,
+                    email,
+                    attempted_role=BeautySession.USER_TYPE_BUSINESS,
+                    existing_role=BeautySession.USER_TYPE_CUSTOMER,
+                )
+            return Response(GENERIC_AUTH_FAILURE, status=status.HTTP_401_UNAUTHORIZED)
 
         if not check_password(raw_password, provider.password):
-            return Response(
-                {'detail': 'Invalid email or password.'},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+            return Response(GENERIC_AUTH_FAILURE, status=status.HTTP_401_UNAUTHORIZED)
 
         if getattr(provider, 'is_suspended', False):
             return Response(
@@ -213,6 +375,7 @@ class BusinessLoginView(APIView):
         signed_token = signing.dumps(payload)
 
         _create_session(provider.id, BeautySession.USER_TYPE_BUSINESS, device_id, signed_token)
+        reset_xrole_counter(client_ip(request))
 
         # Auto-provision the public storefront on first login so the
         # business portal works without any extra setup step.
@@ -239,6 +402,82 @@ class BusinessLogoutView(APIView):
 
         response = Response({'message': 'Logged out successfully.'}, status=status.HTTP_200_OK)
         response.delete_cookie(SESSION_COOKIE_NAME, path='/')
+        return response
+
+
+class GoogleMockAuthView(APIView):
+    """
+    POST /api/beauty/auth/google/
+
+    DEBUG-only passwordless login that simulates "Sign in with Google" for
+    demo purposes. Returns 404 in production (settings.DEBUG is False).
+
+    Request body:
+        { "account": "<demo email>", "device_id": "<str>", "user_type": "customer"|"business" }
+
+    Allowlisted demo accounts only — anything else returns 400.
+    On success: find-or-create the user/provider, issue a real session cookie.
+    """
+
+    # Allowlist — must stay in sync with beauty_google_auth.py resolver catalogue.
+    _CUSTOMER_ACCOUNTS = {
+        'aisha.bell@gmail.com':    {'name': 'Aisha Bell'},
+        'hugo.l@startuplabs.io':   {'name': 'Hugo Lindqvist'},
+    }
+    _BUSINESS_ACCOUNTS = {
+        'studio.luxe@gmail.com':   {'business_name': 'Studio Luxe'},
+        'glow.bar@startuplabs.io': {'business_name': 'Glow Bar'},
+    }
+
+    def post(self, request):
+        if not settings.DEBUG:
+            return Response(status=404)
+
+        account  = (request.data.get('account') or '').strip().lower()
+        device_id = (request.data.get('device_id') or '').strip()
+        user_type = (request.data.get('user_type') or 'customer').strip().lower()
+
+        if not account or not device_id:
+            return Response(
+                {'detail': 'account and device_id are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Resolve the per-type config; the session-issue path below is shared.
+        if user_type == 'customer':
+            allow, sess = self._CUSTOMER_ACCOUNTS, BeautySession.USER_TYPE_CUSTOMER
+            build = lambda: BeautyUser(email=account, city='Brooklyn')
+        elif user_type == 'business':
+            allow, sess = self._BUSINESS_ACCOUNTS, BeautySession.USER_TYPE_BUSINESS
+            build = lambda: BusinessProvider(email=account, business_name=allow[account]['business_name'])
+        else:
+            return Response(
+                {'detail': 'user_type must be customer or business.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if account not in allow:
+            return Response(
+                {'detail': 'Account not in demo allowlist.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        model = BeautyUser if user_type == 'customer' else BusinessProvider
+        obj = model.objects.filter(email=account).first()
+        if obj is None:
+            obj = build()
+            obj.set_password(secrets.token_urlsafe(32))
+            obj.save()
+
+        payload = _make_cookie_payload(obj.id, sess, device_id)
+        signed_token = signing.dumps(payload)
+        _create_session(obj.id, sess, device_id, signed_token)
+
+        response = Response(
+            {'message': 'Login successful.', 'email': obj.email},
+            status=status.HTTP_200_OK,
+        )
+        _set_auth_cookie(response, signed_token)
         return response
 
 

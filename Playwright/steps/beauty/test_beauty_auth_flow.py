@@ -4,7 +4,9 @@ from pytest_bdd import scenarios, given, when, then
 from playwright.sync_api import expect
 from Playwright.Hooks.hooks import selecting_different_routes, timeout_for_testing
 from Playwright.pages.pogoda.beauty.signup_page import (
+    name_input as signup_name_input,
     email_input as signup_email_input,
+    confirm_email_input as signup_confirm_email_input,
     password_input as signup_password_input,
     submit_button as signup_submit_button,
     terms_checkbox as signup_terms_checkbox,
@@ -29,7 +31,7 @@ from Playwright.pages.pogoda.beauty.welcome_page import (
 
 from .beauty_utils import delete_test_users
 
-scenarios("../../features/Pogoda/Beauty/beauty_auth_flow.feature")
+scenarios("../../features/Beauty/beauty_auth_flow.feature")
 
 
 @given("I prepare fresh signup credentials", target_fixture="signup_credentials")
@@ -66,10 +68,12 @@ def go_to_login_page(page):
 
 @when("I fill in the signup email and password")
 def fill_signup_form(page, signup_credentials):
+    page.locator(signup_name_input).fill("Test User")
     page.locator(signup_email_input).fill(signup_credentials["email"])
+    page.locator(signup_confirm_email_input).fill(signup_credentials["email"])
     page.locator(signup_password_input).fill(signup_credentials["password"])
-    # Dynamic-form signup now requires accepting the terms checkbox before
-    # the submit button enables.
+    # Dynamic-form signup requires all fields valid + the terms checkbox
+    # before the submit button enables.
     page.locator(signup_terms_checkbox).click()
 
 
@@ -79,14 +83,15 @@ def submit_signup(page):
     page.wait_for_timeout(3000)
 
 
-@then("I should be on the beauty welcome page after signup")
-def verify_welcome_after_signup(page):
-    expect(page.locator(welcome_page_root)).to_be_visible()
+@then("I should be on the beauty home page after signup")
+def verify_home_after_signup(page):
+    # Signup now auto-logs-in (session cookie set by SignUpView) → home shell.
+    expect(page.locator(home_page_root)).to_be_visible()
 
 
-@then("the welcome sign in button should be visible after signup")
-def verify_welcome_signin_after_signup(page):
-    expect(page.locator(welcome_signin_button)).to_be_visible()
+@then("the bottom nav should be visible after signup")
+def verify_bottom_nav_after_signup(page):
+    expect(page.locator(bottom_nav)).to_be_visible()
 
 
 @when("I fill in the login email and password for the test customer")

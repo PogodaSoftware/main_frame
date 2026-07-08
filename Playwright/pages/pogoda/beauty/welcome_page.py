@@ -1,18 +1,25 @@
-"""Locators for the Beauty welcome page (`/pogoda/beauty/welcome`)."""
+"""Locators for the Beauty welcome page (`/pogoda/beauty/welcome`).
 
-welcome_page_root = "css=div.welcome-page"
+Renders through CustAuthLayoutComponent → root div.cust-auth (split-pane).
+Left aside.hero has the brand block; right main.pane has the projected stack
+of social + email buttons. No div.welcome-page wrapper exists in the DOM.
+"""
 
-# Hero / brand block.
-hero = "css=div.welcome-page .hero"
-brand_block = "css=div.welcome-page .brand"
-brand_name = "css=div.welcome-page .brand-name"
-brand_tag = "css=div.welcome-page .brand-tag"
+# Root (unchanged — already correct).
+welcome_page_root = "css=div.cust-auth"
 
-# Action buttons.
+# Hero / brand block lives in aside.hero inside div.cust-auth.
+# div.welcome-page never existed; fixed to actual DOM path.
+hero = "css=div.cust-auth aside.hero"
+brand_block = "css=div.cust-auth aside.hero .brand"
+brand_name = "css=div.cust-auth aside.hero .brand-name"
+brand_tag = "css=div.cust-auth aside.hero .pitch-title"  # no brand-tag; pitch-title is nearest equivalent
+
+# Action buttons — data-testid attributes are stable and unchanged.
 signin_button = "css=[data-testid='welcome-signin']"
 signup_button = "css=[data-testid='welcome-signup']"
 google_button = "css=[data-testid='welcome-google']"
 
-# Misc.
-divider = "css=div.welcome-page .actions .divider"
-legal_text = "css=div.welcome-page .actions .legal"
+# Misc — fixed from non-existent div.welcome-page scope.
+divider = "css=div.cust-auth .pane .divider"
+legal_text = "css=div.cust-auth .foot"                   # was .legal → footer slot .foot

@@ -14,7 +14,7 @@ from Playwright.pages.pogoda.beauty.login_page import (
     business_login_link_button,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_login_page.feature")
+scenarios("../../features/Beauty/beauty_login_page.feature")
 
 
 @pytest.fixture
@@ -68,3 +68,24 @@ def verify_signup_nav_link(page):
 @then("the business login navigation link should be visible")
 def verify_business_login_nav_link(page):
     expect(page.locator(business_login_link_button)).to_be_visible()
+
+
+@given("I view the beauty login page at a 390px mobile width")
+def navigate_login_mobile(page):
+    page.set_viewport_size({"width": 390, "height": 844})
+    selecting_different_routes(page, 'beauty_login')
+    timeout_for_testing(page)
+
+
+@then("the login page should not scroll horizontally")
+def login_no_horizontal_scroll(page):
+    overflow = page.evaluate(
+        "() => document.documentElement.scrollWidth - document.documentElement.clientWidth"
+    )
+    assert overflow <= 1, f"login page scrolls horizontally by {overflow}px at 390px"
+
+
+@then("the sign in submit button should span the mobile content width")
+def login_submit_full_width(page):
+    w = page.locator(submit_button).bounding_box()["width"]
+    assert w >= 390 * 0.8, f"submit button only {w}px wide at 390px viewport"

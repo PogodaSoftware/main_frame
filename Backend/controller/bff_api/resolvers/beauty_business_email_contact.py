@@ -28,6 +28,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
         'action': 'render',
         'screen': 'beauty_business_email_contact',
         'data': {
+            'business': {
+                'email': business.email,
+                'business_name': business.business_name,
+            },
             'contact': {
                 'email': business.email,
                 'public_email': business.public_email or '',

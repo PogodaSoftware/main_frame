@@ -22,12 +22,49 @@ caller actually owns the booking.
 
 from datetime import datetime, timezone
 
+from django.core import signing
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+WS_TICKET_SALT = 'beauty-ws-ticket'
+WS_TICKET_MAX_AGE = 120  # seconds
+
 from . import chat_service
 from .models import BeautyBooking, BeautyChatMessage, BeautyProvider, BeautySession
+
+
+def _broadcast_message(booking, data: dict) -> None:
+    """Push a freshly-saved message to live WS peers: the booking thread group
+    AND both parties' user-level groups (global toast). Best-effort."""
+    try:
+        from asgiref.sync import async_to_sync
+        from channels.layers import get_channel_layer
+
+        layer = get_channel_layer()
+        if layer is None:
+            return
+        bid = booking.id
+        async_to_sync(layer.group_send)(f'beauty_chat_{bid}', {'type': 'chat.message', 'message': data})
+        base = {
+            'booking_id': bid,
+            'sender_type': data['sender_type'],
+            'body': data['body'],
+            'service_name': booking.display_service_name,
+        }
+        async_to_sync(layer.group_send)(
+            f'beauty_user_customer_{booking.customer_id}',
+            {'type': 'chat.inbox', **base, 'peer_name': booking.service.provider.name or 'Business'},
+        )
+        biz_id = booking.service.provider.business_provider_id
+        if biz_id:
+            async_to_sync(layer.group_send)(
+                f'beauty_user_business_{biz_id}',
+                {'type': 'chat.inbox', **base, 'peer_name': booking.customer.email},
+            )
+    except Exception:
+        # Channels not installed / no layer configured — REST still works.
+        pass
 
 
 def _principal(request) -> tuple[int | None, str | None]:
@@ -71,6 +108,8 @@ class ChatThreadView(APIView):
 
         messages = chat_service.list_messages(booking)
         active = chat_service.is_chat_active(booking)
+        # Opening the thread clears the viewer's unread count for it.
+        chat_service.mark_read(booking, viewer_type=user_type, viewer_id=user_id)
         return Response(
             {
                 'booking_id': booking.id,
@@ -126,7 +165,29 @@ class ChatSendView(APIView):
             sender_id=user_id,
             body=body,
         )
-        return Response(chat_service.serialize_message(msg), status=status.HTTP_201_CREATED)
+        data = chat_service.serialize_message(msg)
+        _broadcast_message(booking, data)
+        return Response(data, status=status.HTTP_201_CREATED)
+
+
+class WsTicketView(APIView):
+    """GET a short-lived signed ticket for the chat WebSocket handshake.
+
+    Authenticated by the normal protected-route cookie middleware (which
+    works via the browser/native cookie jar). The ticket is then passed as a
+    WS query param — avoiding the need to replay the long-lived auth cookie
+    over the socket (which RN's WebSocket can't reliably send)."""
+
+    def get(self, request):
+        user_id, user_type = _principal(request)
+        if not user_id or user_type not in (BeautySession.USER_TYPE_CUSTOMER, BeautySession.USER_TYPE_BUSINESS):
+            return Response({'detail': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
+        device_id = request.META.get('HTTP_X_DEVICE_ID', '').strip()
+        ticket = signing.dumps(
+            {'user_id': user_id, 'user_type': user_type, 'device_id': device_id},
+            salt=WS_TICKET_SALT,
+        )
+        return Response({'ticket': ticket}, status=status.HTTP_200_OK)
 
 
 def _list_threads_for_principal(user_id: int, user_type: str) -> list[dict]:

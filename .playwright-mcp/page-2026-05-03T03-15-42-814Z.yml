@@ -1,0 +1,82 @@
+- generic [ref=e382]:
+  - banner [ref=e383]:
+    - button "Application" [ref=e384] [cursor=pointer]:
+      - generic [ref=e385]: 🏢
+      - generic [ref=e386]: Application
+    - generic [ref=e387]: Step 6 of 6
+  - navigation "Application progress" [ref=e388]:
+    - list [ref=e389]:
+      - listitem [ref=e390]:
+        - generic [ref=e391]: "1"
+        - generic [ref=e392]: About
+      - listitem [ref=e393]:
+        - generic [ref=e394]: "2"
+        - generic [ref=e395]: Services
+      - listitem [ref=e396]:
+        - generic [ref=e397]: "3"
+        - generic [ref=e398]: Payments
+      - listitem [ref=e399]:
+        - generic [ref=e400]: "4"
+        - generic [ref=e401]: Hours
+      - listitem [ref=e402]:
+        - generic [ref=e403]: "5"
+        - generic [ref=e404]: Tools
+      - listitem [ref=e405]:
+        - generic [ref=e406]: "6"
+        - generic [ref=e407]: Review
+  - main [ref=e408]:
+    - heading "Review & submit" [level=1] [ref=e409]
+    - generic [ref=e410]:
+      - region "Applicant" [ref=e411]:
+        - heading "Applicant" [level=2] [ref=e412]
+        - generic [ref=e413]:
+          - term [ref=e414]: Name
+          - definition [ref=e415]: Pat Owner
+          - term [ref=e416]: Entity
+          - definition [ref=e417]: Person
+      - region "Business" [ref=e418]:
+        - heading "Business" [level=2] [ref=e419]
+        - generic [ref=e420]:
+          - term [ref=e421]: Name
+          - definition [ref=e422]: MCP Test Studio
+          - term [ref=e423]: Address
+          - definition [ref=e424]:
+            - generic [ref=e425]: 123 Main St
+            - generic [ref=e426]: Austin, TX 78701
+      - region "Services" [ref=e427]:
+        - heading "Services" [level=2] [ref=e428]
+        - list [ref=e429]:
+          - listitem [ref=e430]: Nails
+      - region "Weekly hours" [ref=e431]:
+        - heading "Weekly hours" [level=2] [ref=e432]
+        - list [ref=e433]:
+          - listitem [ref=e434]:
+            - strong [ref=e435]: "Monday:"
+            - text: 10:00 – 18:00
+          - listitem [ref=e436]:
+            - strong [ref=e437]: "Tuesday:"
+            - text: 10:00 – 18:00
+          - listitem [ref=e438]:
+            - strong [ref=e439]: "Wednesday:"
+            - text: 10:00 – 18:00
+          - listitem [ref=e440]:
+            - strong [ref=e441]: "Thursday:"
+            - text: 10:00 – 18:00
+          - listitem [ref=e442]:
+            - strong [ref=e443]: "Friday:"
+            - text: 10:00 – 18:00
+          - listitem [ref=e444]:
+            - strong [ref=e445]: "Saturday:"
+            - text: 10:00 – 18:00
+          - listitem [ref=e446]:
+            - strong [ref=e447]: "Sunday:"
+            - text: Closed
+      - region "Terms of Service" [ref=e448]:
+        - heading "Terms of Service" [level=2] [ref=e449]
+        - paragraph [ref=e450]: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. By submitting this application you accept the placeholder Terms of Service and Privacy Policy displayed here. These terms are for demonstration only — replace with the production legal text before launch.
+        - generic [ref=e451] [cursor=pointer]:
+          - checkbox "I have read and accept the Terms of Service." [checked] [active] [ref=e452]
+          - generic [ref=e453]: I have read and accept the Terms of Service.
+      - generic [ref=e454]:
+        - button "Back" [ref=e455] [cursor=pointer]
+        - button "Submit application" [ref=e456] [cursor=pointer]

@@ -21,7 +21,7 @@ from .beauty_utils import (
     login_business_via_api,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_profile.feature")
+scenarios("../../features/Beauty/beauty_business_profile.feature")
 
 _MANAGE_PY_DIR = os.path.join(
     os.path.dirname(__file__), "..", "..", "..", "Backend", "controller"
@@ -49,8 +49,7 @@ def _seed_booking(email: str) -> None:
         "service_duration_minutes_at_booking=60)"
     )
     subprocess.run(
-        ["python", "manage.py", "shell", "-c", cmd],
-        cwd=os.path.abspath(_MANAGE_PY_DIR),
+        ["docker", "exec", "main_frame-backend-1", "python", "manage.py", "shell", "-c", cmd],
         capture_output=True,
         timeout=30,
     )
@@ -96,7 +95,12 @@ def click_profile(page):
 
 @then("the business profile page should render")
 def profile_render(page):
-    expect(page.locator(earnings_total)).to_be_visible()
+    try:
+        expect(page.locator(earnings_total)).to_be_visible()
+    except Exception:
+        with open("profile_page_failure.html", "w", encoding="utf-8") as f:
+            f.write(page.content())
+        raise
 
 
 @then("the lifetime earnings value should be visible")

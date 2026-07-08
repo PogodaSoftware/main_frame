@@ -20,6 +20,7 @@ import { FormsModule } from '@angular/forms';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
+import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
 
 interface Message {
   id: number;
@@ -33,9 +34,10 @@ interface Message {
 @Component({
   selector: 'app-beauty-chat-thread',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CustTopNavComponent],
   template: `
-    <div class="beauty-app prov-shell" data-testid="chat-thread-root">
+    <div class="beauty-app prov-shell" [class.cust-desk]="!isBusiness" data-testid="chat-thread-root">
+      <app-cust-top-nav *ngIf="!isBusiness" active="messages" [links]="links" [signedIn]="true" (follow)="emit($event)"></app-cust-top-nav>
       <header class="thread-header">
         <button type="button" class="back-btn" (click)="emit(links['back'])"
                 aria-label="Back" data-testid="chat-back">
@@ -55,6 +57,12 @@ interface Message {
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <rect x="3" y="5" width="18" height="16" rx="2.5"/>
             <path d="M3 10h18M8 3v4M16 3v4"/>
+          </svg>
+        </button>
+        <button type="button" class="phone-btn" aria-label="Call" disabled data-testid="chat-phone">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l2.28-2.28a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
           </svg>
         </button>
       </header>
@@ -188,6 +196,18 @@ interface Message {
       display: grid; place-items: center;
       color: var(--text);
     }
+    .phone-btn {
+      width: 32px; height: 32px;
+      min-width: 44px; min-height: 44px;
+      border-radius: 8px;
+      background: transparent;
+      border: 1px solid var(--line);
+      cursor: pointer;
+      display: grid; place-items: center;
+      color: var(--text-muted);
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
 
     .summary-wrap { padding: 10px 16px 0; flex-shrink: 0; }
     .summary-chip {
@@ -316,6 +336,18 @@ interface Message {
     @media screen and (min-width: 768px) {
       .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
     }
+
+    /* Customer desktop (CustTopNav chrome) — centered conversation column. */
+    .cust-desk.beauty-app { max-width: none; margin: 0; box-shadow: none; min-height: 100dvh; max-height: none; }
+    .cust-desk .thread-header,
+    .cust-desk .summary-wrap,
+    .cust-desk .messages-pane,
+    .cust-desk .composer,
+    .cust-desk .composer-disabled { max-width: 1280px; margin-left: auto; margin-right: auto; width: 100%; padding-left: 32px; padding-right: 32px; }
+    .cust-desk .thread-header { border-bottom: 1px solid var(--line); }
+    .cust-desk .messages-pane { min-height: 56vh; }
+    .cust-desk .composer { margin-bottom: 16px; }
+    .cust-desk .msg .bubble { max-width: 520px; }
   `],
 })
 export class BeautyChatThreadComponent implements OnChanges, AfterViewChecked {
@@ -351,6 +383,7 @@ export class BeautyChatThreadComponent implements OnChanges, AfterViewChecked {
   get viewerType(): 'customer' | 'business' {
     return (this.data['viewer_type'] as 'customer' | 'business') || 'customer';
   }
+  get isBusiness(): boolean { return this.viewerType === 'business'; }
   get composerPlaceholder(): string {
     return this.peerName ? `Message ${this.peerName.split(' ')[0]}…` : 'Message…';
   }

@@ -7,17 +7,15 @@ the My Bookings link, and a HATEOAS `logout` action.
 Auth required — redirects unauthenticated visitors to `beauty_login`.
 """
 
-from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyBooking, BeautySession
-from ..services.auth_service import get_authenticated_user
 from ..services import hateoas_service as h
+from ._customer_auth import require_customer_auth
 
 
 def resolve(request, screen: str, device_id: str, params: dict | None = None) -> dict:
-    cookie = request.COOKIES.get(SESSION_COOKIE_NAME)
-    user = get_authenticated_user(cookie, device_id)
-    if not user or user.get('user_type') != 'customer':
-        return h.redirect_envelope('beauty_login', 'auth_required')
+    user, redirect = require_customer_auth(request, device_id)
+    if redirect:
+        return redirect
 
     user_id = user['user_id']
     booking_count = BeautyBooking.objects.filter(customer_id=user_id).count()

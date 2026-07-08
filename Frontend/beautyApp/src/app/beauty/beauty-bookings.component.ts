@@ -1,10 +1,18 @@
 /**
  * BeautyBookingsComponent (Presentational)
  * ----------------------------------------
- * Lists the signed-in customer's upcoming and past bookings. Cancel
- * actions are HATEOAS POST links the shell handles via BeautyAuthService.
- * After a successful cancel we re-emit the self link so the shell
- * re-resolves and the lists update.
+ * Customer-web "My bookings". Desktop layout per design
+ * `WebCustomerBookingsList`: shared CustTopNav, title + count summary,
+ * Upcoming / Past / All filter chips, then booking cards — upcoming rows carry
+ * Reschedule / Cancel (grace-aware, live countdown) / Open, past rows carry a
+ * status chip and Book-again. Collapses on mobile. RN app untouched.
+ *
+ * Behaviour preserved & BFF-driven: cancel + grace-cancel POST links from each
+ * row, re-emitting `self` after a successful cancel so the shell re-resolves.
+ *
+ * NOTE: the bookings resolver does not emit per-row `reschedule` / re-book
+ * links, so those are synthesised as NAV links to the existing routes
+ * (`/bookings/:id/reschedule`, `/providers/:id`).
  */
 
 import {
@@ -22,6 +30,8 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
 import { formatSlotLocal } from './beauty-time.util';
+import { CustTopNavComponent } from './cust-web/cust-top-nav.component';
+import { BeautyHomeSearchComponent } from './beauty-home-search.component';
 
 interface BookingItem {
   id: number;
@@ -35,287 +45,163 @@ interface BookingItem {
   _links?: Record<string, BffLink>;
 }
 
+const HUES = ['#5C4A3F', '#A88A7A', '#5F5A4A', '#574A3D', '#7A8B6E', '#3A3A3A', '#A06B2C', '#5C4A8A'];
+
 @Component({
   selector: 'app-beauty-bookings',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, CustTopNavComponent, BeautyHomeSearchComponent],
   template: `
-    <div class="beauty-app">
-      <header class="sub-header">
-        <button type="button" class="back-btn" (click)="emit(links['home'])" aria-label="Back">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M15 18l-6-6 6-6"/>
-          </svg>
-        </button>
-        <span class="sub-header-title"></span>
-        <span class="sub-header-spacer"></span>
-      </header>
+    <div class="cust-bookings">
+      <app-cust-top-nav active="bookings" [links]="links" [signedIn]="true" (follow)="emit($event)">
+        <app-beauty-home-search topnav-search></app-beauty-home-search>
+      </app-cust-top-nav>
 
-      <main id="main" class="bookings-section">
-        <h1 class="page-title">Bookings</h1>
-        <div class="page-sub">Manage your appointments</div>
+      <main id="main" class="bk-main">
+        <div class="bk-inner">
+          <h1 class="title">My bookings</h1>
+          <div class="subtitle">{{ upcoming.length }} upcoming · {{ past.length }} past</div>
 
-        <div class="segmented" role="tablist" aria-label="Booking lists">
-          <button
-            type="button"
-            role="tab"
-            id="bookings-tab-upcoming"
-            class="seg-tab"
-            [class.is-active]="activeTab === 'upcoming'"
-            [attr.aria-selected]="activeTab === 'upcoming'"
-            [attr.aria-controls]="'bookings-panel-upcoming'"
-            [attr.tabindex]="activeTab === 'upcoming' ? 0 : -1"
-            (click)="activeTab = 'upcoming'"
-          >Upcoming · {{ upcoming.length }}</button>
-          <button
-            type="button"
-            role="tab"
-            id="bookings-tab-past"
-            class="seg-tab"
-            [class.is-active]="activeTab === 'past'"
-            [attr.aria-selected]="activeTab === 'past'"
-            [attr.aria-controls]="'bookings-panel-past'"
-            [attr.tabindex]="activeTab === 'past' ? 0 : -1"
-            (click)="activeTab = 'past'"
-          >Past · {{ past.length }}</button>
+          <div class="chips">
+            <button type="button" class="chip" [class.is-active]="activeTab==='upcoming'" (click)="activeTab='upcoming'">Upcoming <span class="chip-c">{{ upcoming.length }}</span></button>
+            <button type="button" class="chip" [class.is-active]="activeTab==='past'" (click)="activeTab='past'">Past <span class="chip-c">{{ past.length }}</span></button>
+            <button type="button" class="chip" [class.is-active]="activeTab==='all'" (click)="activeTab='all'">All <span class="chip-c">{{ upcoming.length + past.length }}</span></button>
+          </div>
+
+          <!-- Upcoming -->
+          <ng-container *ngIf="activeTab !== 'past'">
+            <div class="list" *ngIf="upcoming.length; else noUp">
+              <article class="card row" *ngFor="let b of upcoming">
+                <span class="thumb" [style.--hue]="hueFor(b)"></span>
+                <div class="row-main">
+                  <div class="row-name">{{ b.service.name }}</div>
+                  <div class="row-at">at {{ b.provider.name }}</div>
+                  <div class="row-meta">
+                    <span class="mono">{{ dateTime(b) }}</span>
+                    <span class="mono">{{ b.service.duration_minutes }} min</span>
+                    <span class="mono">\${{ (b.service.price_cents / 100).toFixed(2) }}</span>
+                  </div>
+                </div>
+                <span class="chip-status chip-status--ok">Booked</span>
+                <div class="row-actions">
+                  <button *ngIf="b._links?.['reschedule']" type="button" class="btn btn--secondary btn--sm" (click)="emit(b._links!['reschedule'])">Reschedule</button>
+                  <button
+                    *ngIf="b._links?.['cancel_grace'] && graceRemaining(b) > 0; else plainCancel"
+                    type="button" class="btn btn--danger-outline btn--sm"
+                    (click)="cancelGrace(b)" [disabled]="busyId === b.id"
+                  >Cancel free · {{ graceLabel(b) }}</button>
+                  <ng-template #plainCancel>
+                    <button *ngIf="b._links?.['cancel']" type="button" class="btn btn--danger-outline btn--sm" (click)="cancel(b)" [disabled]="busyId === b.id">{{ busyId === b.id ? '…' : 'Cancel' }}</button>
+                  </ng-template>
+                  <button type="button" class="btn btn--ghost btn--sm" (click)="openDetails(b)">Open →</button>
+                </div>
+              </article>
+            </div>
+            <ng-template #noUp>
+              <div class="empty-card" *ngIf="activeTab==='upcoming'">
+                <div class="empty-title">No upcoming bookings</div>
+                <button type="button" class="btn btn--primary btn--md" (click)="emit(links['home'])">Discover studios</button>
+              </div>
+            </ng-template>
+          </ng-container>
+
+          <!-- Past -->
+          <ng-container *ngIf="activeTab !== 'upcoming'">
+            <h2 class="section-h" *ngIf="activeTab==='all' && past.length">Past</h2>
+            <div class="list" *ngIf="past.length; else noPast">
+              <article class="card row row--past" *ngFor="let b of past">
+                <span class="thumb thumb--sm" [style.--hue]="hueFor(b)"></span>
+                <div class="row-main">
+                  <div class="row-name row-name--sm">{{ b.service.name }}</div>
+                  <div class="row-at">at {{ b.provider.name }} · <span class="mono">{{ shortDate(b) }}</span></div>
+                </div>
+                <span class="chip-status" [class.chip-status--cancel]="b.status==='cancelled_by_business'" [class.chip-status--neutral]="isCancelled(b.status) || b.status==='completed'">{{ statusLabel(b.status) }}</span>
+                <div class="row-actions">
+                  <button *ngIf="b._links?.['provider']" type="button" class="btn btn--secondary btn--sm" (click)="emit(b._links!['provider'])">Book again</button>
+                  <button type="button" class="btn btn--ghost btn--sm" (click)="openDetails(b)">Open →</button>
+                </div>
+              </article>
+            </div>
+            <ng-template #noPast>
+              <div class="empty-card" *ngIf="activeTab==='past'"><div class="empty-title">No past bookings yet</div></div>
+            </ng-template>
+          </ng-container>
         </div>
-
-        <section
-          *ngIf="activeTab === 'upcoming'"
-          role="tabpanel"
-          id="bookings-panel-upcoming"
-          tabindex="0"
-          aria-labelledby="bookings-tab-upcoming"
-        >
-          <div class="section-label" *ngIf="upcoming.length">Upcoming</div>
-          <div *ngIf="!upcoming.length" class="empty-card">
-            <div class="empty-title">No upcoming bookings</div>
-            <div class="empty-sub">Pick a service from the home screen to schedule.</div>
-            <button
-              type="button"
-              class="btn-browse"
-              (click)="emit(links['home'])"
-              *ngIf="links['home']"
-            >Browse services</button>
-          </div>
-          <div *ngFor="let b of upcoming" class="b-card">
-            <div class="b-card-head">
-              <button
-                type="button"
-                class="b-card-title-btn"
-                (click)="openDetails(b)"
-                [attr.aria-label]="'View details for ' + b.service.name"
-              >
-                <span class="b-dot is-upcoming" aria-hidden="true"></span>
-                <span class="b-title">{{ b.service.name }}</span>
-              </button>
-              <span class="b-status is-upcoming">Upcoming</span>
-            </div>
-            <div class="b-place">{{ b.provider.name }} · {{ b.provider.location_label }}</div>
-            <div class="b-when">{{ formatLocal(b.slot_at, b.provider?.timezone) || b.slot_label }}</div>
-            <div class="row-actions">
-              <button
-                *ngIf="b._links?.['cancel_grace'] && graceRemaining(b) > 0"
-                type="button"
-                class="row-grace"
-                (click)="cancelGrace(b)"
-                [disabled]="busyId === b.id"
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="9"/>
-                  <path d="M12 7v5l3 2"/>
-                </svg>
-                <span>Cancel free</span>
-                <span class="row-grace-time">· {{ graceLabel(b) }}</span>
-              </button>
-              <button
-                *ngIf="(!b._links?.['cancel_grace'] || graceRemaining(b) <= 0) && b._links?.['cancel']"
-                type="button"
-                class="row-cancel"
-                (click)="cancel(b)"
-                [disabled]="busyId === b.id"
-              >Cancel</button>
-            </div>
-          </div>
-
-          <ng-container *ngIf="past.length">
-            <div class="section-label">Past</div>
-            <div *ngFor="let b of past" class="b-card past">
-              <div class="b-card-head">
-                <button
-                  type="button"
-                  class="b-card-title-btn"
-                  (click)="openDetails(b)"
-                  [attr.aria-label]="'View details for ' + b.service.name"
-                >
-                  <span class="b-dot" [class.is-cancelled]="isCancelled(b.status)" [class.is-biz-cancelled]="b.status === 'cancelled_by_business'" aria-hidden="true"></span>
-                  <span class="b-title">{{ b.service.name }}</span>
-                </button>
-                <span class="b-status" [class.is-cancelled]="isCancelled(b.status)" [class.is-biz-cancelled]="b.status === 'cancelled_by_business'">{{ statusLabel(b.status) }}</span>
-              </div>
-              <div class="b-place">{{ b.provider.name }}</div>
-              <div class="b-when">{{ formatLocal(b.slot_at, b.provider?.timezone) || b.slot_label }}</div>
-            </div>
-          </ng-container>
-        </section>
-
-        <section
-          *ngIf="activeTab === 'past'"
-          role="tabpanel"
-          id="bookings-panel-past"
-          tabindex="0"
-          aria-labelledby="bookings-tab-past"
-        >
-          <div *ngIf="!past.length" class="empty-card past">
-            <div class="empty-title">No past bookings</div>
-          </div>
-          <ng-container *ngIf="past.length">
-            <div class="section-label">Past</div>
-            <div *ngFor="let b of past" class="b-card past">
-              <div class="b-card-head">
-                <button
-                  type="button"
-                  class="b-card-title-btn"
-                  (click)="openDetails(b)"
-                  [attr.aria-label]="'View details for ' + b.service.name"
-                >
-                  <span class="b-dot" [class.is-cancelled]="isCancelled(b.status)" [class.is-biz-cancelled]="b.status === 'cancelled_by_business'" aria-hidden="true"></span>
-                  <span class="b-title">{{ b.service.name }}</span>
-                </button>
-                <span class="b-status" [class.is-cancelled]="isCancelled(b.status)" [class.is-biz-cancelled]="b.status === 'cancelled_by_business'">{{ statusLabel(b.status) }}</span>
-              </div>
-              <div class="b-place">{{ b.provider.name }}</div>
-              <div class="b-when">{{ formatLocal(b.slot_at, b.provider?.timezone) || b.slot_label }}</div>
-            </div>
-          </ng-container>
-        </section>
       </main>
-
-      <nav class="bottom-nav" aria-label="Primary">
-        <button type="button" class="nav-tab is-active" (click)="emit(links['self'])">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <rect x="3" y="5" width="18" height="16" rx="2.5"/>
-            <path d="M3 10h18M8 3v4M16 3v4"/>
-          </svg>
-          <span class="nav-label">Bookings</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['home'])" [disabled]="!links['home']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M3 11l9-7 9 7v9a1.5 1.5 0 0 1-1.5 1.5H4.5A1.5 1.5 0 0 1 3 20v-9z"/>
-          </svg>
-          <span class="nav-label">Home</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['chats'])" [disabled]="!links['chats']" data-testid="nav-chat">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-          <span class="nav-label">Chat</span>
-        </button>
-        <button type="button" class="nav-tab" (click)="emit(links['profile'])" [disabled]="!links['profile']">
-          <span class="nav-dot"></span>
-          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="8.5" r="3.8"/>
-            <path d="M4.5 21c0-4.1 3.4-7.5 7.5-7.5s7.5 3.4 7.5 7.5"/>
-          </svg>
-          <span class="nav-label">Profile</span>
-        </button>
-      </nav>
     </div>
   `,
   styles: [`
     :host {
       --surface: #F2F2F2; --surface-2: #E9E9EB; --line: #DCDCDF;
       --text: #0F1115; --text-muted: #6B6F77;
-      --accent-blue: #CFE3F5; --accent-blue-deep: #7DA8CF;
-      --ink: #0A0A0B; --success: #2F7A47; --danger: #C0392B;
+      --accent-blue: #CFE3F5; --accent-blue-deep: #7DA8CF; --accent-blue-text: #1a3a52;
+      --ink: #0A0A0B; --ink-soft: #1F1F22; --success: #2F7A47; --danger: #C0392B;
       --font-body: 'Inter', system-ui, -apple-system, sans-serif;
       --font-display: 'Cormorant Garamond', Georgia, serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+      display: block; min-height: 100dvh; background: var(--surface);
+      font-family: var(--font-body); color: var(--text);
     }
     * { box-sizing: border-box; }
     :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
 
-    .beauty-app { display: flex; flex-direction: column; min-height: 100dvh; background: var(--surface); font-family: var(--font-body); color: var(--text); }
-    .sub-header { display: flex; align-items: center; height: 56px; padding: 0 12px; background: var(--surface); border-bottom: 1px solid var(--line); flex-shrink: 0; }
-    .sub-header-title { flex: 1; text-align: center; font-family: var(--font-body); font-size: 0.95rem; font-weight: 600; color: var(--text); letter-spacing: 0.2px; }
-    .sub-header-spacer { width: 36px; height: 36px; flex-shrink: 0; }
-    .back-btn { min-width: 44px; min-height: 44px; width: 44px; height: 44px; border-radius: 8px; background: transparent; border: none; color: var(--text); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
-    .back-btn:hover { background: var(--surface-2); }
-    .section-label { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1.2px; margin: 18px 0 10px; }
-    .bookings-section { flex: 1; padding: 20px 20px 16px; max-width: 720px; width: 100%; margin: 0 auto; overflow-y: auto; }
-    .page-title { font-family: var(--font-display); font-size: 2rem; font-weight: 500; margin: 0 0 4px; color: var(--text); letter-spacing: 0.2px; }
-    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-    .page-sub { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 18px; }
+    .cust-bookings { display: flex; flex-direction: column; min-height: 100dvh; }
+    .bk-main { flex: 1; padding: 32px 32px 48px; }
+    .bk-inner { max-width: 1280px; margin: 0 auto; }
+    .mono { font-family: var(--font-mono); font-size: 12px; color: var(--text); }
 
-    .segmented { display: flex; background: var(--surface-2); padding: 3px; border-radius: 10px; margin-bottom: 18px; }
-    .seg-tab { flex: 1; min-height: 44px; height: 44px; border-radius: 8px; background: transparent; border: 1px solid transparent; color: var(--text-muted); font-family: var(--font-body); font-size: 0.75rem; font-weight: 500; cursor: pointer; transition: all 150ms ease; }
-    .seg-tab.is-active { background: #FFFFFF; border-color: var(--line); color: var(--text); font-weight: 600; box-shadow: 0 1px 2px rgba(15,35,60,0.06); }
+    .title { font-family: var(--font-display); font-size: 42px; font-weight: 500; }
+    .subtitle { margin-top: 6px; font-size: 14px; color: var(--text-muted); }
 
-    .empty-card { background: var(--accent-blue); border: 1px solid rgba(125, 168, 207, 0.2); border-radius: 12px; padding: 20px 16px; text-align: center; margin-bottom: 16px; }
-    .empty-card.past { background: var(--surface-2); border-color: var(--line); }
-    .empty-title { font-family: var(--font-display); font-size: 1.25rem; font-weight: 500; color: #1a3a52; margin-bottom: 4px; }
-    .empty-card.past .empty-title { color: var(--text); }
-    .empty-sub { font-size: 0.75rem; color: #1a3a52; opacity: 0.75; margin-bottom: 12px; }
-    .btn-browse { height: 36px; padding: 0 16px; border-radius: 10px; background: var(--ink); color: #FFFFFF; border: 1px solid var(--ink); font-family: var(--font-body); font-size: 0.75rem; font-weight: 600; cursor: pointer; transition: all 150ms ease; }
-    .btn-browse:hover { background: #1F1F22; }
+    .chips { display: flex; gap: 6px; margin-top: 22px; }
+    .chip { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: #fff; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; }
+    .chip:hover:not(.is-active) { border-color: var(--accent-blue-deep); }
+    .chip.is-active { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .chip-c { font-family: var(--font-mono); font-size: 11px; opacity: .7; }
 
-    .b-card { background: #FFFFFF; border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 10px; }
-    .b-card.past { opacity: 0.78; }
-    .b-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
-    .b-card-title-btn { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; background: none; border: none; padding: 0; cursor: pointer; color: inherit; font: inherit; text-align: left; }
-    .b-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
-    .b-dot.is-upcoming { background: var(--success); }
-    .b-dot.is-cancelled { background: var(--danger); }
-    .b-title { font-family: var(--font-display); font-size: 1.1rem; font-weight: 500; line-height: 1.3; letter-spacing: 0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .b-card-title-btn:hover .b-title { text-decoration: underline; text-underline-offset: 2px; }
-    .b-status { font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; padding: 3px 8px; border-radius: 999px; background: #EDEDEF; color: #555; flex-shrink: 0; white-space: nowrap; }
-    .b-status.is-upcoming { background: #E5F3EA; color: #1D4F2C; }
-    .b-status.is-cancelled { background: #FCE8E5; color: #8A2419; }
-    .b-status.is-biz-cancelled { background: var(--danger); color: #FFFFFF; }
-    .b-dot.is-biz-cancelled { background: var(--danger); box-shadow: 0 0 0 2px rgba(192,57,43,0.18); }
-    .b-place { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .b-when { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 0.7rem; color: var(--text-muted); }
+    .section-h { margin: 32px 0 14px; font-family: var(--font-display); font-size: 26px; font-weight: 500; }
+    .list { margin-top: 18px; display: flex; flex-direction: column; gap: 12px; }
 
-    .btn-cancel { margin-top: 10px; background: transparent; color: var(--danger); border: 1.5px solid var(--danger); border-radius: 10px; padding: 8px 14px; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: var(--font-body); transition: all 150ms ease; }
-    .btn-cancel:hover:not(:disabled) { background: rgba(192, 57, 43, 0.06); }
-    .btn-cancel:disabled { opacity: 0.6; cursor: not-allowed; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+    .row { display: flex; gap: 16px; align-items: center; }
+    .row--past { opacity: .9; }
+    .thumb { width: 64px; height: 64px; border-radius: 12px; flex-shrink: 0;
+      background: repeating-linear-gradient(135deg, color-mix(in srgb, var(--hue) 16%, transparent) 0, color-mix(in srgb, var(--hue) 16%, transparent) 8px, color-mix(in srgb, var(--hue) 24%, transparent) 8px, color-mix(in srgb, var(--hue) 24%, transparent) 16px), color-mix(in srgb, var(--hue) 36%, #fff); }
+    .thumb--sm { width: 56px; height: 56px; }
+    .row-main { flex: 1; min-width: 0; }
+    .row-name { font-family: var(--font-display); font-size: 22px; font-weight: 500; }
+    .row-name--sm { font-size: 20px; }
+    .row-at { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .row-meta { margin-top: 8px; display: flex; gap: 14px; flex-wrap: wrap; }
+    .row-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
-    .row-actions { display: flex; justify-content: flex-end; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
-    .row-grace {
-      display: inline-flex; align-items: center; gap: 6px;
-      height: 28px; padding: 0 10px; border-radius: 8px;
-      background: var(--accent-blue);
-      border: 1px solid rgba(125,168,207,0.55);
-      color: #1a3a52;
-      font-family: var(--font-body); font-size: 11px; font-weight: 600;
-      cursor: pointer;
-    }
-    .row-grace:disabled { opacity: 0.55; cursor: not-allowed; }
-    .row-grace-time { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-weight: 600; }
-    .row-cancel {
-      height: 28px; padding: 0 12px; border-radius: 8px;
-      background: #FFFFFF; color: var(--danger);
-      border: 1px solid var(--line);
-      font-family: var(--font-body); font-size: 11px; font-weight: 600;
-      cursor: pointer;
-    }
-    .row-cancel:hover:not(:disabled) { background: #FCE8E5; border-color: var(--danger); }
-    .row-cancel:disabled { opacity: 0.55; cursor: not-allowed; }
+    .chip-status { flex-shrink: 0; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .4px; background: #E5F3EA; color: var(--success); }
+    .chip-status--ok { background: #E5F3EA; color: var(--success); }
+    .chip-status--neutral { background: var(--surface-2); color: var(--text-muted); }
+    .chip-status--cancel { background: #FCE8E5; color: var(--danger); }
 
-    .bottom-nav { display: flex; background: #FFFFFF; border-top: 1px solid var(--line); box-shadow: 0 -2px 14px rgba(15,35,60,0.08); flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
-    .nav-tab { flex: 1; height: 64px; background: transparent; border: none; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; position: relative; color: var(--text); font-family: var(--font-body); }
-    .nav-tab:disabled { opacity: 0.4; cursor: not-allowed; }
-    .nav-tab.is-active { color: #1a3a52; }
-    .nav-dot { position: absolute; top: 6px; width: 6px; height: 6px; border-radius: 50%; background: transparent; }
-    .nav-tab.is-active .nav-dot { background: var(--accent-blue-deep); }
-    .nav-icon { width: 24px; height: 24px; }
-    .nav-label { font-size: 0.7rem; font-weight: 500; line-height: 1; letter-spacing: 0.1px; }
-    .nav-tab.is-active .nav-label { font-weight: 600; }
+    .empty-card { margin-top: 18px; background: #fff; border: 1px dashed var(--line); border-radius: 16px; padding: 40px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    .empty-title { font-family: var(--font-display); font-size: 22px; font-weight: 500; color: var(--text-muted); }
 
-    @media screen and (min-width: 768px) {
-      .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 10px; font-family: var(--font-body); font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: background 150ms ease, border-color 150ms ease; }
+    .btn--sm { height: 36px; padding: 0 14px; font-size: 13px; }
+    .btn--md { height: 44px; padding: 0 18px; font-size: 14px; }
+    .btn--primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+    .btn--primary:hover { background: var(--ink-soft); border-color: var(--ink-soft); }
+    .btn--secondary { background: #fff; color: var(--text); border-color: var(--line); }
+    .btn--secondary:hover:not(:disabled) { border-color: var(--accent-blue-deep); }
+    .btn--ghost { background: transparent; color: var(--text); border-color: transparent; }
+    .btn--ghost:hover { background: rgba(15,17,21,0.06); }
+    .btn--danger-outline { background: #fff; color: var(--danger); border-color: rgba(192,57,43,0.4); }
+    .btn--danger-outline:hover:not(:disabled) { background: #FCE8E5; }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    @media (max-width: 760px) {
+      .bk-main { padding: 20px; }
+      .title { font-size: 32px; }
+      .row { flex-wrap: wrap; }
+      .row-actions { width: 100%; }
+      .row-actions .btn { flex: 1; }
     }
   `],
 })
@@ -325,7 +211,7 @@ export class BeautyBookingsComponent implements OnInit, OnDestroy {
   @Output() followLink = new EventEmitter<BffLink>();
 
   busyId: number | null = null;
-  activeTab: 'upcoming' | 'past' = 'upcoming';
+  activeTab: 'upcoming' | 'past' | 'all' = 'upcoming';
   now = Date.now();
   private tickTimer: ReturnType<typeof setInterval> | null = null;
   private isBrowser = false;
@@ -341,19 +227,30 @@ export class BeautyBookingsComponent implements OnInit, OnDestroy {
     if (!this.isBrowser) return;
     this.tickTimer = setInterval(() => { this.now = Date.now(); }, 1000);
   }
-
   ngOnDestroy(): void {
-    if (this.tickTimer != null) {
-      clearInterval(this.tickTimer);
-      this.tickTimer = null;
-    }
+    if (this.tickTimer != null) { clearInterval(this.tickTimer); this.tickTimer = null; }
+  }
+
+  get upcoming(): BookingItem[] { return (this.data['upcoming'] as BookingItem[]) || []; }
+  get past(): BookingItem[] { return (this.data['past'] as BookingItem[]) || []; }
+
+  hueFor(b: BookingItem): string { return HUES[(b.id || 0) % HUES.length]; }
+
+  dateTime(b: BookingItem): string {
+    return formatSlotLocal(b.slot_at, b.provider?.timezone) || b.slot_label;
+  }
+  shortDate(b: BookingItem): string {
+    const d = new Date(b.slot_at);
+    if (isNaN(d.getTime())) return b.slot_label;
+    const o: Intl.DateTimeFormatOptions = { weekday: 'short', month: 'short', day: 'numeric' };
+    if (b.provider?.timezone) o.timeZone = b.provider.timezone;
+    try { return new Intl.DateTimeFormat(undefined, o).format(d); } catch { return new Intl.DateTimeFormat(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).format(d); }
   }
 
   graceRemaining(b: BookingItem): number {
     if (!b.grace_period_ends_at) return 0;
     return Math.max(0, Math.floor((new Date(b.grace_period_ends_at).getTime() - this.now) / 1000));
   }
-
   graceLabel(b: BookingItem): string {
     const total = this.graceRemaining(b);
     const m = Math.floor(total / 60);
@@ -361,73 +258,44 @@ export class BeautyBookingsComponent implements OnInit, OnDestroy {
     return `${m}:${s.toString().padStart(2, '0')}`;
   }
 
-  cancelGrace(b: BookingItem): void {
-    const link = b._links?.['cancel_grace'];
-    if (!link || this.busyId != null) return;
-    this.busyId = b.id;
-    this.authService.follow(link).subscribe({
-      next: () => {
-        this.busyId = null;
-        const self = this.links['self'];
-        if (self) this.followLink.emit(self);
-      },
-      error: () => { this.busyId = null; },
-    });
-  }
-
-  get upcoming(): BookingItem[] {
-    return (this.data['upcoming'] as BookingItem[]) || [];
-  }
-  get past(): BookingItem[] {
-    return (this.data['past'] as BookingItem[]) || [];
-  }
-
   openDetails(b: BookingItem): void {
     const link = b._links?.['detail'];
     if (link) this.followLink.emit(link);
   }
-
   cancel(b: BookingItem): void {
     const link = b._links?.['cancel'];
     if (!link || this.busyId != null) return;
     this.busyId = b.id;
     this.authService.follow(link).subscribe({
-      next: () => {
-        this.busyId = null;
-        // Re-resolve this same screen.
-        const self = this.links['self'];
-        if (self) this.followLink.emit(self);
-      },
-      error: () => {
-        this.busyId = null;
-      },
+      next: () => { this.busyId = null; const self = this.links['self']; if (self) this.followLink.emit(self); },
+      error: () => { this.busyId = null; },
+    });
+  }
+  cancelGrace(b: BookingItem): void {
+    const link = b._links?.['cancel_grace'];
+    if (!link || this.busyId != null) return;
+    this.busyId = b.id;
+    this.authService.follow(link).subscribe({
+      next: () => { this.busyId = null; const self = this.links['self']; if (self) this.followLink.emit(self); },
+      error: () => { this.busyId = null; },
     });
   }
 
-  emit(link: BffLink | null | undefined): void {
-    if (link) this.followLink.emit(link);
-  }
+  emit(link: BffLink | null | undefined): void { if (link) this.followLink.emit(link); }
 
-  /** Render the booking time in the BUSINESS provider's local timezone. */
-  formatLocal(iso: string | undefined | null, tz?: string | null): string {
-    return formatSlotLocal(iso, tz);
-  }
+  formatLocal(iso: string | undefined | null, tz?: string | null): string { return formatSlotLocal(iso, tz); }
 
   isCancelled(status: string): boolean {
-    return status === 'cancelled'
-      || status === 'cancelled_by_customer'
-      || status === 'cancelled_by_business'
-      || status === 'cancelled_immediate';
+    return status === 'cancelled' || status === 'cancelled_by_customer'
+      || status === 'cancelled_by_business' || status === 'cancelled_immediate';
   }
-
-  /** Friendly label for the row badge. Compact for the small chip. */
   statusLabel(status: string): string {
     switch (status) {
       case 'cancelled_by_business': return 'Provider cancelled';
       case 'cancelled_by_customer': return 'Cancelled';
-      case 'cancelled_immediate':   return 'Cancelled (free)';
-      case 'cancelled':             return 'Cancelled';
-      case 'completed':             return 'Completed';
+      case 'cancelled_immediate': return 'Cancelled (free)';
+      case 'cancelled': return 'Cancelled';
+      case 'completed': return 'Completed';
       default: return status.charAt(0).toUpperCase() + status.slice(1);
     }
   }

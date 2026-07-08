@@ -1,6 +1,12 @@
 /**
- * BeautyBusinessAvailabilityComponent — redesigned per Business Provider Portal handoff (hours-1).
- * Quick-set chips + per-day Closed/Open/24h segmented pill + time inputs + tz info banner.
+ * BeautyBusinessAvailabilityComponent — desktop redesign per Business Provider
+ * Portal · Web handoff (web-hours).
+ *
+ * Sidebar + topbar chrome, breadcrumb + Cormorant heading + Cancel / Save,
+ * two-column body: left card hosts the shared weekly-hours editor (flat,
+ * TZ banner suppressed) with QUICK SET + SCHEDULE; right rail shows a TIME
+ * ZONE card + an UPCOMING OVERRIDES card. BFF contract unchanged
+ * (weekly_hours rows + submit link).
  */
 
 import {
@@ -16,54 +22,12 @@ import { FormsModule } from '@angular/forms';
 
 import { BeautyAuthService } from './beauty-auth.service';
 import { BffLink } from './beauty-bff.types';
-import { BeautyProviderSubHeaderComponent } from './provider/prov-sub-header.component';
-import { BeautyProviderTabBarComponent, ProviderTab } from './provider/prov-tab-bar.component';
-import { resolveTabLink } from './provider/prov-tab-nav';
-import { BeautyProviderCardComponent } from './provider/prov-card.component';
-import { BeautyProviderButtonComponent } from './provider/prov-btn.component';
-
-interface DayRow {
-  day_of_week: number;
-  day_label: string;
-  start_time: string;
-  end_time: string;
-  is_closed: boolean;
-  is_24h: boolean;
-}
-
-type SegState = 'closed' | 'open' | '24h';
-
-interface QuickSet {
-  k: string;
-  label: string;
-  apply: (rows: DayRow[]) => void;
-}
-
-const QUICK_SETS: QuickSet[] = [
-  { k: 'wd-10-6', label: 'Weekdays 10–6', apply: (rows) => setMon(rows, 1, 5, '10:00', '18:00') },
-  { k: 'mf-9-5', label: 'Mon–Fri 9–5', apply: (rows) => setMon(rows, 1, 5, '09:00', '17:00') },
-  { k: '7day', label: '7 days 10–8', apply: (rows) => setMon(rows, 0, 6, '10:00', '20:00') },
-  { k: 'wknd', label: 'Weekends only', apply: (rows) => {
-    rows.forEach(r => { r.is_closed = true; r.is_24h = false; });
-    rows.filter(r => r.day_of_week === 0 || r.day_of_week === 6).forEach(r => {
-      r.is_closed = false; r.start_time = '10:00'; r.end_time = '18:00';
-    });
-  }},
-  { k: 'closed', label: 'Closed all week', apply: (rows) => {
-    rows.forEach(r => { r.is_closed = true; r.is_24h = false; });
-  }},
-];
-
-function setMon(rows: DayRow[], from: number, to: number, start: string, end: string) {
-  rows.forEach(r => {
-    if (r.day_of_week >= from && r.day_of_week <= to) {
-      r.is_closed = false; r.is_24h = false;
-      r.start_time = start; r.end_time = end;
-    } else {
-      r.is_closed = true; r.is_24h = false;
-    }
-  });
-}
+import { BeautyProvWebSidebarComponent } from './prov-web/prov-web-sidebar.component';
+import { BeautyProvWebTopbarComponent } from './prov-web/prov-web-topbar.component';
+import {
+  BeautyWeeklyHoursEditorComponent,
+  DayRow,
+} from './beauty-weekly-hours-editor.component';
 
 @Component({
   selector: 'app-beauty-business-availability',
@@ -71,203 +35,147 @@ function setMon(rows: DayRow[], from: number, to: number, start: string, end: st
   imports: [
     CommonModule,
     FormsModule,
-    BeautyProviderSubHeaderComponent,
-    BeautyProviderTabBarComponent,
-    BeautyProviderCardComponent,
-    BeautyProviderButtonComponent,
+    BeautyProvWebSidebarComponent,
+    BeautyProvWebTopbarComponent,
+    BeautyWeeklyHoursEditorComponent,
   ],
   template: `
-    <div class="beauty-app prov-shell">
-      <app-prov-sub-header back="Dashboard" title="Weekly hours"
-                           (backClick)="emit(links['business_home'])">
-        <app-prov-btn slot="right" variant="primary" size="sm"
-                      (clicked)="save()" [disabled]="isSaving">
-          {{ isSaving ? 'Saving…' : 'Save' }}
-        </app-prov-btn>
-      </app-prov-sub-header>
+    <div class="pw-shell">
+      <app-prov-web-sidebar
+        active="hours"
+        [businessName]="business?.business_name || 'Your storefront'"
+        [email]="business?.email || ''"
+        [storefrontLive]="true"
+        [badges]="navBadges"
+        (follow)="emit($event)">
+      </app-prov-web-sidebar>
 
-      <main id="main" class="prov-body">
-        <p class="hint">Set when your storefront is open. Customers can only book during these hours.</p>
+      <div class="pw-main">
+        <app-prov-web-topbar
+          [businessName]="business?.business_name || 'Your storefront'"
+          [email]="business?.email || ''"
+          [notifCount]="0"
+          (follow)="emit($event)">
+        </app-prov-web-topbar>
 
-        <div class="quickset">
-          <div class="qs-label">Quick set</div>
-          <div class="qs-chips">
-            <button *ngFor="let qs of quickSets" type="button"
-                    class="qs-chip" [class.is-selected]="activeQuickSet === qs.k"
-                    (click)="applyQuickSet(qs)">
-              {{ qs.label }}
-            </button>
-          </div>
-        </div>
-
-        <app-prov-card padding="0 14px" class="hours-card">
-          <div *ngFor="let row of rows; let last = last" class="day-row" [class.last]="last">
-            <div class="day-col">
-              <div class="day-name">{{ row.day_label }}</div>
-              <div class="day-sub">{{ subLabel(row) }}</div>
+        <main id="main" class="pw-content">
+          <div class="pw-header">
+            <div class="pw-header-text pw-header-centered">
+              <h1 class="pw-title">Weekly hours</h1>
+              <div class="pw-sub">When customers can book you. Set once, override per-day for vacations.</div>
             </div>
-
-            <div class="seg-pill">
-              <button type="button" class="seg" [class.is-selected]="state(row) === 'closed'"
-                      [class.closed]="state(row) === 'closed'"
-                      (click)="setState(row, 'closed')">Closed</button>
-              <button type="button" class="seg" [class.is-selected]="state(row) === 'open'"
-                      (click)="setState(row, 'open')">Open</button>
-              <button type="button" class="seg" [class.is-selected]="state(row) === '24h'"
-                      (click)="setState(row, '24h')">24h</button>
-            </div>
-
-            <div class="time-pair" *ngIf="state(row) === 'open'">
-              <input type="time" [(ngModel)]="row.start_time"
-                     class="time-input"
-                     [attr.aria-label]="row.day_label + ' start time'"/>
-              <span class="dash" aria-hidden="true">–</span>
-              <input type="time" [(ngModel)]="row.end_time"
-                     class="time-input"
-                     [attr.aria-label]="row.day_label + ' end time'"/>
+            <div class="pw-header-actions">
+              <button type="button" class="wbtn wbtn-secondary"
+                      (click)="emit(links['business_home'])" [disabled]="isSaving">Cancel</button>
+              <button type="button" class="wbtn wbtn-success"
+                      (click)="save()" [disabled]="isSaving">
+                {{ isSaving ? 'Saving…' : 'Save' }}
+              </button>
             </div>
           </div>
-        </app-prov-card>
 
-        <div class="tz-banner">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 17v.01"/>
-          </svg>
-          <span>Time zone: UTC. All bookings show in your customer's local time.</span>
-        </div>
+          <div class="pw-pad hours-grid">
+            <div class="web-card hours-main">
+              <app-beauty-weekly-hours-editor
+                [rows]="rows" [flat]="true" [hideTzBanner]="true">
+              </app-beauty-weekly-hours-editor>
+              <p *ngIf="message" class="msg" [class.error]="isError"
+                 [attr.role]="isError ? 'alert' : 'status'" aria-live="polite">{{ message }}</p>
+            </div>
 
-        <p *ngIf="message" class="msg" [class.error]="isError"
-           [attr.role]="isError ? 'alert' : 'status'" aria-live="polite">{{ message }}</p>
-      </main>
+            <aside class="side-rail">
+              <div class="web-card rail-card">
+                <div class="rail-eyebrow">Time zone</div>
+                <div class="tz-name">{{ tzCityLabel }}</div>
+                <div class="tz-meta">{{ tzOffsetLabel }}</div>
+                <label class="tz-select-wrap">
+                  <select class="tz-select" [(ngModel)]="selectedTz" name="storefront-tz" aria-label="Storefront timezone">
+                    <option *ngFor="let z of allZones" [value]="z">{{ z.replace('_', ' ') }}</option>
+                  </select>
+                </label>
+                <button type="button" class="tz-detect" (click)="useDeviceTz()"
+                        *ngIf="deviceTz && deviceTz !== selectedTz">
+                  Use my timezone ({{ deviceTz.replace('_', ' ') }})
+                </button>
+                <div class="tz-note">Set your storefront's local time. Hours are entered in this zone; every customer sees them converted to their own.</div>
+              </div>
 
-      <app-prov-tab-bar active="dashboard" [badges]="tabBadges" (tabClick)="onTab($event)"></app-prov-tab-bar>
+              <div class="web-card rail-card">
+                <div class="rail-eyebrow">Upcoming overrides</div>
+                <div class="rail-empty">{{ overrideMsg || 'Nothing scheduled.' }}</div>
+                <button type="button" class="wbtn wbtn-secondary block-btn" (click)="blockOff()">
+                  + Block off dates
+                </button>
+              </div>
+            </aside>
+          </div>
+        </main>
+      </div>
     </div>
   `,
   styles: [`
     :host {
       --surface: #F2F2F2; --line: #DCDCDF; --text: #0F1115; --text-muted: #6B6F77;
-      --accent-blue: #CFE3F5; --accent-blue-deep: #7DA8CF; --danger: #C0392B;
+      --accent-blue: #CFE3F5; --accent-blue-deep: #7DA8CF; --accent-blue-text: #1a3a52;
+      --ink: #0A0A0B; --success: #2F7A47; --danger: #C0392B;
       --font-body: 'Inter', system-ui, sans-serif;
       --font-display: 'Cormorant Garamond', Georgia, serif;
       --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
-      display: block;
-      background: var(--surface);
+      display: block; background: var(--surface);
     }
     :host *:focus-visible { outline: 2px solid #1a3a52; outline-offset: 2px; border-radius: 6px; }
-    .prov-shell {
-      display: flex; flex-direction: column;
-      min-height: 100vh;
-      background: var(--surface); color: var(--text);
-      font-family: var(--font-body);
-    }
-    .prov-body { flex: 1; padding: 14px 16px; overflow-y: auto; }
-    .hint {
-      font-size: 12px;
-      color: var(--text-muted);
-      line-height: 1.5;
-      margin: 0 0 12px;
-    }
 
-    .quickset { margin-bottom: 14px; }
-    .qs-label {
-      font-size: 11px; font-weight: 600;
-      letter-spacing: 0.6px; text-transform: uppercase;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-    .qs-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .qs-chip {
-      padding: 7px 12px; min-height: 44px;
-      border-radius: 999px;
-      font-size: 12px; font-weight: 600;
-      cursor: pointer;
-      background: #FFFFFF;
-      color: var(--text);
-      border: 1px solid var(--line);
-    }
-    .qs-chip.is-selected {
-      background: var(--text); color: #FFFFFF;
-      border-color: var(--text);
-    }
+    .pw-shell { display: flex; min-height: 100dvh; background: var(--surface); }
+    app-prov-web-sidebar { position: sticky; top: 0; height: 100dvh; }
+    .pw-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    app-prov-web-topbar { position: sticky; top: 0; z-index: 5; }
+    .pw-content { flex: 1; padding: 0 0 40px; }
+    .pw-pad { padding: 20px 28px 28px; }
 
-    .hours-card { display: block; }
-    .day-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 0;
-      border-bottom: 1px solid var(--line);
-      flex-wrap: wrap;
-    }
-    .day-row.last { border-bottom: none; }
-    .day-col { width: 80px; flex-shrink: 0; }
-    .day-name { font-size: 13px; font-weight: 600; color: var(--text); }
-    .day-sub { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+    .pw-header { position: relative; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 24px 28px 4px; }
+    .pw-header-text { flex: 1; min-width: 0; }
+    .pw-header-centered { text-align: center; }
+    .pw-title { margin: 0; font-family: var(--font-display); font-size: 2rem; font-weight: 500; letter-spacing: 0.2px; line-height: 1.15; }
+    .pw-sub { font-size: 0.8125rem; color: var(--text-muted); margin-top: 6px; }
+    .pw-header-actions { position: absolute; top: 24px; right: 28px; display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
 
-    .seg-pill {
-      display: inline-flex;
-      background: var(--surface);
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 2px;
-    }
-    .seg {
-      padding: 6px 10px; min-height: 32px;
-      border-radius: 999px;
-      font-size: 11px; font-weight: 600;
-      background: transparent;
-      color: var(--text-muted);
-      border: 1px solid transparent;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .seg.is-selected {
-      background: #FFFFFF;
-      color: var(--text);
-      border-color: var(--line);
-    }
-    .seg.is-selected.closed {
-      background: #FCE8E5;
-      color: var(--danger);
-      border-color: rgba(192,57,43,0.33);
-    }
+    .wbtn { height: 40px; padding: 0 16px; border-radius: 10px; cursor: pointer; font-family: var(--font-body); font-size: 0.8125rem; font-weight: 600; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid transparent; white-space: nowrap; }
+    .wbtn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .wbtn-success { background: var(--success); color: #fff; border-color: var(--success); }
+    .wbtn-success:hover:not(:disabled) { background: #276539; }
+    .wbtn-secondary { background: #fff; color: var(--text); border-color: var(--line); }
+    .wbtn-secondary:hover:not(:disabled) { border-color: var(--accent-blue-deep); }
 
-    .time-pair {
-      display: flex; align-items: center; gap: 4px;
-      margin-left: auto;
-    }
-    .time-input {
-      font-family: var(--font-mono);
-      font-size: 11px; font-weight: 600;
-      color: var(--text);
-      background: #FFFFFF;
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      padding: 5px 8px;
-      min-height: 32px;
-    }
-    .dash { color: var(--text-muted); font-size: 11px; }
+    .web-card { background: #fff; border: 1px solid var(--line); border-radius: 14px; }
 
-    .tz-banner {
-      margin-top: 12px;
-      font-size: 11px;
-      color: #1a3a52;
-      background: rgba(207,227,245,0.6);
-      border: 1px solid rgba(125,168,207,0.33);
-      border-radius: 10px;
-      padding: 10px 12px;
-      display: flex; gap: 8px; align-items: flex-start;
-    }
-    .tz-banner svg { color: var(--accent-blue-deep); flex-shrink: 0; margin-top: 1px; }
+    .hours-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+    .hours-main { padding: 18px 20px 20px; }
 
-    .msg {
-      padding: 12px 0;
-      color: var(--accent-blue-deep);
-      font-size: 13px;
-    }
+    .side-rail { display: flex; flex-direction: column; gap: 16px; }
+    .rail-card { padding: 16px; }
+    .rail-eyebrow { font-size: 0.625rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px; }
+    .tz-name { font-family: var(--font-display); font-size: 1.125rem; font-weight: 500; }
+    .tz-meta { font-family: var(--font-mono); font-size: 0.6875rem; color: var(--text-muted); margin-top: 2px; }
+    .tz-select-wrap { display: block; margin-top: 10px; }
+    .tz-select { width: 100%; height: 38px; padding: 0 28px 0 10px; background: #fff; border: 1px solid var(--line); border-radius: 10px; font-family: var(--font-body); font-size: 0.8125rem; color: var(--text); cursor: pointer; appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B6F77' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>"); background-repeat: no-repeat; background-position: right 10px center; }
+    .tz-detect { margin-top: 8px; background: none; border: none; padding: 0; cursor: pointer; font: inherit; font-size: 0.75rem; font-weight: 600; color: var(--accent-blue-text); }
+    .tz-detect:hover { text-decoration: underline; }
+    .tz-note { margin-top: 12px; font-size: 0.75rem; line-height: 1.5; color: var(--accent-blue-text); background: rgba(207,227,245,0.55); border: 1px solid rgba(125,168,207,0.33); border-radius: 10px; padding: 10px 12px; }
+    .rail-empty { font-size: 0.8125rem; color: var(--text-muted); }
+    .block-btn { width: 100%; margin-top: 12px; }
+
+    .msg { padding: 12px 0 0; color: var(--accent-blue-deep); font-size: 0.8125rem; }
     .msg.error { color: var(--danger); }
 
-    @media screen and (min-width: 768px) {
-      .beauty-app { max-width: 430px; margin: 0 auto; box-shadow: 0 0 40px rgba(15,35,60,0.15); }
+    @media screen and (max-width: 900px) {
+      .hours-grid { grid-template-columns: 1fr; }
+      .side-rail { order: -1; }
+    }
+    @media screen and (max-width: 720px) {
+      app-prov-web-sidebar { display: none; }
+      .pw-header { flex-direction: column; padding: 16px; }
+      .pw-pad { padding: 16px; }
     }
   `],
 })
@@ -277,58 +185,84 @@ export class BeautyBusinessAvailabilityComponent implements OnChanges {
   @Output() followLink = new EventEmitter<BffLink>();
 
   rows: DayRow[] = [];
-  quickSets = QUICK_SETS;
-  activeQuickSet: string | null = null;
   isSaving = false;
   message = '';
   isError = false;
+  overrideMsg = '';
 
-  constructor(private authService: BeautyAuthService) {}
+  selectedTz = 'UTC';
+  deviceTz = '';
+  allZones: string[] = [];
+
+  constructor(private authService: BeautyAuthService) {
+    try {
+      this.deviceTz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+    } catch { this.deviceTz = ''; }
+    try {
+      const sv = (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf;
+      this.allZones = sv ? sv('timeZone') : [];
+    } catch { this.allZones = []; }
+    if (!this.allZones.length) {
+      this.allZones = ['UTC', 'America/New_York', 'America/Chicago', 'America/Denver',
+        'America/Los_Angeles', 'Europe/London', 'Europe/Paris', 'Asia/Tokyo'];
+    }
+  }
 
   ngOnChanges(_: SimpleChanges): void {
     const incoming = (this.data['weekly_hours'] as DayRow[]) || [];
     this.rows = incoming.map((r) => ({ ...r, is_24h: !!r.is_24h }));
-    this.activeQuickSet = null;
+
+    const stored = (this.data['timezone'] as string) || '';
+    // Auto-detect: an unset/UTC-default storefront adopts the provider's
+    // device tz so the first save records their real zone; an explicitly
+    // configured zone is preserved.
+    this.selectedTz = (stored && stored !== 'UTC') ? stored : (this.deviceTz || stored || 'UTC');
+    if (this.selectedTz && !this.allZones.includes(this.selectedTz)) {
+      this.allZones = [this.selectedTz, ...this.allZones];
+    }
   }
 
-  get tabBadges(): { bookings?: number; messages?: number } {
+  useDeviceTz(): void {
+    if (this.deviceTz) this.selectedTz = this.deviceTz;
+  }
+
+  get tzCityLabel(): string {
+    const z = this.selectedTz || 'UTC';
+    if (z === 'UTC') return 'Coordinated Universal Time';
+    return z.split('/').pop()?.replace(/_/g, ' ') || z;
+  }
+
+  get tzOffsetLabel(): string {
+    const z = this.selectedTz || 'UTC';
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: z, hour: '2-digit', minute: '2-digit', timeZoneName: 'short', hour12: true,
+      }).formatToParts(new Date());
+      const t = parts.filter(p => p.type !== 'timeZoneName').map(p => p.value).join('');
+      const abbr = parts.find(p => p.type === 'timeZoneName')?.value || '';
+      return `${z.replace(/_/g, ' ')} · ${abbr} · ${t.trim()} now`;
+    } catch {
+      return z.replace(/_/g, ' ');
+    }
+  }
+
+  get business(): { email?: string; business_name?: string } | null {
+    return (this.data['business'] as { email?: string; business_name?: string }) || null;
+  }
+
+  get navBadges(): { bookings?: number; messages?: number } {
     const b = (this.data['badges'] as { messages_unread?: number; bookings_unread?: number }) || {};
     return { bookings: b.bookings_unread || 0, messages: b.messages_unread || 0 };
-  }
-
-  state(row: DayRow): SegState {
-    if (row.is_closed) return 'closed';
-    if (row.is_24h) return '24h';
-    return 'open';
-  }
-
-  setState(row: DayRow, st: SegState): void {
-    row.is_closed = st === 'closed';
-    row.is_24h = st === '24h';
-    if (st === 'open' && !row.start_time) row.start_time = '10:00';
-    if (st === 'open' && !row.end_time) row.end_time = '18:00';
-    this.activeQuickSet = null;
-  }
-
-  subLabel(row: DayRow): string {
-    if (row.is_closed) return 'Closed';
-    if (row.is_24h) return 'Open 24h';
-    const a = (row.start_time || '').slice(0, 5);
-    const b = (row.end_time || '').slice(0, 5);
-    return `${a}–${b}`;
-  }
-
-  applyQuickSet(qs: QuickSet): void {
-    qs.apply(this.rows);
-    this.activeQuickSet = qs.k;
   }
 
   emit(link: BffLink | null | undefined): void {
     if (link) this.followLink.emit(link);
   }
 
-  onTab(tab: ProviderTab): void {
-    this.emit(resolveTabLink(tab, this.links));
+  blockOff(): void {
+    // Date-specific overrides have no backend endpoint yet — surface the
+    // intent without faking a save. Wire to a real override API when it lands.
+    this.overrideMsg = 'Date overrides are coming soon.';
   }
 
   save(): void {
@@ -344,7 +278,7 @@ export class BeautyBusinessAvailabilityComponent implements OnChanges {
       screen: null, route: null, prompt: null,
     };
 
-    this.authService.follow(submitLink, { weekly_hours: this.rows }).subscribe({
+    this.authService.follow(submitLink, { weekly_hours: this.rows, timezone: this.selectedTz }).subscribe({
       next: () => {
         this.isSaving = false;
         this.message = 'Saved.';

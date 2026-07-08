@@ -14,7 +14,7 @@ from Playwright.pages.pogoda.beauty.business_login_page import (
     customer_signin_link_button,
 )
 
-scenarios("../../features/Pogoda/Beauty/beauty_business_login_page.feature")
+scenarios("../../features/Beauty/beauty_business_login_page.feature")
 
 
 @pytest.fixture

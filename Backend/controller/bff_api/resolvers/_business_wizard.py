@@ -29,18 +29,18 @@ STEP_SCREENS = {
 }
 
 CATEGORY_OPTIONS = [
-    {'value': 'facial',  'label': 'Facials'},
-    {'value': 'massage', 'label': 'Massage'},
-    {'value': 'nails',   'label': 'Nails'},
-    {'value': 'hair',    'label': 'Hair'},
+    {'value': 'facial',  'label': 'Facials', 'description': 'Brightening peels, signature facials, hydra-glow'},
+    {'value': 'massage', 'label': 'Massage', 'description': 'Swedish, deep tissue, hot stone'},
+    {'value': 'nails',   'label': 'Nails',   'description': 'Manicure, pedicure, gel, acrylic'},
+    {'value': 'hair',    'label': 'Hair',    'description': 'Cut, color, blowout, treatments'},
 ]
 TOOL_OPTIONS = [
-    {'value': 'google_calendar', 'label': 'Google Calendar'},
-    {'value': 'icloud',          'label': 'iCloud Calendar'},
-    {'value': 'outlook',         'label': 'Outlook Calendar'},
-    {'value': 'square',          'label': 'Square POS'},
-    {'value': 'mindbody',        'label': 'Mindbody'},
-    {'value': 'vagaro',          'label': 'Vagaro'},
+    {'value': 'google_calendar', 'label': 'Google Calendar', 'description': 'Sync bookings to your Google calendar'},
+    {'value': 'icloud',          'label': 'iCloud Calendar', 'description': 'Apple Calendar sync'},
+    {'value': 'outlook',         'label': 'Outlook Calendar','description': 'Microsoft 365 / Outlook sync'},
+    {'value': 'square',          'label': 'Square POS',      'description': 'Match in-person sales with bookings'},
+    {'value': 'mindbody',        'label': 'Mindbody',        'description': 'Import existing client list & bookings'},
+    {'value': 'vagaro',          'label': 'Vagaro',          'description': 'Import existing client list & bookings'},
 ]
 TOS_TEXT = (
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do '
