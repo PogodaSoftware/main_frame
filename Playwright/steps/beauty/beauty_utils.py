@@ -46,7 +46,15 @@ def login_business_via_api(email: str, password: str) -> str:
 def attach_business_session_cookie(page, cookie_value: str) -> None:
     """Set the auth cookie on the Playwright browser context for both the
     backend and frontend ports so subsequent navigations include it.
-    Also injects the device ID into localStorage."""
+
+    The auth cookie is bound to ``TEST_DEVICE_ID``; the middleware also
+    checks that the ``X-Device-ID`` header the SPA sends matches it. The
+    SPA derives that header from ``localStorage['beauty_device_id']``, so
+    we seed the same value via an init script that runs before the app
+    boots on every subsequent navigation. Without this, the SPA generates
+    a fresh random id, the device check fails, and the auth guard bounces
+    every gated screen back to the login page.
+    """
     frontend_ports: Iterable[str] = {os.getenv('BEAUTY_PORT', '4200'),
                                      os.getenv('FRONTEND_PORT', '5000')}
     cookies = []

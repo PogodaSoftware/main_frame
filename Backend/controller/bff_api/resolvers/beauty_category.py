@@ -7,6 +7,7 @@ their services nested. Public — no auth required.
 `params` must contain `slug` (one of facial/massage/nails/hair).
 """
 
+from beauty_api.availability_service import marketplace_visibility_q
 from beauty_api.models import BeautyService
 from ..services import hateoas_service as h
 
@@ -26,9 +27,12 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     if slug not in CATEGORY_LABELS:
         return h.redirect_envelope('beauty_home', 'unknown_category')
 
+    # Only surface storefronts that are marketplace-visible (curated
+    # NULL-linked providers, or businesses whose application was accepted).
     services = (
         BeautyService.objects.select_related('provider')
         .filter(category=slug)
+        .filter(marketplace_visibility_q('provider__'))
         .order_by('provider__name', 'name')
     )
 

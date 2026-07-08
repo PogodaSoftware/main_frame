@@ -120,6 +120,7 @@ export const routes: Routes = [
     path: 'wireframe',
     component: BeautyShellComponent,
     title: 'Beauty - Wireframe',
+    canActivate: [beautyAuthGuard],
     data: { screen: 'beauty_wireframe' },
   },
   {

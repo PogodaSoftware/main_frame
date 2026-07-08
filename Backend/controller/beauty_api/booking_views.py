@@ -23,7 +23,11 @@ from rest_framework.views import APIView
 
 from django.db.models import Avg, Count
 
-from .availability_service import is_slot_available
+from .availability_service import (
+    is_provider_publicly_visible,
+    is_slot_available,
+    marketplace_visibility_q,
+)
 from .models import (
     BeautyBooking,
     BeautyProvider,
@@ -153,6 +157,7 @@ class CategoryListView(APIView):
         services = (
             BeautyService.objects.select_related('provider')
             .filter(category=cat)
+            .filter(marketplace_visibility_q('provider__'))
             .order_by('provider__name', 'name')
         )
 
@@ -185,6 +190,10 @@ class ProviderDetailView(APIView):
         try:
             provider = BeautyProvider.objects.get(id=provider_id)
         except BeautyProvider.DoesNotExist:
+            return Response({'detail': 'Provider not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # An unapproved storefront must not be reachable even by direct id.
+        if not is_provider_publicly_visible(provider):
             return Response({'detail': 'Provider not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         services = list(provider.services.all().order_by('category', 'name'))
@@ -221,6 +230,8 @@ class ServiceDetailView(APIView):
         try:
             svc = BeautyService.objects.select_related('provider').get(id=service_id)
         except BeautyService.DoesNotExist:
+            return Response({'detail': 'Service not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if not is_provider_publicly_visible(svc.provider):
             return Response({'detail': 'Service not found.'}, status=status.HTTP_404_NOT_FOUND)
         return Response(
             {
@@ -302,8 +313,13 @@ class MyBookingsView(APIView):
             )
 
         try:
-            service = BeautyService.objects.get(id=service_id)
+            service = BeautyService.objects.select_related('provider').get(id=service_id)
         except (BeautyService.DoesNotExist, ValueError, TypeError):
+            return Response({'detail': 'Service not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Never allow booking a storefront that isn't marketplace-visible
+        # (i.e. an unapproved onboarding business).
+        if not is_provider_publicly_visible(service.provider):
             return Response({'detail': 'Service not found.'}, status=status.HTTP_404_NOT_FOUND)
 
         try:

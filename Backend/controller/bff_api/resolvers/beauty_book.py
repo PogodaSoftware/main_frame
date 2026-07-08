@@ -10,7 +10,7 @@ Auth required — redirects unauthenticated visitors to `beauty_login`.
 `params` must contain `serviceId` (the service primary key).
 """
 
-from beauty_api.availability_service import compute_slots
+from beauty_api.availability_service import compute_slots, is_provider_publicly_visible
 from beauty_api.models import BeautyFavorite, BeautyService
 from ..services import hateoas_service as h
 from ..services.beauty_timezone_service import provider_timezone as _provider_timezone
@@ -32,6 +32,11 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     try:
         svc = BeautyService.objects.select_related('provider').get(id=service_id)
     except BeautyService.DoesNotExist:
+        return h.redirect_envelope('beauty_home', 'service_not_found')
+
+    # Never render a booking screen for a storefront that isn't
+    # marketplace-visible (unapproved onboarding business).
+    if not is_provider_publicly_visible(svc.provider):
         return h.redirect_envelope('beauty_home', 'service_not_found')
 
     is_favorited = BeautyFavorite.objects.filter(

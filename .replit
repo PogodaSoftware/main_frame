@@ -58,7 +58,7 @@ outputType = "console"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "cd Frontend/beautyApp && NG_CLI_ANALYTICS=false npm start -- --port 4200 --host 0.0.0.0 --disable-host-check"
+args = "cd Frontend/beautyApp && NG_CLI_ANALYTICS=false npm start -- --port 4200 --host 0.0.0.0"
 waitForPort = 4200
 
 [[ports]]

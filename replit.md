@@ -1,5 +1,14 @@
 # Portfolio Resume Application
 
+## Recent Changes (July 7, 2026) — Onboarding gate: unapproved businesses can't reach the marketplace
+
+Closed a High-severity server-side authorization flaw: a business whose onboarding application was not `accepted` could bypass the wizard via direct API calls, run a live storefront, and appear bookable to customers.
+
+- **Source of truth** (`beauty_api/availability_service.py`): `is_provider_publicly_visible(provider)` and `marketplace_visibility_q(field_prefix)`. Curated providers (`business_provider_id IS NULL`) stay visible; a business-linked storefront is visible only once its `BusinessProviderApplication.status == accepted`.
+- **Business portal** (`beauty_api/business_views.py`): `_require_business_storefront()` is secure-by-default (`require_accepted=True`). Dashboard, services CRUD, calendar, bookings, and earnings are gated. Onboarding-wizard (application, availability) and account (password, contact, delete) endpoints pass `require_accepted=False` so onboarding still works.
+- **Customer surfaces — gated on BOTH backends**: REST (`beauty_api/booking_views.py`: category, provider/service detail, booking create) and the SDUI BFF resolvers (`beauty_category`, `beauty_provider_detail`, `beauty_book`). Unapproved storefronts are hidden (404 on REST, redirect to `beauty_home` on BFF).
+- Pre-existing business-linked providers are all test artifacts with no accepted application and are intentionally hidden (no backfill migration).
+
 ## Architecture: Beauty App Separation (May 2, 2026)
 
 The Beauty booking app (`/pogoda/beauty/*`) has been extracted from the portfolio Angular project into its own standalone Angular application to eliminate cross-vulnerability risk.

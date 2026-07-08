@@ -17,6 +17,7 @@ Security measures applied:
 
 import hashlib
 import logging
+import os
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -53,7 +54,10 @@ from bff_api.services.hateoas_service import is_signup_enabled
 
 logger = logging.getLogger(__name__)
 
-COOKIE_SECURE = not settings.DEBUG
+# Cookie Secure flag is fully independent of debug mode.
+# Defaults to True in all environments. Only set BEAUTY_COOKIE_INSECURE=true
+# for local development over plain http — never in any deployed environment.
+COOKIE_SECURE = os.environ.get('BEAUTY_COOKIE_INSECURE', 'false').lower() != 'true'
 
 # Single shared response body for every auth failure so the API never
 # leaks whether a particular email exists in either user store.

@@ -28,12 +28,15 @@ Public functions
 from datetime import datetime, date, time, timedelta, timezone
 from zoneinfo import ZoneInfo
 
+from django.db.models import Q
+
 from .timezone_utils import resolve_zoneinfo
 from .models import (
     BeautyBooking,
     BeautyProvider,
     BeautyProviderAvailability,
     BeautyService,
+    BusinessProviderApplication,
 )
 
 
@@ -315,3 +318,43 @@ def ensure_storefront(business_provider) -> BeautyProvider:
 
 def get_storefront(business_provider_id: int) -> BeautyProvider | None:
     return BeautyProvider.objects.filter(business_provider_id=business_provider_id).first()
+
+
+# ---------------------------------------------------------------------------
+# Marketplace visibility gate
+# ---------------------------------------------------------------------------
+# A storefront may only be shown to / booked by customers once its owning
+# business account's onboarding application has been accepted. Storefronts that
+# were never linked to a business account (``business_provider_id is None``) are
+# the legacy/curated demo catalog and stay visible. This is the single
+# server-side source of truth shared by every customer-facing catalog and
+# booking endpoint, mirroring the accepted-application gate the BFF applies to
+# the business portal screens.
+
+def approved_business_provider_ids() -> set[int]:
+    """PKs of BusinessProviders whose onboarding application is accepted."""
+    return set(
+        BusinessProviderApplication.objects
+        .filter(status=BusinessProviderApplication.STATUS_ACCEPTED)
+        .values_list('business_provider_id', flat=True)
+    )
+
+
+def is_provider_publicly_visible(provider: BeautyProvider) -> bool:
+    """True if this storefront may be shown to / booked by customers."""
+    if provider.business_provider_id is None:
+        return True
+    return provider.business_provider_id in approved_business_provider_ids()
+
+
+def marketplace_visibility_q(field_prefix: str = '') -> Q:
+    """Q filter selecting only marketplace-visible providers.
+
+    ``field_prefix`` lets callers filter through a relation, e.g.
+    ``marketplace_visibility_q('provider__')`` for a BeautyService queryset.
+    """
+    field = f'{field_prefix}business_provider_id'
+    return (
+        Q(**{f'{field}__isnull': True})
+        | Q(**{f'{field}__in': approved_business_provider_ids()})
+    )

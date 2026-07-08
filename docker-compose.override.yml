@@ -2,6 +2,9 @@ services:
   backend:
     environment:
       - BEAUTY_ADMIN_PRINCIPALS=customer:4
+      # Dev runs over plain http (localhost + RN emulator 10.0.2.2); a Secure
+      # cookie would be dropped there. Never set in deployed environments.
+      - BEAUTY_COOKIE_INSECURE=true
     ports:
       - "8000:8000"
   # App entry proxy moved off :4200 → :3001 (avoid the other app on :3000).

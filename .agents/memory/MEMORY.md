@@ -1,0 +1,3 @@
+- [Beauty Playwright tests](beauty-playwright-tests.md) — authed page tests need a device-id seed; many fail on stale selectors from the portal redesign, not on functionality.
+- [Beauty SDUI auth gate](beauty-sdui-auth.md) — every /pogoda/beauty screen's access decision is the BFF resolver's; never bypass it client-side to render a screen locally.
+- [Beauty marketplace visibility](beauty-marketplace-visibility.md) — storefront visibility/authz gates must be applied in BOTH the REST catalog and the BFF resolvers; gating only REST leaves the real (SDUI) customer path open.

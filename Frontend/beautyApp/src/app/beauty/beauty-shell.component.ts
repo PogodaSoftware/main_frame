@@ -27,7 +27,7 @@ import {
 } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { combineLatest, of, Subscription } from 'rxjs';
+import { combineLatest, Subscription } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 import { BeautyBffService } from './beauty-bff.service';
@@ -532,15 +532,6 @@ export class BeautyShellComponent implements OnInit, OnDestroy {
           this.currentParams = params;
           this.isLoading = true;
           this.serverError = false;
-
-          // Wireframe is a dev-only page — bypass the BFF entirely.
-          if (this.currentScreen === 'beauty_wireframe') {
-            return of({
-              action: 'render' as const,
-              screen: 'beauty_wireframe',
-              _links: {},
-            } as BffResponse);
-          }
 
           return this.bffService.resolve(this.currentScreen, params);
         }),

@@ -12,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 from django.db.models import Avg, Count
 
+from beauty_api.availability_service import is_provider_publicly_visible
 from beauty_api.middleware import SESSION_COOKIE_NAME
 from beauty_api.models import BeautyBooking, BeautyFavorite, BeautyProvider, BeautyReview, BeautySession
 from ..services.auth_service import get_authenticated_user
@@ -86,6 +87,10 @@ def resolve(request, screen: str, device_id: str, params: dict | None = None) ->
     try:
         provider = BeautyProvider.objects.prefetch_related('services').get(id=provider_id)
     except BeautyProvider.DoesNotExist:
+        return h.redirect_envelope('beauty_home', 'provider_not_found')
+
+    # An unapproved storefront must not be reachable even by direct id.
+    if not is_provider_publicly_visible(provider):
         return h.redirect_envelope('beauty_home', 'provider_not_found')
 
     services = list(provider.services.all().order_by('category', 'name'))

@@ -74,7 +74,8 @@ import { BeautyProvWebTopbarComponent } from './prov-web/prov-web-topbar.compone
                          class="form-input" [(ngModel)]="confirmPassword" required data-testid="confirm-password"/>
                 </div>
 
-                <button type="submit" class="wbtn wbtn-success" [disabled]="busy">
+                <button type="submit" class="wbtn wbtn-success" [disabled]="busy"
+                        data-testid="change-password-submit">
                   {{ busy ? 'Saving…' : 'Update password' }}
                 </button>
                 <p *ngIf="message" class="msg" [class.error]="isError"

@@ -1,0 +1,35 @@
+# Threat Model
+## Project Overview
+The production-relevant scope for this scan is the Beauty application only: the Angular client in `Frontend/beautyApp/` and the Django backend/BFF in `Backend/controller/`. The Beauty app exposes a public marketplace plus authenticated customer, business, and Beauty-admin workflows over a custom cookie-and-device-bound session model. This project is deployed publicly, so all public Beauty routes and backend endpoints should be treated as internet-reachable.
+This scan assumes production uses `NODE_ENV=production`, transport is protected by platform-managed TLS, and mockup/dev-only sandboxes are not deployed. The portfolio app outside `/pogoda/beauty/*` is out of scope for Beauty scans unless shared backend code makes it reachable.
+## Assets
+- **Beauty customer and business accounts** — email addresses, hashed passwords, suspension state, and account metadata. Compromise enables impersonation and privacy loss.
+- **Session material** — the signed `beauty_auth` cookie, device identifiers, and `BeautySession` rows. Exposure or broken validation would enable account takeover or session replay.
+- **Booking and chat data** — appointment times, provider relationships, and per-booking chat content. These contain sensitive customer/business activity data.
+- **Business operations data** — provider storefront settings, services, availability, bookings, and runtime feature flags. Unauthorized changes can disrupt booking availability or expose sensitive commercial information.
+- **Administrative controls** — Beauty CRM and feature-flag capabilities, plus any legacy admin-style resolvers. Unauthorized access would expose the full user base or allow account and feature manipulation.
+## Trust Boundaries
+- **Browser/mobile client → Django backend** — all Beauty client input is untrusted and must be validated server-side.
+- **BFF resolve endpoint → resolver dispatch** — `POST /api/bff/beauty/resolve/` accepts caller-selected screen names, so each resolver must enforce its own authorization before returning data.
+- **Auth cookie/header → session validation** — the `beauty_auth` cookie and `X-Device-ID` header cross from the client into the custom auth system and must match a live server-side `BeautySession`.
+- **Authenticated customer/business → admin surfaces** — normal Beauty accounts must never gain access to admin-only CRM, feature-flag, or legacy inventory screens.
+- **Backend → database** — Django ORM queries access all Beauty user, session, booking, and business data; authorization failures here become full-dataset disclosure.
+- **Production → dev-only tooling** — Playwright, local Docker-only routing aids, and experimental/mockup code should be ignored unless a production request path reaches them.
+## Scan Anchors
+- Production entry points: `Backend/controller/beauty_api/urls.py` and `Backend/controller/bff_api/views.py`.
+- Highest-risk areas: `Backend/controller/beauty_api/` auth/admin/business views and `Backend/controller/bff_api/resolvers/` for screen-level authorization.
+- Public surfaces: marketplace/category/provider/service reads, signup/login, BFF resolve.
+- Authenticated surfaces: `/api/beauty/protected/*`, customer bookings/chats, business portal routes, BFF screens resolved from authenticated sessions.
+- Admin surfaces: Beauty CRM, feature-flag endpoints, and any `/pogoda/beauty/admin/*` or legacy admin-style resolvers.
+- Usually dev-only: Playwright, local workflow helpers, Docker/dev port wiring, and the portfolio app outside Beauty.
+## Threat Categories
+### Spoofing
+The Beauty app relies on a custom signed-cookie session rather than a framework-default auth stack. The system must require a valid signed cookie, matching `X-Device-ID`, and an active unexpired `BeautySession` row for every authenticated API or BFF action. Customer, business, and admin identities must remain distinct, with admin status derived only from trusted server-side allowlists.
+### Tampering
+Clients can submit account, booking, availability, chat, and business-management requests, but the browser shell is not a trust boundary. The backend must validate all state changes server-side, including booking ownership, business ownership, feature-flag mutations, and any route parameters or screen names supplied to the BFF.
+### Information Disclosure
+The BFF can aggregate and return high-value datasets, including user inventories, session metadata, booking history, and business records. Resolver-level authorization must prevent normal users from reaching admin-style screens, and API responses must remain scoped to the authenticated principal. Logs and error responses must not leak secrets, tokens, or internal debugging details.
+### Denial of Service
+Public login, signup, BFF resolve, marketplace browsing, and slot-computation paths are all internet-reachable on a public deployment. These endpoints must avoid unbounded work per request and should continue to enforce rate limits or other protections where sensitive or expensive operations are exposed.
+### Elevation of Privilege
+The main Beauty risk is broken function-level authorization across customer, business, and admin surfaces. Every admin resolver and endpoint must enforce admin authorization server-side, and every business/customer endpoint must confirm the caller owns the referenced resource. BFF screen registration alone is not protection because attackers can call the resolve endpoint directly with arbitrary screen names.
